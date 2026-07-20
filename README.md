@@ -1,5 +1,11 @@
 # HA Relay Panel
 
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+![Home Assistant](https://img.shields.io/badge/Home%20Assistant-integration-41BDF5?logo=homeassistant&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-Express-339933?logo=nodedotjs&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+![Self-hosted](https://img.shields.io/badge/self--hosted-no%20cloud-success)
+
 A visual web panel for **Home Assistant** that turns relays (switches) + temperature
 sensors into simple thermostats. Drag relay widgets onto a canvas, bind each one to a
 temperature sensor and a target temperature, and the panel generates a Home Assistant
@@ -7,6 +13,8 @@ automation that switches the relay to hold that temperature — with a clean, to
 UI for viewing and manual control.
 
 Self-hosted, no cloud. Talks to your own Home Assistant over its REST/WebSocket API.
+
+![HA Relay Panel screenshot](docs/screenshot.png)
 
 ## Features
 
