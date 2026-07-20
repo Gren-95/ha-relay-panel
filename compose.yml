@@ -1,0 +1,39 @@
+services:
+  relay-panel-db:
+    image: mariadb:11
+    container_name: relay-panel-db
+    restart: always
+    environment:
+      - MARIADB_DATABASE=relaypanel
+      - MARIADB_USER=relay
+      - MARIADB_PASSWORD=${DB_PASSWORD}
+      - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - TZ=Europe/Tallinn
+    volumes:
+      - relay-panel-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  relay-panel-web:
+    build: .
+    container_name: relay-panel-web
+    restart: always
+    ports:
+      - "8090:3000"
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=relay-panel-db
+      - DB_USER=relay
+      - DB_NAME=relaypanel
+      - MQTT_URL=mqtt://homeassistant.local:1883
+      - TZ=Europe/Tallinn
+    depends_on:
+      relay-panel-db:
+        condition: service_healthy
+
+volumes:
+  relay-panel-data:

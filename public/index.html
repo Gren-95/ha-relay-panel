@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Relay Panel</title>
+  <script>try{var t=localStorage.getItem('relaypanel-theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+  <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="ha-banner" class="ha-banner hidden"><i class="bi bi-exclamation-triangle-fill"></i> <span data-i18n="ha_unreachable">Home Assistant unreachable — readings may be stale</span></div>
+  <header>
+    <h1><i class="bi bi-lightning-charge-fill"></i> <span data-i18n="app_title">Relay Panel</span> <span id="summary" class="summary"></span></h1>
+    <button id="btn-menu" class="btn menu-btn" aria-label="Menu"><i class="bi bi-list"></i></button>
+    <div id="toolbar" class="toolbar">
+      <span id="status" class="status"></span>
+      <div class="tb-group edit-only">
+        <select id="device-picker" class="btn select"><option value="" data-i18n="physical_relay_ph">+ Physical relay…</option></select>
+        <select id="area-picker" class="btn select"><option value="" data-i18n="area_ph">+ Area…</option></select>
+      </div>
+      <span class="tb-divider edit-only"></span>
+      <div class="tb-group">
+        <button id="btn-save" class="btn edit-only"><i class="bi bi-floppy"></i> <span data-i18n="save">Save</span></button>
+        <button id="btn-mode" class="btn"><i class="bi bi-pencil-square"></i> <span id="mode-label">Edit</span></button>
+        <button id="btn-logout" class="btn hidden" data-i18n-title="sign_out" title="Sign out"><i class="bi bi-box-arrow-right"></i></button>
+        <button id="btn-lang" class="btn" title="Keel / Language">ET</button>
+        <button id="btn-theme" class="btn" data-i18n-title="toggle_dark" title="Toggle dark mode"><i class="bi bi-moon-stars"></i></button>
+      </div>
+      <span class="tb-divider"></span>
+      <div class="tb-group tb-advanced">
+        <button id="btn-advanced" class="btn"><i class="bi bi-gear"></i> <span data-i18n="advanced">Advanced</span> <i class="bi bi-caret-down-fill"></i></button>
+        <div id="advanced-menu" class="tb-menu hidden">
+          <button id="btn-add" class="btn menu-item edit-only"><i class="bi bi-plus-lg"></i> <span data-i18n="add_single_relay">Add single relay</span></button>
+          <span class="tb-menu-sep edit-only"></span>
+          <button id="btn-export" class="btn menu-item"><i class="bi bi-download"></i> <span data-i18n="export_layout">Export layout</span></button>
+          <button id="btn-import" class="btn menu-item"><i class="bi bi-upload"></i> <span data-i18n="import_layout">Import layout</span></button>
+        </div>
+        <input id="import-file" type="file" accept="application/json,.json" hidden />
+      </div>
+    </div>
+  </header>
+
+  <main id="canvas" class="canvas edit"></main>
+
+  <!-- Editor panel -->
+  <aside id="editor" class="editor hidden">
+    <div class="editor-head">
+      <h2 data-i18n="edit_relay">Edit relay</h2>
+      <button id="ed-close" class="x">&times;</button>
+    </div>
+    <label><span data-i18n="name">Name</span>
+      <input id="ed-name" type="text" data-i18n-ph="name_ph" placeholder="e.g. Masterwood heater" />
+    </label>
+    <label><span data-i18n="relay_to_switch">Relay to switch</span>
+      <select id="ed-relay"></select>
+    </label>
+    <button id="ed-rename-relay" class="btn tiny" type="button"><i class="bi bi-pencil"></i> <span data-i18n="rename_this_relay">Rename this relay</span></button>
+    <label><span data-i18n="temp_sensor">Temperature sensor</span>
+      <select id="ed-sensor"></select>
+    </label>
+    <button id="ed-rename-sensor" class="btn tiny" type="button"><i class="bi bi-pencil"></i> <span data-i18n="rename_this_sensor">Rename this sensor</span></button>
+    <label><span data-i18n="area">Area</span>
+      <select id="ed-area"><option value="" data-i18n="none_opt">— none —</option></select>
+    </label>
+    <label><span data-i18n="heat_or_cool">Heat or cool?</span>
+      <select id="ed-mode">
+        <option value="below" data-i18n="heating_opt">Heating — switch ON when too cold</option>
+        <option value="above" data-i18n="cooling_opt">Cooling — switch ON when too hot</option>
+      </select>
+    </label>
+    <label><span data-i18n="target_temp">Target temperature (°C)</span>
+      <input id="ed-temp" type="number" step="0.5" value="20" />
+    </label>
+    <label><span data-i18n="switchback_gap">Switch-back gap (°C) — optional, 0 = switch exactly at target</span>
+      <input id="ed-deadband" type="number" step="0.5" min="0" value="0" />
+    </label>
+    <div id="ed-stale" class="ed-stale hidden"></div>
+    <div id="ed-history" class="ed-history hidden">
+      <div class="ed-history-head" data-i18n="last_24h">Last 24 hours</div>
+      <svg id="ed-spark" class="spark" viewBox="0 0 240 56" preserveAspectRatio="none"></svg>
+      <div id="ed-history-info" class="ed-history-info"></div>
+    </div>
+    <div class="editor-actions">
+      <button id="ed-bind" class="btn primary" data-i18n="save_turn_on_auto">Save &amp; turn on automatic control</button>
+      <button id="ed-unbind" class="btn" data-i18n="remove_automation">Remove automation</button>
+      <button id="ed-delete" class="btn danger" data-i18n="delete_this_relay">Delete this relay</button>
+    </div>
+    <div id="ed-automation" class="ed-automation hidden">
+      <div id="ed-automation-row" class="ed-automation-row hidden">
+        <span id="ed-automation-status"></span>
+        <button id="ed-automation-toggle" class="btn" type="button"></button>
+      </div>
+      <button id="ed-relay-toggle" class="btn" type="button"></button>
+    </div>
+    <p id="ed-msg" class="ed-msg"></p>
+  </aside>
+
+  <!-- Device (physical relay) editor panel -->
+  <aside id="dev-editor" class="editor hidden">
+    <div class="editor-head">
+      <h2 data-i18n="physical_relay_h">Physical relay</h2>
+      <button id="de-close" class="x">&times;</button>
+    </div>
+    <label><span data-i18n="label_shown">Label (shown on the box)</span>
+      <input id="de-name" type="text" />
+    </label>
+    <button id="de-rename-ha" class="btn tiny" type="button"><i class="bi bi-pencil"></i> <span data-i18n="rename_device_ha">Rename device in Home Assistant</span></button>
+    <label><span data-i18n="group_area">Group / area</span>
+      <select id="de-area"><option value="" data-i18n="none_opt">— none —</option></select>
+    </label>
+    <div class="de-outputs-head" data-i18n="outputs">Outputs</div>
+    <div id="de-outputs" class="de-outputs"></div>
+    <select id="de-add-output" class="btn"><option value="" data-i18n="add_output_ph">+ Add output…</option></select>
+    <div class="editor-actions">
+      <button id="de-save" class="btn primary" data-i18n="save">Save</button>
+      <button id="de-delete" class="btn danger" data-i18n="remove_from_board">Remove from board</button>
+    </div>
+    <p id="de-msg" class="ed-msg"></p>
+  </aside>
+
+  <!-- Login (validates against your Home Assistant account) -->
+  <div id="login-modal" class="login-modal hidden">
+    <div class="login-card">
+      <h2><i class="bi bi-shield-lock"></i> <span data-i18n="sign_in_to_edit">Sign in to edit</span></h2>
+      <p class="login-sub"><span data-i18n="use_ha_1">Use your </span><b>Home Assistant</b><span data-i18n="use_ha_2"> account.</span></p>
+      <input id="login-user" type="text" data-i18n-ph="username" placeholder="Username" autocomplete="username" />
+      <input id="login-pass" type="password" data-i18n-ph="password" placeholder="Password" autocomplete="current-password" />
+      <div class="login-actions">
+        <button id="login-submit" class="btn primary" data-i18n="sign_in">Sign in</button>
+        <button id="login-cancel" class="btn" data-i18n="cancel">Cancel</button>
+      </div>
+      <p id="login-msg" class="ed-msg"></p>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

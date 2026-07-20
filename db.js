@@ -1,0 +1,80 @@
+const mysql = require('mysql2/promise');
+
+let pool;
+
+async function initDb() {
+  pool = mysql.createPool({
+    host: process.env.DB_HOST || 'relay-panel-db',
+    user: process.env.DB_USER || 'relay',
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME || 'relaypanel',
+    waitForConnections: true,
+    connectionLimit: 5,
+  });
+
+  // One panel row holds the whole layout JSON (relay widgets + bindings).
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS panel (
+      id         INT PRIMARY KEY,
+      name       VARCHAR(190) NOT NULL DEFAULT 'Main',
+      layout     JSON NOT NULL,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+  // Rolling backups so a layout is never lost — every change snapshots the
+  // PREVIOUS layout here before overwriting; the newest ~30 are kept.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS panel_backup (
+      id         INT AUTO_INCREMENT PRIMARY KEY,
+      layout     JSON NOT NULL,
+      relays     INT NOT NULL DEFAULT 0,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await pool.query(
+    `INSERT IGNORE INTO panel (id, name, layout) VALUES (1, 'Main', ?)`,
+    [JSON.stringify({ relays: [], areas: [], devices: [] })]
+  );
+  return pool;
+}
+
+function normalize(l) {
+  const layout = typeof l === 'string' ? JSON.parse(l) : (l || {});
+  if (!Array.isArray(layout.relays)) layout.relays = [];
+  if (!Array.isArray(layout.areas)) layout.areas = [];
+  if (!Array.isArray(layout.devices)) layout.devices = [];
+  return layout;
+}
+const isEmpty = (l) => !l || (!l.relays.length && !l.devices.length && !l.areas.length);
+
+async function getLayout() {
+  const [rows] = await pool.query('SELECT layout FROM panel WHERE id = 1');
+  if (!rows.length) return { relays: [], areas: [], devices: [] };
+  return normalize(rows[0].layout);
+}
+
+async function saveLayout(layout) {
+  const next = normalize(layout);
+  const cur = await getLayout();
+  // back up the current layout before overwriting (only when it has content and
+  // actually differs), so any change — including a wipe — is recoverable.
+  if (!isEmpty(cur) && JSON.stringify(cur) !== JSON.stringify(next)) {
+    await pool.query('INSERT INTO panel_backup (layout, relays) VALUES (?, ?)', [JSON.stringify(cur), cur.relays.length]);
+    await pool.query('DELETE FROM panel_backup WHERE id NOT IN (SELECT id FROM (SELECT id FROM panel_backup ORDER BY id DESC LIMIT 30) x)');
+  }
+  await pool.query('UPDATE panel SET layout = ? WHERE id = 1', [JSON.stringify(next)]);
+  return getLayout();
+}
+
+async function listBackups() {
+  const [rows] = await pool.query('SELECT id, relays, created_at FROM panel_backup ORDER BY id DESC');
+  return rows.map((r) => ({ id: r.id, relays: r.relays, created_at: r.created_at }));
+}
+
+async function restoreBackup(id) {
+  const [rows] = await pool.query('SELECT layout FROM panel_backup WHERE id = ?', [id]);
+  if (!rows.length) return null;
+  return saveLayout(normalize(rows[0].layout)); // saving also snapshots current first
+}
+
+module.exports = { initDb, getLayout, saveLayout, listBackups, restoreBackup };

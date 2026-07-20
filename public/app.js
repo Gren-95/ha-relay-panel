@@ -1,0 +1,1110 @@
+'use strict';
+
+
+// ---- i18n (English default in the HTML; Estonian overrides here) ----
+const TR = {
+  et: {
+    ha_unreachable: 'Home Assistant pole saadaval — näidud võivad olla vananenud',
+    app_title: 'Relee paneel',
+    physical_relay_ph: '+ Füüsiline relee…', area_ph: '+ Ala…',
+    save: 'Salvesta', sign_out: 'Logi välja', toggle_dark: 'Tumeda režiimi lüliti',
+    advanced: 'Rohkem', add_single_relay: 'Lisa üksik relee',
+    export_layout: 'Ekspordi paigutus', import_layout: 'Impordi paigutus',
+    edit_relay: 'Muuda releed', name: 'Nimi', name_ph: 'nt Masterwoodi küte',
+    relay_to_switch: 'Lülitatav relee', rename_this_relay: 'Nimeta see relee ümber',
+    temp_sensor: 'Temperatuuriandur', rename_this_sensor: 'Nimeta see andur ümber',
+    area: 'Ala', none_opt: '— puudub —', heat_or_cool: 'Küte või jahutus?',
+    heating_opt: 'Küte — lülita SISSE, kui liiga külm',
+    cooling_opt: 'Jahutus — lülita SISSE, kui liiga kuum',
+    target_temp: 'Sihttemperatuur (°C)',
+    switchback_gap: 'Tagasilülituse vahe (°C) — valikuline, 0 = lülita täpselt sihil',
+    last_24h: 'Viimased 24 tundi',
+    save_turn_on_auto: 'Salvesta ja lülita automaatjuhtimine sisse',
+    remove_automation: 'Eemalda automaatika', delete_this_relay: 'Kustuta see relee',
+    physical_relay_h: 'Füüsiline relee', label_shown: 'Silt (kuvatakse kastil)',
+    rename_device_ha: 'Nimeta seade Home Assistantis ümber', group_area: 'Rühm / ala',
+    outputs: 'Väljundid', add_output_ph: '+ Lisa väljund…', remove_from_board: 'Eemalda tahvlilt',
+    sign_in_to_edit: 'Muutmiseks logi sisse', use_ha_1: 'Kasuta oma ', use_ha_2: ' kontot.',
+    username: 'Kasutajanimi', password: 'Parool', sign_in: 'Logi sisse', cancel: 'Tühista',
+    // dynamic
+    mode_edit: 'Muuda', mode_live: 'Vaade',
+    saved: 'salvestatud', save_error: 'salvestamise viga', sign_in_to_save: 'salvestamiseks logi sisse',
+    signing_in: 'logib sisse…', signed_in_loading: 'sisse logitud — laen…',
+    enter_user_pass: 'Sisesta kasutajanimi ja parool.', sign_in_failed: 'Sisselogimine ebaõnnestus.',
+    timed_out: 'Aegus — kontrolli ühendust ja proovi uuesti.',
+    exported: 'eksporditud', imported: 'imporditud',
+    undo: 'võta tagasi', redo: 'tee uuesti', nothing_undo: 'pole midagi tagasi võtta', nothing_redo: 'pole midagi uuesti teha',
+    relays: 'releed', on_word: 'sees', in_maintenance: 'hoolduses', offline_word: 'ühenduseta',
+    warn_relay_missing: 'Relee olem puudub Home Assistantis (ümber nimetatud või eemaldatud). Ava see relee, vali see uuesti ja salvesta.',
+    warn_relay_offline: 'Relee on ühenduseta / kättesaamatu — seda ei saa praegu lülitada. Kontrolli seadme toidet ja võrku.',
+    warn_sensor_missing: 'Temperatuuriandur puudub Home Assistantis (ümber nimetatud või eemaldatud). Ava see relee, vali andur uuesti ja salvesta.',
+    warn_sensor_offline: 'Temperatuuriandur on ühenduseta. Automaatjuhtimine on peatatud (relee jääb ohutult VÄLJA). Releed saab siiski käsitsi lülitada.',
+    auto_on: 'automaatjuhtimine on SEES', auto_paused: 'hoolduseks peatatud', auto_none: 'automaatjuhtimine puudub',
+    pause_maint: 'Peata hoolduseks', resume_auto: 'Jätka automaatjuhtimist',
+    turn_relay_off: 'Lülita relee VÄLJA', turn_relay_on: 'Lülita relee SISSE',
+    maint_badge: 'hooldus', relay_offline_short: 'relee ühenduseta', no_relay: 'releed pole',
+    click_turn_on: 'Klõpsa, et lülitada SISSE', click_turn_off: 'Klõpsa, et lülitada VÄLJA',
+    already_on_board: ' on juba tahvlil', all_on: 'Kõik sisse', all_off: 'Kõik välja',
+  },
+};
+const EN = {  // English fallbacks for dynamic (non-HTML) strings
+  mode_edit: 'Edit', mode_live: 'Live',
+  saved: 'saved', save_error: 'save error', sign_in_to_save: 'sign in to save',
+  signing_in: 'signing in…', signed_in_loading: 'signed in — loading…',
+  enter_user_pass: 'Enter username and password.', sign_in_failed: 'Sign in failed.',
+  timed_out: 'Timed out — check the connection and try again.',
+  exported: 'exported', imported: 'imported',
+  undo: 'undo', redo: 'redo', nothing_undo: 'nothing to undo', nothing_redo: 'nothing to redo',
+  relays: 'relays', on_word: 'on', in_maintenance: 'in maintenance', offline_word: 'offline',
+  warn_relay_missing: 'Relay entity is missing in Home Assistant (renamed or removed). Open this relay, pick it again and Save.',
+  warn_relay_offline: 'Relay is offline / unreachable — it cannot be switched right now. Check the device power and network.',
+  warn_sensor_missing: 'Temperature sensor is missing in Home Assistant (renamed or removed). Open this relay, pick the sensor again and Save.',
+  warn_sensor_offline: 'Temperature sensor is offline. Automatic control is paused (the relay fails safe to OFF). You can still switch the relay manually.',
+  auto_on: 'automatic control is ON', auto_paused: 'paused for maintenance', auto_none: 'no automatic control',
+  pause_maint: 'Pause for maintenance', resume_auto: 'Resume automatic control',
+  turn_relay_off: 'Turn relay OFF', turn_relay_on: 'Turn relay ON',
+  maint_badge: 'maint', relay_offline_short: 'relay offline', no_relay: 'no relay',
+  click_turn_on: 'Click to turn ON', click_turn_off: 'Click to turn OFF',
+  already_on_board: ' is already on the board', all_on: 'All on', all_off: 'All off',
+};
+let LANG = 'en';
+function t(key) { return (LANG === 'et' && TR.et[key] != null) ? TR.et[key] : (EN[key] != null ? EN[key] : key); }
+function applyI18n() {
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    if (el.children.length) return; // never overwrite an element that wraps other elements
+    const v = LANG === 'et' ? TR.et[el.dataset.i18n] : null; if (v != null) el.textContent = v; else if (el.dataset.i18nEn != null) el.textContent = el.dataset.i18nEn;
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach((el) => { const v = LANG === 'et' ? TR.et[el.dataset.i18nPh] : null; if (v != null) el.placeholder = v; });
+  document.querySelectorAll('[data-i18n-title]').forEach((el) => { const v = LANG === 'et' ? TR.et[el.dataset.i18nTitle] : null; if (v != null) el.title = v; });
+  const lb = document.getElementById('btn-lang'); if (lb) lb.textContent = LANG === 'et' ? 'EN' : 'ET';
+  document.documentElement.lang = LANG;
+}
+function setLang(l) {
+  LANG = l === 'et' ? 'et' : 'en';
+  try { localStorage.setItem('relaypanel-lang', LANG); } catch {}
+  // snapshot English defaults once so we can switch back
+  document.querySelectorAll('[data-i18n]').forEach((el) => { if (!el.children.length && el.dataset.i18nEn == null) el.dataset.i18nEn = el.textContent; });
+  applyI18n();
+  if (typeof render === 'function') { applyMode(); render(); }
+}
+
+const state = {
+  layout: { relays: [], areas: [], devices: [] },
+  entities: { switches: [], sensors: [] },
+  haAreas: [],
+  relayDevices: [],
+  edit: false,      // start in view (Live) mode; editing requires sign-in
+  loaded: false,    // true only after the layout loads from the DB (never save before)
+  authed: false,
+  user: null,
+  selected: null,
+  selectedDev: null,
+  live: {},
+  autoStates: {},
+};
+
+const $ = (s) => document.querySelector(s);
+const canvas = $('#canvas');
+
+async function api(path, opts) {
+  const res = await fetch(path, opts);
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401) { // session missing/expired -> back to view, prompt sign-in
+    state.authed = false; state.user = null; state.edit = false;
+    if (typeof applyMode === 'function') { applyMode(); updateAuthUI(); render(); openLogin(); }
+    throw new Error(data.error || 'Sign in required');
+  }
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+}
+function setStatus(m) { $('#status').textContent = m || ''; }
+function esc(v) { const d = document.createElement('div'); d.textContent = v == null ? '' : String(v); return d.innerHTML; }
+
+async function boot() {
+  try {
+    const layout = await api('/api/layout');   // must succeed before we ever save
+    const [entities, areas, devices] = await Promise.all([
+      api('/api/entities').catch(() => state.entities), api('/api/areas').catch(() => []), api('/api/relay-devices').catch(() => []),
+    ]);
+    state.layout = layout; state.loaded = true;   // only now is it safe to persist
+    state.entities = entities;
+    state.haAreas = Array.isArray(areas) ? areas : [];
+    state.relayDevices = Array.isArray(devices) ? devices : [];
+  } catch (e) {
+    // DATA-SAFETY: layout failed to load — do NOT mark loaded, so no save can
+    // overwrite the real DB layout with this empty fallback. Retry shortly.
+    setStatus('load error — retrying…'); setTimeout(boot, 4000);
+  }
+  state.layout.relays = state.layout.relays || [];
+  state.layout.areas = state.layout.areas || [];
+  state.layout.devices = state.layout.devices || [];
+  // migrate existing layouts to the slim vertical card design
+  for (const d of state.layout.devices) reflowDeviceOutputs(d);
+  for (const a of state.layout.areas) fitAreaToContents(a);
+  fillSelects();
+  render();
+  initHistory();
+  if (state.loaded && state.layout.devices.length) saveLayout();
+  refreshLive();
+  setInterval(refreshLive, 10000);
+}
+
+function fillSelects() {
+  const opt = (v, t) => `<option value="${esc(v)}">${esc(t)}</option>`;
+  $('#ed-relay').innerHTML = opt('', '— pick relay —') + state.entities.switches.map((s) => opt(s.entity_id, s.name)).join('');
+  $('#ed-sensor').innerHTML = opt('', '— pick sensor —') + state.entities.sensors.map((s) => opt(s.entity_id, s.name)).join('');
+  $('#ed-area').innerHTML = opt('', '— none —') + state.haAreas.map((a) => opt(a.id, a.name)).join('');
+  $('#device-picker').innerHTML = opt('', '+ Physical relay…') +
+    state.relayDevices.map((d) => opt(d.device_id, `${d.name} (${d.outputs.length})`)).join('');
+  refreshAreaPicker();
+}
+
+// Area picker: already-placed areas shown disabled (can't add the same area twice).
+function refreshAreaPicker() {
+  const placed = new Set((state.layout.areas || []).map((a) => a.areaId));
+  $('#area-picker').innerHTML = '<option value="">+ Area…</option>' +
+    state.haAreas.map((a) => `<option value="${esc(a.id)}"${placed.has(a.id) ? ' disabled' : ''}>${esc(a.name)}${placed.has(a.id) ? ' ✓' : ''}</option>`).join('');
+}
+
+function areaColor(id) {
+  let h = 0; const s = String(id || '');
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) & 0xffffffff;
+  return Math.abs(h) % 360;
+}
+function areaName(id) { const a = state.haAreas.find((x) => x.id === id); return a ? a.name : id; }
+// readable header colour for area/device boxes: dark on light theme, light on dark
+function headColor(hue) {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  return dark ? `hsl(${hue},65%,68%)` : `hsl(${hue},55%,32%)`;
+}
+function boxTint(hue) {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  return `hsla(${hue},55%,45%,${dark ? 0.07 : 0.10})`;
+}
+
+// --- area containment: a relay assigned to an area is clamped inside its box ---
+const CARD_W = 340, CARD_H = 84, GAP = 10, HDR = 44, PAD = 10;
+function boxFor(r) {
+  if (r.device) { const d = state.layout.devices.find((x) => x.id === r.device); if (d) return d; }
+  return r.area ? state.layout.areas.find((a) => a.areaId === r.area) : null;
+}
+function clampToBox(r, box, w, h) {
+  w = w || CARD_W; h = h || CARD_H;
+  const minX = box.x + PAD, maxX = Math.max(minX, box.x + box.w - w - PAD);
+  const minY = box.y + HDR, maxY = Math.max(minY, box.y + box.h - h - PAD);
+  r.x = Math.min(Math.max(r.x, minX), maxX);
+  r.y = Math.min(Math.max(r.y, minY), maxY);
+}
+function centerInBox(r, box, w, h) {
+  w = w || CARD_W; h = h || CARD_H;
+  r.x = Math.round(box.x + (box.w - w) / 2);
+  r.y = Math.round(box.y + HDR + (box.h - HDR - h) / 2);
+}
+
+// Stack a device's output cards vertically inside its box and size the box to fit.
+function reflowDeviceOutputs(dev) {
+  const outs = state.layout.relays.filter((r) => r.device === dev.id);
+  dev.w = CARD_W + 2 * PAD;
+  dev.h = HDR + PAD + Math.max(1, outs.length) * CARD_H + Math.max(0, outs.length - 1) * GAP + PAD;
+  outs.forEach((r, i) => { r.x = dev.x + PAD; r.y = dev.y + HDR + i * (CARD_H + GAP); });
+}
+
+// Grow an area box so it contains all its pinned device boxes + loose member cards.
+function fitAreaToContents(area) {
+  let right = area.x + 200, bottom = area.y + HDR + 100;
+  for (const d of state.layout.devices.filter((x) => x.area === area.areaId)) {
+    right = Math.max(right, d.x + (d.w || 320)); bottom = Math.max(bottom, d.y + (d.h || 220));
+  }
+  for (const r of state.layout.relays.filter((x) => x.area === area.areaId && !x.device)) {
+    right = Math.max(right, (r.x || 20) + CARD_W); bottom = Math.max(bottom, (r.y || 20) + CARD_H);
+  }
+  // only GROW — never shrink below the current (possibly manually-set) size,
+  // so an area always contains its devices/cards but manual resizing survives.
+  area.w = Math.max(area.w || 240, right - area.x + PAD);
+  area.h = Math.max(area.h || 140, bottom - area.y + PAD);
+}
+
+// Keep every device box sized to its outputs and every area big enough to contain
+// its contents — called on each render so sizes can never drift out of sync
+// (e.g. after renames, adds, or a card-size change).
+function normalizeLayout() {
+  for (const d of state.layout.devices) reflowDeviceOutputs(d);
+  for (const a of state.layout.areas) fitAreaToContents(a);
+}
+
+// The area box whose bounds contain point (px,py), if any.
+function areaAt(px, py) {
+  return state.layout.areas.find((a) => px >= a.x && px <= a.x + a.w && py >= a.y && py <= a.y + a.h) || null;
+}
+
+// Explicitly assign a device box to an HA area (from the box's dropdown).
+// Propagates the area to its outputs, and if that area has a box on the board,
+// moves the device (with outputs) inside it so it's visually grouped too.
+function assignDeviceArea(g, areaId) {
+  g.area = areaId || '';
+  const outs = state.layout.relays.filter((r) => r.device === g.id);
+  outs.forEach((r) => { r.area = areaId || ''; });
+  const box = areaId && state.layout.areas.find((a) => a.areaId === areaId);
+  if (box) {
+    g.x = box.x + PAD; g.y = box.y + HDR;   // slot just inside the area
+    reflowDeviceOutputs(g);
+    fitAreaToContents(box);                 // grow the area to fit the relay
+  } else {
+    reflowDeviceOutputs(g);
+  }
+}
+
+// Pin a device box to whichever area box now contains its center; propagate that
+// area to all the device's output relays (so binding/grouping follows the area).
+// Returns true if the pinned area changed.
+function pinDeviceToArea(g) {
+  const cx = (g.x || 20) + (g.w || 320) / 2, cy = (g.y || 20) + (g.h || 220) / 2;
+  const area = areaAt(cx, cy);
+  const newArea = area ? area.areaId : '';
+  if ((g.area || '') === newArea) return false;
+  g.area = newArea;
+  for (const r of state.layout.relays.filter((x) => x.device === g.id)) r.area = newArea;
+  return true;
+}
+
+const isMobile = () => window.innerWidth <= 700;
+
+function render() {
+  refreshAreaPicker();
+  normalizeLayout();
+  updateSummary();
+  if (isMobile()) return renderMobile();
+  canvas.className = 'canvas' + (state.edit ? ' edit' : '');
+  canvas.innerHTML = '';
+  for (const a of state.layout.areas) canvas.appendChild(renderBox(a, 'area'));
+  for (const d of state.layout.devices) canvas.appendChild(renderBox(d, 'device'));
+  for (const r of state.layout.relays) canvas.appendChild(card(r));
+}
+
+// Mobile: ignore x/y positions, render a nested flex list (area -> device -> outputs).
+function renderMobile() {
+  canvas.className = 'canvas mobile';
+  canvas.innerHTML = '';
+  const doneDev = new Set(), doneRel = new Set();
+
+  const deviceBlock = (d) => {
+    doneDev.add(d.id);
+    const hue = areaColor(d.deviceId);
+    const box = document.createElement('div');
+    box.className = 'm-device';
+    box.style.borderColor = `hsl(${hue},45%,55%)`;
+    const head = document.createElement('div');
+    head.className = 'm-device-head';
+    head.style.color = headColor(hue);
+    head.innerHTML = `<i class="bi bi-hdd-stack"></i> ${esc(d.name || d.deviceId)}`;
+    head.addEventListener('click', () => openDeviceEditor(d));
+    box.appendChild(head);
+    for (const r of state.layout.relays.filter((x) => x.device === d.id)) { box.appendChild(card(r, true)); doneRel.add(r.id); }
+    return box;
+  };
+
+  // areas with their nested devices + loose cards
+  for (const a of state.layout.areas) {
+    const hue = areaColor(a.areaId);
+    const box = document.createElement('div');
+    box.className = 'm-area';
+    box.style.borderColor = `hsl(${hue},50%,55%)`;
+    box.innerHTML = `<div class="m-area-head" style="color:${headColor(hue)}"><span><i class="bi bi-grid-3x3-gap"></i> ${esc(a.name || a.areaId)}</span>
+      <span class="area-master"><button class="am-btn" data-act="on">${t('all_on')}</button><button class="am-btn" data-act="off">${t('all_off')}</button></span></div>`;
+    box.querySelectorAll('.am-btn').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); setAreaRelays(a.areaId, b.dataset.act === 'on'); }));
+    for (const d of state.layout.devices.filter((x) => x.area === a.areaId)) box.appendChild(deviceBlock(d));
+    for (const r of state.layout.relays.filter((x) => x.area === a.areaId && !x.device)) { box.appendChild(card(r, true)); doneRel.add(r.id); }
+    canvas.appendChild(box);
+  }
+  // device boxes not in any area
+  for (const d of state.layout.devices) if (!doneDev.has(d.id)) canvas.appendChild(deviceBlock(d));
+  // loose relays (no device, not already shown)
+  for (const r of state.layout.relays) if (!r.device && !doneRel.has(r.id)) canvas.appendChild(card(r, true));
+}
+
+// ---- group boxes: HA areas ('area') and physical relay devices ('device') ----
+function memberFilter(g, kind) { return kind === 'device' ? (r) => r.device === g.id : (r) => r.area === g.areaId; }
+
+function renderBox(g, kind) {
+  const isDev = kind === 'device';
+  const refId = isDev ? g.deviceId : g.areaId;
+  const hue = areaColor(refId);
+  const el = document.createElement('div');
+  el.className = 'area' + (isDev ? ' device' : '');
+  el.dataset.gid = g.id;
+  el.style.left = (g.x || 20) + 'px';
+  el.style.top = (g.y || 20) + 'px';
+  el.style.width = (g.w || 320) + 'px';
+  el.style.height = (g.h || 220) + 'px';
+  el.style.borderColor = `hsl(${hue},50%,55%)`;
+  el.style.background = boxTint(hue);
+  const pin = isDev && g.area ? ` <span class="area-pin"><i class="bi bi-geo-alt-fill"></i> ${esc(areaName(g.area))}</span>` : '';
+  // area boxes get a master on/off for all their relays (works in Live mode too)
+  const master = !isDev ? `<span class="area-master"><button class="am-btn" data-act="on">${t('all_on')}</button><button class="am-btn" data-act="off">${t('all_off')}</button></span>` : '';
+  el.innerHTML = `<div class="area-head" style="color:${headColor(hue)}">
+      <span>${isDev ? '<i class="bi bi-hdd-stack"></i>' : '<i class="bi bi-grid-3x3-gap"></i>'} ${esc(g.name || refId)}${pin}</span>
+      ${master}${state.edit ? '<button class="area-del" title="Remove group">&times;</button>' : ''}
+    </div>${state.edit ? '<div class="area-resize"></div>' : ''}`;
+
+  const isMember = memberFilter(g, kind);
+  el.querySelectorAll('.am-btn').forEach((b) => {
+    b.addEventListener('pointerdown', (e) => e.stopPropagation());
+    b.addEventListener('click', (e) => { e.stopPropagation(); setAreaRelays(g.areaId, b.dataset.act === 'on'); });
+  });
+  if (state.edit) {
+    groupHeaderDrag(el.querySelector('.area-head'), el, g, isMember, isDev);
+    const rz = el.querySelector('.area-resize');
+    dragMove(rz, el, (dx, dy, ow, oh) => { g.w = Math.max(160, ow + dx); g.h = Math.max(120, oh + dy); el.style.width = g.w + 'px'; el.style.height = g.h + 'px'; },
+      () => (g.w || 320), () => (g.h || 220),
+      () => { if (isDev) pinDeviceToArea(g); for (const r of state.layout.relays.filter(isMember)) clampToBox(r, g); render(); saveLayout(); });
+    el.querySelector('.area-del').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (isDev) state.layout.devices = state.layout.devices.filter((x) => x.id !== g.id);
+      else state.layout.areas = state.layout.areas.filter((x) => x.id !== g.id);
+      render(); saveLayout();
+    });
+  }
+  return el;
+}
+
+// Drag a group by its header; everything nested moves along. For an AREA box that
+// means loose member cards + pinned device boxes (and their outputs). For a DEVICE
+// box it means its output cards, and on drop it pins to the area that contains it.
+function groupHeaderDrag(head, el, g, isMember, isDev) {
+  head.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    if (e.target.closest('.area-del')) return; // let the delete button get its click
+    e.stopPropagation();
+    const sx = e.clientX, sy = e.clientY;
+
+    // things that move with this group: {obj, kind, x0, y0, el}
+    const movers = [];
+    const relEl = (id) => canvas.querySelector('.relay[data-id="' + id + '"]');
+    const boxEl = (id) => canvas.querySelector('.area[data-gid="' + id + '"]');
+    if (isDev) {
+      for (const r of state.layout.relays.filter((x) => x.device === g.id)) movers.push({ obj: r, x0: r.x || 20, y0: r.y || 20, el: relEl(r.id) });
+    } else {
+      // pinned device boxes + their outputs
+      for (const d of state.layout.devices.filter((x) => x.area === g.areaId)) {
+        movers.push({ obj: d, x0: d.x || 20, y0: d.y || 20, el: boxEl(d.id) });
+        for (const r of state.layout.relays.filter((x) => x.device === d.id)) movers.push({ obj: r, x0: r.x || 20, y0: r.y || 20, el: relEl(r.id) });
+      }
+      // loose cards assigned to this area (not inside a device box)
+      for (const r of state.layout.relays.filter((x) => x.area === g.areaId && !x.device)) movers.push({ obj: r, x0: r.x || 20, y0: r.y || 20, el: relEl(r.id) });
+    }
+
+    const gx = g.x || 20, gy = g.y || 20;
+    let moved = false;
+    head.setPointerCapture(e.pointerId);
+    // a device box locked to an area stays inside that area box
+    const lockBox = isDev && g.area ? state.layout.areas.find((a) => a.areaId === g.area) : null;
+    const mv = (ev) => {
+      const dx = ev.clientX - sx, dy = ev.clientY - sy;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+      let nx = Math.max(0, gx + dx), ny = Math.max(0, gy + dy);
+      if (lockBox) {
+        const minX = lockBox.x + PAD, maxX = Math.max(minX, lockBox.x + lockBox.w - (g.w || 320) - PAD);
+        const minY = lockBox.y + HDR, maxY = Math.max(minY, lockBox.y + lockBox.h - (g.h || 220) - PAD);
+        nx = Math.min(Math.max(nx, minX), maxX); ny = Math.min(Math.max(ny, minY), maxY);
+      }
+      const adx = nx - gx, ady = ny - gy; // effective (clamped) delta
+      g.x = nx; g.y = ny; el.style.left = nx + 'px'; el.style.top = ny + 'px';
+      for (const m of movers) { m.obj.x = Math.max(0, m.x0 + adx); m.obj.y = Math.max(0, m.y0 + ady); if (m.el) { m.el.style.left = m.obj.x + 'px'; m.el.style.top = m.obj.y + 'px'; } }
+    };
+    const up = () => {
+      head.removeEventListener('pointermove', mv); head.removeEventListener('pointerup', up);
+      if (!moved) { if (isDev) openDeviceEditor(g); return; } // click (no drag) -> open editor
+      if (isDev && pinDeviceToArea(g)) { const a = state.layout.areas.find((x) => x.areaId === g.area); if (a) fitAreaToContents(a); }
+      render(); saveLayout();
+    };
+    head.addEventListener('pointermove', mv); head.addEventListener('pointerup', up);
+  });
+}
+
+// generic pointer drag helper: onMove(dx,dy, baseA, baseB); getA/getB give base values
+function dragMove(handle, el, onMove, getA, getB, onEnd) {
+  handle.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    const sx = e.clientX, sy = e.clientY, a0 = getA(), b0 = getB();
+    handle.setPointerCapture(e.pointerId);
+    const mv = (ev) => onMove(ev.clientX - sx, ev.clientY - sy, a0, b0);
+    const up = () => { handle.removeEventListener('pointermove', mv); handle.removeEventListener('pointerup', up); onEnd && onEnd(); };
+    handle.addEventListener('pointermove', mv);
+    handle.addEventListener('pointerup', up);
+  });
+}
+
+function addArea(areaId) {
+  if (!areaId) return;
+  if (state.layout.areas.some((a) => a.areaId === areaId)) { setStatus('“' + areaName(areaId) + '”' + t('already_on_board')); setTimeout(() => setStatus(''), 1800); return; }
+  const id = 'a' + Date.now().toString(36);
+  state.layout.areas.push({ id, areaId, name: areaName(areaId), x: 24, y: 24, w: 340, h: 240 });
+  render(); saveLayout();
+}
+
+// Add a physical relay: a device box + one relay card per output, grouped inside.
+function addPhysicalRelay(deviceId) {
+  if (!deviceId) return;
+  const dev = state.relayDevices.find((d) => d.device_id === deviceId);
+  if (!dev) return;
+  const id = 'd' + Date.now().toString(36);
+  const box = { id, deviceId, name: dev.name, x: 40, y: 40, w: CARD_W + 2 * PAD, h: 200 };
+  state.layout.devices.push(box);
+  dev.outputs.forEach((o, i) => {
+    state.layout.relays.push({
+      id: 'r' + Date.now().toString(36) + i, name: o.name, relay: o.entity_id,
+      sensor: '', area: '', device: id, mode: 'below', temp: 20, deadband: 0, bound: false, x: 0, y: 0,
+    });
+  });
+  reflowDeviceOutputs(box);
+  render(); saveLayout();
+}
+
+// ---- relay cards ----
+function card(r, mobile) {
+  const el = document.createElement('div');
+  el.className = 'relay' + (mobile ? ' m-card' : '');
+  el.dataset.id = r.id;
+  if (!mobile) { el.style.left = (r.x || 20) + 'px'; el.style.top = (r.y || 20) + 'px'; }
+  if (r.area) { const hue = areaColor(r.area); el.style.borderLeft = `4px solid hsl(${hue},60%,50%)`; }
+
+  const live = state.live[r.sensor] || {};
+  const relLive = state.live[r.relay] || {};
+  const temp = live.state != null && live.state !== '' && !isNaN(+live.state) ? (+live.state).toFixed(1) : '—';
+  const sensLive = state.live[r.sensor] || {};
+  const on = relLive.state === 'on';
+  // offline / stale-binding detection — distinguish the RELAY from its SENSOR.
+  // A relay stays usable when only its sensor is down (just no auto-control).
+  const relMissing = !!(r.relay && relLive.missing);
+  const relOffline = !!(r.relay && (relLive.state === 'unavailable' || relLive.state === 'unknown'));
+  const senMissing = !!(r.sensor && sensLive.missing);
+  const senOffline = !!(r.sensor && (sensLive.state === 'unavailable' || sensLive.state === 'unknown'));
+  const relayBad = relMissing || relOffline;  // relay itself unreachable -> can't switch
+  // one clear "!" icon per problem; message shown on hover/click
+  let warnMsg = '', warnLevel = '';
+  if (relMissing) { warnMsg = t('warn_relay_missing'); warnLevel = 'error'; }
+  else if (relOffline) { warnMsg = t('warn_relay_offline'); warnLevel = 'error'; }
+  else if (senMissing) { warnMsg = t('warn_sensor_missing'); warnLevel = 'error'; }
+  else if (senOffline) { warnMsg = t('warn_sensor_offline'); warnLevel = 'warn'; }
+  const warnIcon = warnMsg ? `<button class="warn-icon ${warnLevel}" title="${esc(warnMsg)}" data-msg="${esc(warnMsg)}" aria-label="warning"><i class="bi bi-exclamation-triangle-fill"></i></button>` : '';
+  const dotCls = r.relay ? (on ? 'dot on' : 'dot off') : 'dot';
+  // temperature styling: colour the current reading by demand vs satisfied
+  const curNum = temp !== '—' ? +temp : null;
+  let curClass = '';
+  if (curNum != null && r.temp != null) {
+    if (r.mode === 'above') curClass = curNum > r.temp ? 'demand-cool' : 'satisfied';
+    else curClass = curNum < r.temp ? 'demand-heat' : 'satisfied';
+  }
+  const modeIcon = r.mode === 'above' ? '<i class="bi bi-snow"></i>' : '<i class="bi bi-fire"></i>';
+  // automation paused for maintenance?
+  const maint = r.bound && r.automationId && state.autoStates[r.automationId] === false;
+  if (maint) el.classList.add('maint');
+
+  el.innerHTML = `
+    <button class="${dotCls} r-toggle" title="${!r.relay ? t('no_relay') : relayBad ? t('relay_offline_short') : (on ? t('click_turn_off') : t('click_turn_on'))}"${r.relay && !relayBad ? '' : ' disabled'}></button>
+    <div class="r-info">
+      <div class="r-name">${esc(r.name || 'Relay')}${r.bound ? '' : ' <span class="r-unset"><i class="bi bi-circle"></i></span>'}</div>
+      <div class="r-relay">${esc(r.relay || 'no relay')}${r.area ? ' · ' + esc(areaName(r.area)) : ''}</div>
+    </div>
+    ${warnIcon}${maint ? '<span class="maint-badge"><i class="bi bi-pause-fill"></i> ' + t('maint_badge') + '</span>' : ''}
+    <div class="r-metric">
+      <div class="cur ${curClass}">${temp}${temp === '—' ? '' : '<span class="deg">°</span>'}</div>
+      <div class="tgt">${modeIcon}&nbsp;${r.temp != null ? r.temp + '°' : '—'}${r.deadband ? `<span class="band">±${r.deadband}</span>` : ''}</div>
+    </div>`;
+
+  // manual on/off toggle (works in both edit & live modes)
+  const tog = el.querySelector('.r-toggle');
+  tog.addEventListener('pointerdown', (e) => e.stopPropagation()); // don't start a drag
+  tog.addEventListener('click', (e) => { e.stopPropagation(); toggleRelay(r); });
+
+  const wi = el.querySelector('.warn-icon');
+  if (wi) {
+    wi.addEventListener('pointerdown', (e) => e.stopPropagation());
+    wi.addEventListener('click', (e) => { e.stopPropagation(); showWarnPop(wi, wi.dataset.msg); });
+  }
+
+  if (mobile) {
+    // list mode: tap the card (not the toggle) to edit; no dragging
+    el.addEventListener('click', (e) => { if (!e.target.closest('.r-toggle')) openEditor(r); });
+  } else if (state.edit) dragMove(el, el, (dx, dy, ox, oy) => {
+    const moved = Math.abs(dx) > 3 || Math.abs(dy) > 3; el._moved = el._moved || moved;
+    r.x = Math.max(0, ox + dx); r.y = Math.max(0, oy + dy);
+    const box = boxFor(r); if (box) clampToBox(r, box, el.offsetWidth, el.offsetHeight); // hard-linked: stay inside its area
+    el.style.left = r.x + 'px'; el.style.top = r.y + 'px';
+  }, () => (r.x || 20), () => (r.y || 20), () => { if (el._moved) { el._moved = false; saveLayout(); } else openEditor(r); });
+  return el;
+}
+
+function openEditor(r) {
+  closeDeviceEditor();
+  state.selected = r.id;
+  $('#ed-name').value = r.name || '';
+  $('#ed-relay').value = r.relay || '';
+  $('#ed-sensor').value = r.sensor || '';
+  $('#ed-area').value = r.area || '';
+  $('#ed-mode').value = r.mode || 'below';
+  $('#ed-temp').value = r.temp != null ? r.temp : 20;
+  $('#ed-deadband').value = r.deadband != null ? r.deadband : 0;
+  edMsg('');
+  loadAutomationState(r);
+  showStaleWarning(r);
+  loadHistory(r);
+  $('#editor').classList.remove('hidden');
+}
+
+// warn if the bound relay/sensor entity no longer exists in HA (e.g. after a rename)
+function showStaleWarning(r) {
+  const box = $('#ed-stale');
+  const relMissing = r.relay && !state.entities.switches.some((s) => s.entity_id === r.relay);
+  const senMissing = r.sensor && !state.entities.sensors.some((s) => s.entity_id === r.sensor);
+  if (!relMissing && !senMissing) { box.classList.add('hidden'); return; }
+  const which = [relMissing && `relay (${r.relay})`, senMissing && `sensor (${r.sensor})`].filter(Boolean).join(' and ');
+  box.innerHTML = `<i class="bi bi-exclamation-triangle-fill"></i> The ${which} no longer exists in Home Assistant (renamed or removed). Pick it again and Save.`;
+  box.classList.remove('hidden');
+}
+
+// relay last-changed duration + 24h sensor sparkline
+async function loadHistory(r) {
+  const box = $('#ed-history'), info = $('#ed-history-info'), spark = $('#ed-spark');
+  if (!r.sensor && !r.relay) { box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+  spark.innerHTML = ''; info.textContent = 'loading…';
+  // relay on/off duration
+  const rl = state.live[r.relay] || {};
+  let dur = '';
+  if (r.relay && rl.last_changed && (rl.state === 'on' || rl.state === 'off')) {
+    dur = `Relay ${rl.state.toUpperCase()} for ${fmtAgo(Date.now() - Date.parse(rl.last_changed))}. `;
+  }
+  if (!r.sensor) { info.textContent = dur || 'no sensor bound'; spark.innerHTML = ''; return; }
+  try {
+    const { points } = await api('/api/history?entity=' + encodeURIComponent(r.sensor));
+    if (!points || points.length < 2) { info.textContent = dur + 'not enough history'; return; }
+    drawSpark(spark, points, r.temp);
+    const vs = points.map((p) => p.v);
+    info.textContent = `${dur}min ${Math.min(...vs).toFixed(1)}° · max ${Math.max(...vs).toFixed(1)}° · now ${vs[vs.length - 1].toFixed(1)}°`;
+  } catch { info.textContent = dur + '(history unavailable)'; }
+}
+
+function fmtAgo(ms) {
+  const m = Math.round(ms / 60000);
+  if (m < 60) return m + ' min';
+  const h = Math.floor(m / 60);
+  return h + 'h ' + (m % 60) + 'm';
+}
+
+// draw a temperature sparkline (with a dashed target line) into the svg
+function drawSpark(svg, points, target) {
+  const W = 240, H = 56, pad = 3;
+  const vs = points.map((p) => p.v), ts = points.map((p) => p.t);
+  let lo = Math.min(...vs), hi = Math.max(...vs);
+  if (target != null && isFinite(+target)) { lo = Math.min(lo, +target); hi = Math.max(hi, +target); }
+  if (hi - lo < 1) { hi += 0.5; lo -= 0.5; }
+  const t0 = ts[0], t1 = ts[ts.length - 1] || t0 + 1;
+  const x = (t) => pad + ((t - t0) / (t1 - t0 || 1)) * (W - 2 * pad);
+  const y = (v) => pad + (1 - (v - lo) / (hi - lo)) * (H - 2 * pad);
+  const d = points.map((p, i) => (i ? 'L' : 'M') + x(p.t).toFixed(1) + ' ' + y(p.v).toFixed(1)).join(' ');
+  let out = '';
+  if (target != null && isFinite(+target)) {
+    const ty = y(+target).toFixed(1);
+    out += `<line x1="${pad}" y1="${ty}" x2="${W - pad}" y2="${ty}" class="spark-target"/>`;
+  }
+  out += `<path d="${d}" class="spark-line"/>`;
+  svg.innerHTML = out;
+}
+
+// maintenance controls — a manual relay toggle (whenever a relay is set) and,
+// for bound relays, the automation enable/disable.
+async function loadAutomationState(r) {
+  const box = $('#ed-automation');
+  if (!r.relay) { box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+  updateRelayToggleBtn(r);
+
+  const row = $('#ed-automation-row');
+  if (!r.bound) { row.classList.add('hidden'); return; }
+  row.classList.remove('hidden');
+  $('#ed-automation-status').textContent = 'checking…';
+  $('#ed-automation-toggle').disabled = true;
+  try { updateAutomationUI(await api(`/api/relays/${r.id}/automation`)); }
+  catch { $('#ed-automation-status').textContent = 'automation state unknown'; }
+}
+
+function updateRelayToggleBtn(r) {
+  const btn = $('#ed-relay-toggle');
+  const on = (state.live[r.relay] || {}).state === 'on';
+  btn.innerHTML = '<i class="bi bi-power"></i> ' + (on ? t('turn_relay_off') : t('turn_relay_on'));
+  btn.classList.toggle('relay-on', on);
+}
+async function toggleRelayFromEditor() {
+  const r = selected(); if (!r || !r.relay) return;
+  await toggleRelay(r);          // flips via HA + updates state.live + re-renders
+  updateRelayToggleBtn(r);
+}
+function updateAutomationUI(s) {
+  const on = s.exists && s.enabled;
+  $('#ed-automation-status').innerHTML = !s.exists ? `<span class="auto-off">${t('auto_none')}</span>`
+    : (on ? `<span class="auto-on"><i class="bi bi-record-fill"></i> ${t('auto_on')}</span>` : `<span class="auto-off"><i class="bi bi-pause-fill"></i> ${t('auto_paused')}</span>`);
+  const btn = $('#ed-automation-toggle');
+  btn.innerHTML = on ? `<i class="bi bi-pause-fill"></i> ${t('pause_maint')}` : `<i class="bi bi-play-fill"></i> ${t('resume_auto')}`;
+  btn.disabled = !s.exists;
+  btn.dataset.enable = on ? '0' : '1';
+}
+async function toggleAutomation() {
+  const r = selected(); if (!r) return;
+  const enable = $('#ed-automation-toggle').dataset.enable === '1';
+  $('#ed-automation-toggle').disabled = true;
+  try {
+    updateAutomationUI(await api(`/api/relays/${r.id}/automation`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled: enable }),
+    }));
+    edMsg(enable ? 'automation enabled' : 'automation disabled for maintenance', 'ok');
+  } catch (e) { edMsg('error: ' + e.message, 'err'); loadAutomationState(r); }
+}
+function closeEditor() { state.selected = null; $('#editor').classList.add('hidden'); }
+function edMsg(m, cls) { const e = $('#ed-msg'); e.textContent = m || ''; e.className = 'ed-msg ' + (cls || ''); }
+function selected() { return state.layout.relays.find((x) => x.id === state.selected); }
+
+// ---- device (physical relay) editor ----
+function openDeviceEditor(g) {
+  closeEditor();
+  state.selectedDev = g.id;
+  $('#de-name').value = g.name || '';
+  $('#de-area').innerHTML = '<option value="">— none —</option>' +
+    state.haAreas.map((a) => `<option value="${esc(a.id)}"${g.area === a.id ? ' selected' : ''}>${esc(a.name)}</option>`).join('');
+  const outs = state.layout.relays.filter((r) => r.device === g.id);
+  $('#de-outputs').innerHTML = outs.map((r) => {
+    const on = (state.live[r.relay] || {}).state === 'on';
+    return `<div class="de-out" data-id="${esc(r.id)}">
+      <span class="de-out-dot ${r.relay ? (on ? 'on' : 'off') : ''}"></span>
+      <span class="de-out-name">${esc(r.name || r.relay || 'output')}</span>
+      <span class="de-out-tag">${r.bound ? '<i class="bi bi-record-fill"></i> bound' : '<i class="bi bi-circle"></i>'}</span>
+    </div>`;
+  }).join('') || '<div class="de-empty">no outputs</div>';
+  // clicking an output row opens that output's relay editor
+  $('#de-outputs').querySelectorAll('.de-out').forEach((row) => {
+    row.addEventListener('click', () => { const r = state.layout.relays.find((x) => x.id === row.dataset.id); if (r) openEditor(r); });
+  });
+  // "+ Add output": only this physical device's own outputs that aren't placed yet
+  const dev = state.relayDevices.find((d) => d.device_id === g.deviceId);
+  const used = new Set(outs.map((r) => r.relay));
+  const avail = dev ? dev.outputs.filter((o) => !used.has(o.entity_id)) : [];
+  const sel = $('#de-add-output');
+  sel.innerHTML = '<option value="">+ Add output…</option>' +
+    avail.map((o) => `<option value="${esc(o.entity_id)}">${esc(o.name)}</option>`).join('');
+  sel.classList.toggle('hidden', avail.length === 0);
+  deMsg('');
+  $('#dev-editor').classList.remove('hidden');
+}
+
+// Add one of the device's own outputs back into its box.
+function addOutputToDevice(entityId) {
+  const g = selectedDev(); if (!g || !entityId) return;
+  const dev = state.relayDevices.find((d) => d.device_id === g.deviceId);
+  const o = dev && dev.outputs.find((x) => x.entity_id === entityId);
+  if (!o) { deMsg('that output is not on this device', 'err'); return; }
+  if (state.layout.relays.some((r) => r.device === g.id && r.relay === entityId)) { deMsg('already added', 'err'); return; }
+  state.layout.relays.push({
+    id: 'r' + Date.now().toString(36), name: o.name, relay: o.entity_id,
+    sensor: '', area: g.area || '', device: g.id, mode: 'below', temp: 20, deadband: 0, bound: false, x: 0, y: 0,
+  });
+  reflowDeviceOutputs(g);
+  const a = g.area && state.layout.areas.find((x) => x.areaId === g.area); if (a) fitAreaToContents(a);
+  render(); saveLayout();
+  openDeviceEditor(g); // refresh the list + dropdown
+}
+function closeDeviceEditor() { state.selectedDev = null; $('#dev-editor').classList.add('hidden'); }
+function deMsg(m, cls) { const e = $('#de-msg'); e.textContent = m || ''; e.className = 'ed-msg ' + (cls || ''); }
+function selectedDev() { return state.layout.devices.find((x) => x.id === state.selectedDev); }
+
+function saveDevice() {
+  const g = selectedDev(); if (!g) return;
+  g.name = $('#de-name').value.trim() || g.name;
+  const area = $('#de-area').value;
+  assignDeviceArea(g, area);
+  const a = area && state.layout.areas.find((x) => x.areaId === area); if (a) fitAreaToContents(a);
+  deMsg('saved', 'ok');
+  render(); saveLayout();
+}
+
+async function renameDeviceHa() {
+  const g = selectedDev(); if (!g) return;
+  const first = state.layout.relays.find((r) => r.device === g.id && r.relay);
+  if (!first) { deMsg('no output entity to rename', 'err'); return; }
+  const nm = prompt('New Home Assistant name for this physical relay:', g.name || '');
+  if (nm == null || !nm.trim()) return;
+  try {
+    deMsg('renaming…');
+    const res = await api('/api/rename', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity_id: first.relay, name: nm.trim(), parent: true }) });
+    g.name = nm.trim().replace(/\s+/g, '_');
+    deMsg('renamed in ' + res.where, 'ok');
+    render(); saveLayout();
+  } catch (e) { deMsg('error: ' + e.message, 'err'); }
+}
+
+function deleteDevice() {
+  const g = selectedDev(); if (!g) return;
+  const n = state.layout.relays.filter((r) => r.device === g.id).length;
+  if (!confirm(`Remove "${g.name || 'physical relay'}" and its ${n} output${n === 1 ? '' : 's'} from the board?`)) return;
+  state.layout.relays = state.layout.relays.filter((r) => r.device !== g.id);
+  state.layout.devices = state.layout.devices.filter((x) => x.id !== g.id);
+  closeDeviceEditor(); render(); saveLayout();
+}
+
+async function saveLayout() {
+  if (!state.authed) return; // viewers don't persist layout (and shouldn't be prompted to log in)
+  if (!state.loaded) return; // never overwrite the DB before the real layout has loaded
+  pushHistory();
+  try { await api('/api/layout', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(state.layout) }); setStatus(t('saved')); setTimeout(() => setStatus(''), 1000); }
+  catch { setStatus(t('save_error')); }
+}
+
+// --- undo / redo history (snapshots of the layout) ---
+const history = { stack: [], idx: -1, restoring: false };
+const snapshot = () => JSON.stringify(state.layout);
+function initHistory() { history.stack = [snapshot()]; history.idx = 0; }
+function pushHistory() {
+  if (history.restoring) return;
+  const snap = snapshot();
+  if (history.stack[history.idx] === snap) return;      // unchanged
+  history.stack = history.stack.slice(0, history.idx + 1); // drop redo tail
+  history.stack.push(snap);
+  if (history.stack.length > 60) history.stack.shift();
+  history.idx = history.stack.length - 1;
+}
+async function applyHistory() {
+  state.layout = JSON.parse(history.stack[history.idx]);
+  closeEditor(); closeDeviceEditor();
+  history.restoring = true;
+  try { await saveLayout(); } finally { history.restoring = false; }
+  fillSelects(); render();
+}
+async function undo() {
+  if (!state.edit || !state.authed) return;
+  if (history.idx <= 0) { setStatus(t('nothing_undo')); setTimeout(() => setStatus(''), 1000); return; }
+  history.idx--; await applyHistory(); setStatus(t('undo')); setTimeout(() => setStatus(''), 800);
+}
+async function redo() {
+  if (!state.edit || !state.authed) return;
+  if (history.idx >= history.stack.length - 1) { setStatus(t('nothing_redo')); setTimeout(() => setStatus(''), 1000); return; }
+  history.idx++; await applyHistory(); setStatus(t('redo')); setTimeout(() => setStatus(''), 800);
+}
+
+function addRelay() {
+  const id = 'r' + Date.now().toString(36);
+  const n = state.layout.relays.length;
+  state.layout.relays.push({ id, name: 'Relay ' + (n + 1), x: 40 + (n % 5) * 24, y: 40 + (n % 5) * 24, relay: '', sensor: '', area: '', mode: 'below', temp: 20, deadband: 0, bound: false });
+  render(); saveLayout(); openEditor(state.layout.relays[state.layout.relays.length - 1]);
+}
+
+async function bind() {
+  const r = selected(); if (!r) return;
+  const oldArea = r.area;
+  const body = {
+    name: $('#ed-name').value.trim(), relay: $('#ed-relay').value, sensor: $('#ed-sensor').value,
+    area: $('#ed-area').value, mode: $('#ed-mode').value,
+    temp: Number($('#ed-temp').value), deadband: Number($('#ed-deadband').value),
+  };
+  Object.assign(r, body);
+  try {
+    edMsg('binding…');
+    const res = await api(`/api/relays/${r.id}/bind`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    r.bound = true; r.automationId = res.automationId;
+    // swapped into a (different) area -> teleport to the middle of that area
+    // (device outputs stay put inside their physical-relay box)
+    if (!r.device && r.area && r.area !== oldArea) { const box = boxFor(r); if (box) centerInBox(r, box); }
+    edMsg('bound ✓ ' + res.automationId, 'ok');
+    loadAutomationState(r);
+    render(); saveLayout(); refreshLive();
+  } catch (e) { edMsg('error: ' + e.message, 'err'); }
+}
+
+// rename the HA device behind an entity (and Z2M too if it's zigbee)
+async function renameDevice(entityId) {
+  if (!entityId) { edMsg('pick a device first', 'err'); return; }
+  const nm = prompt('New name for ' + entityId + ':');
+  if (nm == null || !nm.trim()) return;
+  try {
+    edMsg('renaming…');
+    const res = await api('/api/rename', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity_id: entityId, name: nm.trim() }) });
+    edMsg('renamed in ' + res.where, 'ok');
+    // reload the device lists to show the new name (keep current selections)
+    setTimeout(async () => {
+      try {
+        const rv = $('#ed-relay').value, sv = $('#ed-sensor').value, av = $('#ed-area').value;
+        state.entities = await api('/api/entities'); fillSelects();
+        $('#ed-relay').value = rv; $('#ed-sensor').value = sv; $('#ed-area').value = av;
+      } catch {}
+    }, 1600);
+  } catch (e) { edMsg('rename error: ' + e.message, 'err'); }
+}
+
+async function unbind() {
+  const r = selected(); if (!r) return;
+  try { await api(`/api/relays/${r.id}/unbind`, { method: 'POST' }); r.bound = false; delete r.automationId; loadAutomationState(r); edMsg('automation removed', 'ok'); render(); }
+  catch (e) { edMsg('error: ' + e.message, 'err'); }
+}
+
+async function deleteRelay() {
+  const r = selected(); if (!r) return;
+  if (!confirm(`Delete relay "${r.name || r.relay || 'relay'}"?` + (r.bound ? '\nIts automatic control will also be removed.' : ''))) return;
+  if (r.bound) { try { await api(`/api/relays/${r.id}/unbind`, { method: 'POST' }); } catch {} }
+  state.layout.relays = state.layout.relays.filter((x) => x.id !== r.id);
+  closeEditor(); render(); saveLayout();
+}
+
+// Master control: turn every relay in an area on/off at once.
+async function setAreaRelays(areaId, on) {
+  const relays = state.layout.relays.filter((r) => r.area === areaId && r.relay);
+  if (!relays.length) return;
+  setStatus(on ? 'turning area on…' : 'turning area off…');
+  await Promise.all(relays.map((r) => api('/api/switch', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity_id: r.relay, action: on ? 'on' : 'off' }),
+  }).then((res) => { state.live[r.relay] = { ...(state.live[r.relay] || {}), state: res.state }; }).catch(() => {})));
+  setStatus(''); render();
+}
+
+// Warning "!" popover: click the icon to see the plain-language reason.
+function showWarnPop(anchor, msg) {
+  const existing = document.getElementById('warn-pop');
+  if (existing) { const same = existing._anchor === anchor; existing.remove(); if (same) return; }
+  const pop = document.createElement('div');
+  pop.id = 'warn-pop'; pop.className = 'warn-pop'; pop.textContent = msg || ''; pop._anchor = anchor;
+  document.body.appendChild(pop);
+  const r = anchor.getBoundingClientRect();
+  pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - pop.offsetWidth - 8)) + 'px';
+  pop.style.top = Math.min(r.bottom + 6, window.innerHeight - pop.offsetHeight - 8) + 'px';
+}
+document.addEventListener('click', (e) => {
+  const p = document.getElementById('warn-pop');
+  if (p && !e.target.closest('.warn-icon') && e.target !== p) p.remove();
+});
+
+// Manually flip a relay on/off via HA.
+async function toggleRelay(r) {
+  if (!r.relay) return;
+  const cur = (state.live[r.relay] || {}).state;
+  try {
+    setStatus('switching…');
+    const res = await api('/api/switch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity_id: r.relay, action: cur === 'on' ? 'off' : 'on' }) });
+    state.live[r.relay] = { ...(state.live[r.relay] || {}), state: res.state };
+    setStatus(''); render();
+  } catch (e) { setStatus('switch error'); }
+}
+
+async function refreshLive() {
+  const ids = new Set();
+  for (const r of state.layout.relays) { if (r.sensor) ids.add(r.sensor); if (r.relay) ids.add(r.relay); }
+  try {
+    const [live, autos, haStatus] = await Promise.all([
+      ids.size ? api('/api/live?ids=' + encodeURIComponent([...ids].join(','))) : Promise.resolve(state.live),
+      api('/api/automations').catch(() => state.autoStates || {}),
+      api('/api/ha-status').catch(() => ({ reachable: true })),
+    ]);
+    state.live = live; state.autoStates = autos || {};
+    $('#ha-banner').classList.toggle('hidden', haStatus.reachable !== false);
+    render();
+  } catch {}
+}
+
+// header summary: quick counts across all bound relays
+function updateSummary() {
+  const relays = state.layout.relays.filter((r) => r.relay);
+  let on = 0, heat = 0, cool = 0, maint = 0, offline = 0;
+  for (const r of relays) {
+    const lv = state.live[r.relay] || {};
+    if (lv.state === 'unavailable' || lv.state === 'unknown' || lv.missing) { offline++; continue; }
+    if (lv.state === 'on') { on++; (r.mode === 'above' ? cool++ : heat++); }
+    if (r.bound && r.automationId && state.autoStates[r.automationId] === false) maint++;
+  }
+  const bits = [`${relays.length} ${t('relays')}`];
+  if (on) bits.push(`${on} ${t('on_word')}`);
+  if (maint) bits.push(`${maint} ${t('in_maintenance')}`);
+  if (offline) bits.push(`<i class="bi bi-exclamation-triangle-fill"></i> ${offline} ${t('offline_word')}`);
+  $('#summary').innerHTML = relays.length ? bits.join(' · ') : '';
+}
+
+// theme: follows the OS/browser preference by default; an explicit toggle
+// (remembered per browser) overrides it.
+const savedTheme = () => { try { return localStorage.getItem('relaypanel-theme'); } catch { return null; } };
+const systemTheme = () => { try { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } catch { return 'light'; } };
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  $('#btn-theme').innerHTML = t === 'dark' ? '<i class="bi bi-sun"></i>' : '<i class="bi bi-moon-stars"></i>';
+  $('#btn-theme').title = t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+}
+$('#btn-theme').addEventListener('click', () => {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  try { localStorage.setItem('relaypanel-theme', next); } catch {}
+  applyTheme(next);
+});
+applyTheme(savedTheme() || systemTheme());
+
+// language: init from storage (default English), toggle button
+$('#btn-lang').addEventListener('click', () => setLang(LANG === 'et' ? 'en' : 'et'));
+(function initLang() {
+  let l = 'en'; try { l = localStorage.getItem('relaypanel-lang') || 'en'; } catch {}
+  // snapshot English defaults now, then apply chosen language
+  document.querySelectorAll('[data-i18n]').forEach((el) => { if (!el.children.length && el.dataset.i18nEn == null) el.dataset.i18nEn = el.textContent; });
+  setLang(l);
+})();
+// follow OS theme changes while the user hasn't picked one explicitly
+try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => { if (!savedTheme()) applyTheme(e.matches ? 'dark' : 'light'); }); } catch {}
+
+// mobile hamburger: toggle the toolbar dropdown; close on outside tap
+$('#btn-menu').addEventListener('click', (e) => { e.stopPropagation(); $('#toolbar').classList.toggle('open'); });
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#toolbar') && !e.target.closest('#btn-menu')) $('#toolbar').classList.remove('open');
+});
+
+// ---- import / export ----
+function exportLayout() {
+  const data = { app: 'relay-panel', version: 1, exportedAt: new Date().toISOString(), layout: state.layout };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'relay-panel-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.json';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  $('#advanced-menu').classList.add('hidden');
+  setStatus(t('exported')); setTimeout(() => setStatus(''), 1500);
+}
+
+async function importLayout(file) {
+  let data;
+  try { data = JSON.parse(await file.text()); } catch { setStatus('not valid JSON'); return; }
+  const l = data && data.layout ? data.layout : data; // accept wrapped export or a raw layout
+  if (!l || !Array.isArray(l.relays)) { setStatus('not a relay-panel layout'); return; }
+  const counts = `${(l.relays || []).length} relays, ${(l.devices || []).length} devices, ${(l.areas || []).length} areas`;
+  if (!confirm(`Import will REPLACE the current layout with:\n${counts}\n\nContinue?`)) return;
+  state.layout = { relays: l.relays || [], areas: l.areas || [], devices: l.devices || [] };
+  for (const d of state.layout.devices) reflowDeviceOutputs(d);
+  for (const a of state.layout.areas) fitAreaToContents(a);
+  closeEditor(); closeDeviceEditor();
+  await saveLayout();
+  fillSelects(); render(); refreshLive();
+  setStatus(t('imported')); setTimeout(() => setStatus(''), 1500);
+}
+
+// wiring
+const closeAdvanced = () => $('#advanced-menu').classList.add('hidden');
+$('#btn-add').addEventListener('click', () => { closeAdvanced(); addRelay(); });
+$('#btn-advanced').addEventListener('click', (e) => { e.stopPropagation(); $('#advanced-menu').classList.toggle('hidden'); });
+document.addEventListener('click', (e) => { if (!e.target.closest('.tb-advanced')) $('#advanced-menu').classList.add('hidden'); });
+$('#btn-export').addEventListener('click', exportLayout);
+$('#btn-import').addEventListener('click', () => { $('#advanced-menu').classList.add('hidden'); $('#import-file').click(); });
+$('#import-file').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) importLayout(f); e.target.value = ''; });
+$('#area-picker').addEventListener('change', (e) => { closeAdvanced(); addArea(e.target.value); e.target.value = ''; });
+$('#device-picker').addEventListener('change', (e) => { closeAdvanced(); addPhysicalRelay(e.target.value); e.target.value = ''; });
+$('#btn-save').addEventListener('click', saveLayout);
+function applyMode() {
+  $('#mode-label').textContent = state.edit ? t('mode_edit') : t('mode_live');
+  const i = $('#btn-mode i'); if (i) i.className = state.edit ? 'bi bi-pencil-square' : 'bi bi-eye';
+  document.body.classList.toggle('live-mode', !state.edit);
+  if (!state.edit) { closeEditor(); closeDeviceEditor(); }
+}
+function toggleMode() {
+  if (!state.edit && !state.authed) { openLogin(); return; } // entering Edit needs sign-in
+  state.edit = !state.edit; applyMode(); render();
+}
+$('#btn-mode').addEventListener('click', toggleMode);
+// Esc closes the top-most open thing (in priority order)
+function closeTopmost() {
+  if (!$('#login-modal').classList.contains('hidden')) { closeLogin(); return true; }
+  if (!$('#advanced-menu').classList.contains('hidden')) { $('#advanced-menu').classList.add('hidden'); return true; }
+  if (!$('#editor').classList.contains('hidden')) { closeEditor(); return true; }
+  if (!$('#dev-editor').classList.contains('hidden')) { closeDeviceEditor(); return true; }
+  return false;
+}
+
+// keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  const typing = /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName || '');
+  const ctrl = e.ctrlKey || e.metaKey;
+  const k = (e.key || '').toLowerCase();
+
+  if (e.key === 'Escape') { if (closeTopmost()) e.preventDefault(); return; }
+  if (!ctrl) return;
+
+  if (k === 'e' && !typing) {                    // Ctrl+E: toggle Edit/View
+    if (!$('#login-modal').classList.contains('hidden')) return;
+    e.preventDefault(); toggleMode();
+  } else if (k === 's') {                          // Ctrl+S: save layout
+    e.preventDefault();
+    if (state.edit && state.authed) saveLayout(); else { setStatus(t('sign_in_to_save')); setTimeout(() => setStatus(''), 1200); }
+  } else if (k === 'z' && !typing) {               // Ctrl+Z / Ctrl+Shift+Z: undo/redo
+    e.preventDefault(); e.shiftKey ? redo() : undo();
+  } else if (k === 'y' && !typing) {               // Ctrl+Y: redo (alt)
+    e.preventDefault(); redo();
+  }
+});
+
+// --- auth (validates against Home Assistant) ---
+function updateAuthUI() {
+  $('#btn-logout').classList.toggle('hidden', !state.authed);
+  $('#btn-logout').title = state.user ? 'Sign out (' + state.user + ')' : 'Sign out';
+}
+async function checkSession() {
+  try { const s = await api('/api/session'); state.authed = !!s.authed; state.user = s.user || null; }
+  catch { state.authed = false; state.user = null; }
+  updateAuthUI();
+  // just signed in via the login-reload? drop straight into Edit mode
+  let enter = false; try { enter = sessionStorage.getItem('rp-enter-edit') === '1'; if (enter) sessionStorage.removeItem('rp-enter-edit'); } catch {}
+  if (enter && state.authed) { state.edit = true; applyMode(); render(); }
+}
+function openLogin() { $('#login-msg').textContent = ''; $('#login-user').value = ''; $('#login-pass').value = ''; $('#login-modal').classList.remove('hidden'); $('#login-user').focus(); }
+function closeLogin() { $('#login-modal').classList.add('hidden'); }
+async function doLogin() {
+  const username = $('#login-user').value.trim(), password = $('#login-pass').value;
+  if (!username || !password) { $('#login-msg').textContent = t('enter_user_pass'); return; }
+  $('#login-submit').disabled = true;
+  $('#login-msg').textContent = t('signing_in');
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 12000); // never spin forever
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }), signal: ac.signal,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { $('#login-msg').textContent = data.error || t('sign_in_failed'); return; }
+    // Signed in: the session cookie is set. Reload for a clean, fully-authed state
+    // (avoids any client-state edge cases in the success path), landing in Edit mode.
+    $('#login-msg').textContent = t('signed_in_loading');
+    try { sessionStorage.setItem('rp-enter-edit', '1'); } catch {}
+    location.reload();
+    return;
+  } catch (e) {
+    $('#login-msg').textContent = e.name === 'AbortError' ? t('timed_out') : (e.message || t('sign_in_failed'));
+  } finally { clearTimeout(to); $('#login-submit').disabled = false; }
+}
+async function doLogout() {
+  try { await api('/api/logout', { method: 'POST' }); } catch {}
+  state.authed = false; state.user = null; state.edit = false; applyMode(); render(); updateAuthUI();
+}
+$('#login-submit').addEventListener('click', doLogin);
+$('#login-cancel').addEventListener('click', closeLogin);
+$('#login-pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+$('#login-user').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#login-pass').focus(); });
+$('#btn-logout').addEventListener('click', doLogout);
+checkSession();
+applyMode();
+$('#ed-close').addEventListener('click', closeEditor);
+$('#ed-bind').addEventListener('click', bind);
+$('#ed-unbind').addEventListener('click', unbind);
+$('#ed-delete').addEventListener('click', deleteRelay);
+$('#ed-automation-toggle').addEventListener('click', toggleAutomation);
+$('#ed-relay-toggle').addEventListener('click', toggleRelayFromEditor);
+$('#ed-rename-relay').addEventListener('click', () => renameDevice($('#ed-relay').value));
+$('#ed-rename-sensor').addEventListener('click', () => renameDevice($('#ed-sensor').value));
+$('#de-close').addEventListener('click', closeDeviceEditor);
+$('#de-save').addEventListener('click', saveDevice);
+$('#de-add-output').addEventListener('change', (e) => { addOutputToDevice(e.target.value); e.target.value = ''; });
+$('#de-rename-ha').addEventListener('click', renameDeviceHa);
+$('#de-delete').addEventListener('click', deleteDevice);
+
+// re-render when crossing the mobile/desktop breakpoint
+let _wasMobile = isMobile();
+window.addEventListener('resize', () => { const m = isMobile(); if (m !== _wasMobile) { _wasMobile = m; render(); } });
+
+boot();

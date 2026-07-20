@@ -1,0 +1,14 @@
+{
+  "name": "relay-panel",
+  "version": "1.0.0",
+  "description": "Visual relay panel: place relays, bind a temp sensor + activation threshold, generate HA automations.",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": {
+    "express": "^4.19.2",
+    "mqtt": "^5.10.1",
+    "mysql2": "^3.11.0",
+    "ws": "^8.18.0"
+  }
+}
