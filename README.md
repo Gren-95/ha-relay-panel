@@ -49,11 +49,26 @@ git clone https://github.com/Gren-95/ha-relay-panel.git
 cd ha-relay-panel
 cp .env.example .env
 # edit .env: set HA_URL + HA_TOKEN (and MQTT_URL if you use Zigbee2MQTT)
-docker compose up -d --build
+
+docker compose pull      # grab the prebuilt image (or omit to build locally)
+docker compose up -d     # add --build to build from source instead
 ```
 
 Open **http://<host>:8090**. Click **Edit**, sign in with your Home Assistant account,
 then add a relay and bind it to a sensor.
+
+## Docker image
+
+Prebuilt multi-arch images (`linux/amd64`, `linux/arm64`) are published to the GitHub
+Container Registry on every push:
+
+```
+ghcr.io/gren-95/ha-relay-panel:latest
+```
+
+The `compose.yml` above uses it by default (with a local `build:` fallback). The web
+container is **stateless and runs unprivileged** — all data lives in the MariaDB service.
+Tags: `latest`, the branch name, `sha-<commit>`, and `vX.Y.Z` on releases.
 
 ## Configuration (`.env`)
 

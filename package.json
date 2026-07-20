@@ -1,9 +1,13 @@
 {
-  "name": "relay-panel",
+  "name": "ha-relay-panel",
   "version": "1.0.0",
-  "description": "Visual relay panel: place relays, bind a temp sensor + activation threshold, generate HA automations.",
+  "description": "Visual Home Assistant panel: bind relays to temperature sensors as simple thermostats.",
   "type": "commonjs",
   "main": "server.js",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/Gren-95/ha-relay-panel.git" },
+  "keywords": ["home-assistant", "thermostat", "relay", "iot", "mqtt", "self-hosted"],
+  "engines": { "node": ">=20" },
   "scripts": { "start": "node server.js" },
   "dependencies": {
     "express": "^4.19.2",

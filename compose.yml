@@ -18,6 +18,8 @@ services:
       retries: 10
 
   relay-panel-web:
+    # Use the prebuilt image (docker compose pull) — or build locally (docker compose up --build).
+    image: ghcr.io/gren-95/ha-relay-panel:latest
     build: .
     container_name: relay-panel-web
     restart: always
@@ -29,7 +31,6 @@ services:
       - DB_HOST=relay-panel-db
       - DB_USER=relay
       - DB_NAME=relaypanel
-      - MQTT_URL=mqtt://homeassistant.local:1883
       - TZ=Europe/Tallinn
     depends_on:
       relay-panel-db:
