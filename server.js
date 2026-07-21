@@ -83,7 +83,10 @@ app.put('/api/layout', requireAuth, wrap(async (req, res) => {
     areas: Array.isArray(b.areas) ? b.areas : [],
     devices: Array.isArray(b.devices) ? b.devices : [],
   };
-  res.json(await db.saveLayout(layout));
+  const result = await db.saveLayout(layout);
+  await db.addAuditLog(currentUser(req), 'layout.save',
+    { relays: layout.relays.length, areas: layout.areas.length, devices: layout.devices.length });
+  res.json(result);
 }));
 
 // --- layout backups (recover a wiped/old layout) ---
@@ -94,6 +97,7 @@ app.post('/api/layout/restore', requireAuth, wrap(async (req, res) => {
   const id = Number((req.body || {}).id);
   const restored = await db.restoreBackup(id);
   if (!restored) return res.status(404).json({ ok: false, error: 'backup not found' });
+  await db.addAuditLog(currentUser(req), 'layout.restore', { backup_id: id });
   res.json({ ok: true, layout: restored });
 }));
 
@@ -126,6 +130,8 @@ app.post('/api/relays/:rid/bind', requireAuth, wrap(async (req, res) => {
     Object.assign(r, { name, relay, sensor, mode: md, temp: t, deadband: band, area: area || null, schedule: sched, automationId, bound: true });
     await db.saveLayout(layout);
   }
+  await db.addAuditLog(currentUser(req), 'relay.bind',
+    { rid, relay, sensor, mode: md, temp: t });
   res.json({ ok: true, automationId });
 }));
 
@@ -137,6 +143,8 @@ app.post('/api/relays/:rid/unbind', requireAuth, wrap(async (req, res) => {
   const automationId = (r && r.automationId) || `relaypanel_${slug(rid)}`;
   await ha.deleteAutomation(automationId);
   if (r) { r.bound = false; delete r.automationId; await db.saveLayout(layout); }
+  await db.addAuditLog(currentUser(req), 'relay.unbind',
+    { rid, relay: r ? r.relay : '', name: r ? r.name : '' });
   res.json({ ok: true });
 }));
 
@@ -151,11 +159,13 @@ app.post('/api/rename', requireAuth, wrap(async (req, res) => {
   const ieee = ha.zigbeeIeee(info.identifiers) || (parent ? ha.zigbeeIeee(info.parent_identifiers) : null);
   if (ieee) {
     const base = await z2m.renameZigbee(ieee, nm);
+    await db.addAuditLog(currentUser(req), 'device.rename', { entity_id, new_name: nm, via: 'z2m' });
     return res.json({ ok: true, zigbee: true, where: `Zigbee2MQTT (${base}) → HA` });
   }
   // For a physical relay whose channels are sub-devices, rename the PARENT device.
   const target = parent && info.parent_id ? info.parent_id : info.device_id;
   await ha.renameHaDevice(target, nm);
+  await db.addAuditLog(currentUser(req), 'device.rename', { entity_id, new_name: nm, via: 'ha' });
   res.json({ ok: true, zigbee: false, where: parent && info.parent_id ? 'Home Assistant (device)' : 'Home Assistant' });
 }));
 
@@ -164,6 +174,7 @@ app.post('/api/switch', wrap(async (req, res) => {
   const { entity_id, action } = req.body || {};
   if (!/^switch\./.test(entity_id || '')) return res.status(400).json({ ok: false, error: 'switch entity required' });
   const state = await ha.setSwitch(entity_id, action);
+  await db.addAuditLog(currentUser(req), 'switch.toggle', { entity_id, action, result_state: state });
   res.json({ ok: true, state });
 }));
 
@@ -194,6 +205,7 @@ app.post('/api/reapply', requireAuth, wrap(async (req, res) => {
     await ha.upsertAutomation(automationId, config);
     n++;
   }
+  await db.addAuditLog(currentUser(req), 'automation.reapply', { count: n });
   res.json({ ok: true, reapplied: n });
 }));
 
@@ -214,6 +226,8 @@ app.post('/api/relays/:rid/automation', requireAuth, wrap(async (req, res) => {
   const a = await ha.findAutomation(automationId);
   if (!a) return res.status(404).json({ ok: false, error: 'no automation for this relay' });
   const enabled = await ha.setAutomationEnabled(a.entity_id, !!(req.body && req.body.enabled));
+  await db.addAuditLog(currentUser(req), enabled ? 'automation.resume' : 'automation.pause',
+    { rid: req.params.rid });
   res.json({ ok: true, exists: true, enabled });
 }));
 
@@ -225,12 +239,15 @@ app.post('/api/login', wrap(async (req, res) => {
   if (!r.ok) return res.status(401).json({ ok: false, error: r.error });
   const token = crypto.randomBytes(24).toString('hex');
   sessions.set(token, { user: r.user, exp: Date.now() + SESSION_MS });
+  await db.addAuditLog(r.user, 'login', {});
   res.setHeader('Set-Cookie', `rp_session=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${SESSION_MS / 1000}`);
   res.json({ ok: true, user: r.user });
 }));
 
 app.post('/api/logout', (req, res) => {
+  const u = currentUser(req);
   const t = cookies(req).rp_session; if (t) sessions.delete(t);
+  if (u) db.addAuditLog(u, 'logout', {}).catch(() => {});
   res.setHeader('Set-Cookie', 'rp_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0');
   res.json({ ok: true });
 });
@@ -241,6 +258,21 @@ app.get('/api/session', (req, res) => {
 });
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
+
+// --- audit helper: let the client log non-CRUD actions like relay/device delete ---
+app.post('/api/audit', requireAuth, wrap(async (req, res) => {
+  const { action, detail } = req.body || {};
+  if (!action) return res.status(400).json({ ok: false, error: 'action required' });
+  await db.addAuditLog(currentUser(req), String(action), detail || {});
+  res.json({ ok: true });
+}));
+
+// --- activity log (audit trail) ---
+app.get('/api/activity-log', wrap(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const perPage = parseInt(req.query.per_page) || 50;
+  res.json(await db.getActivityLog(page, perPage));
+}));
 
 const PORT = process.env.PORT || 3000;
 db.initDb()
