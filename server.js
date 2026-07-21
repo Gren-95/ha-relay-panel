@@ -15,6 +15,21 @@ app.use(express.static(path.join(__dirname, 'public'), {
 
 const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9_]+/g, '_').slice(0, 60);
 
+// Validate/normalize an incoming schedule; returns null if there are no usable blocks.
+function sanitizeSchedule(sc) {
+  if (!sc || typeof sc !== 'object' || !Array.isArray(sc.blocks)) return null;
+  const hhmm = (s) => /^\d{1,2}:\d{2}$/.test(String(s || '').trim());
+  const blocks = sc.blocks.map((b) => ({
+    days: (Array.isArray(b.days) ? b.days : []).map(Number).filter((d) => d >= 1 && d <= 7),
+    start: String(b.start || '').trim(),
+    end: String(b.end || '').trim(),
+    temp: Number(b.temp),
+  })).filter((b) => b.days.length && hhmm(b.start) && hhmm(b.end) && isFinite(b.temp)).slice(0, 20);
+  if (!blocks.length) return null;
+  const fb = Number(sc.fallback);
+  return { blocks, fallback: isFinite(fb) ? fb : null };
+}
+
 
 // --- auth: HA-account login -> in-memory session cookie ---
 const SESSION_MS = 12 * 60 * 60 * 1000; // 12h
@@ -91,23 +106,24 @@ app.get('/api/live', wrap(async (req, res) => {
 // --- bind: create/update the HA automation for a relay widget ---
 app.post('/api/relays/:rid/bind', requireAuth, wrap(async (req, res) => {
   const { rid } = req.params;
-  const { name, relay, sensor, mode, temp, deadband, area } = req.body || {};
+  const { name, relay, sensor, mode, temp, deadband, area, schedule } = req.body || {};
   if (!/^switch\./.test(relay || '')) return res.status(400).json({ ok: false, error: 'pick a relay (switch.*)' });
   if (!/^sensor\./.test(sensor || '')) return res.status(400).json({ ok: false, error: 'pick a temperature sensor' });
   const t = Number(temp);
   if (!isFinite(t)) return res.status(400).json({ ok: false, error: 'target temperature must be a number' });
   const band = isFinite(Number(deadband)) ? Math.max(0, Number(deadband)) : 0;
   const md = mode === 'above' ? 'above' : 'below';
+  const sched = sanitizeSchedule(schedule);
 
   const automationId = `relaypanel_${slug(rid)}`;
   const alias = `RelayPanel: ${name || relay}`;
-  const config = ha.buildAutomation({ id: automationId, alias, sensor, relay, mode: md, temp: t, deadband: band });
+  const config = ha.buildAutomation({ id: automationId, alias, sensor, relay, mode: md, temp: t, deadband: band, schedule: sched });
   await ha.upsertAutomation(automationId, config);
 
   const layout = await db.getLayout();
   const r = (layout.relays || []).find((x) => x.id === rid);
   if (r) {
-    Object.assign(r, { name, relay, sensor, mode: md, temp: t, deadband: band, area: area || null, automationId, bound: true });
+    Object.assign(r, { name, relay, sensor, mode: md, temp: t, deadband: band, area: area || null, schedule: sched, automationId, bound: true });
     await db.saveLayout(layout);
   }
   res.json({ ok: true, automationId });
@@ -173,7 +189,7 @@ app.post('/api/reapply', requireAuth, wrap(async (req, res) => {
     const config = ha.buildAutomation({
       id: automationId, alias: `RelayPanel: ${r.name || r.relay}`,
       sensor: r.sensor, relay: r.relay, mode: r.mode === 'above' ? 'above' : 'below',
-      temp: Number(r.temp), deadband: Number(r.deadband) || 0,
+      temp: Number(r.temp), deadband: Number(r.deadband) || 0, schedule: sanitizeSchedule(r.schedule),
     });
     await ha.upsertAutomation(automationId, config);
     n++;

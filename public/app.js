@@ -18,6 +18,10 @@ const TR = {
     cooling_opt: 'Jahutus — lülita SISSE, kui liiga kuum',
     target_temp: 'Sihttemperatuur (°C)',
     switchback_gap: 'Tagasilülituse vahe (°C) — valikuline, 0 = lülita täpselt sihil',
+    use_schedule: 'Kasuta ajakava (erinev siht kellaaja järgi)',
+    add_time_block: 'Lisa ajavahemik',
+    fallback_temp: 'Muul ajal, siht (°C)',
+    sched_hint: 'Kui ükski plokk ei sobi, kasutatakse ülemist sihttemperatuuri (kui varuväärtus pole seatud).',
     last_24h: 'Viimased 24 tundi',
     save_turn_on_auto: 'Salvesta ja lülita automaatjuhtimine sisse',
     remove_automation: 'Eemalda automaatika', delete_this_relay: 'Kustuta see relee',
@@ -504,7 +508,7 @@ function card(r, mobile) {
   el.innerHTML = `
     <button class="${dotCls} r-toggle" title="${!r.relay ? t('no_relay') : relayBad ? t('relay_offline_short') : (on ? t('click_turn_off') : t('click_turn_on'))}"${r.relay && !relayBad ? '' : ' disabled'}></button>
     <div class="r-info">
-      <div class="r-name">${esc(r.name || 'Relay')}${r.bound ? '' : ' <span class="r-unset"><i class="bi bi-circle"></i></span>'}</div>
+      <div class="r-name">${esc(r.name || 'Relay')}${r.bound ? '' : ' <span class="r-unset"><i class="bi bi-circle"></i></span>'}${(r.schedule && r.schedule.blocks && r.schedule.blocks.length) ? ' <i class="bi bi-clock sched-badge" title="scheduled"></i>' : ''}</div>
       <div class="r-relay">${esc(r.relay || 'no relay')}${r.area ? ' · ' + esc(areaName(r.area)) : ''}</div>
     </div>
     ${warnIcon}${maint ? '<span class="maint-badge"><i class="bi bi-pause-fill"></i> ' + t('maint_badge') + '</span>' : ''}
@@ -546,11 +550,48 @@ function openEditor(r) {
   $('#ed-mode').value = r.mode || 'below';
   $('#ed-temp').value = r.temp != null ? r.temp : 20;
   $('#ed-deadband').value = r.deadband != null ? r.deadband : 0;
+  loadScheduleUI(r.schedule);
   edMsg('');
   loadAutomationState(r);
   showStaleWarning(r);
   loadHistory(r);
   $('#editor').classList.remove('hidden');
+}
+
+// ---- schedule editor ----
+const SCHED_DAYS = [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [7, 'Sun']];
+function schedBlockRow(b) {
+  b = b || { days: [1, 2, 3, 4, 5], start: '06:00', end: '18:00', temp: 21 };
+  const row = document.createElement('div');
+  row.className = 'sched-row';
+  row.innerHTML =
+    `<div class="sched-days">${SCHED_DAYS.map(([n, lbl]) =>
+      `<label class="sched-day"><input type="checkbox" value="${n}"${b.days.includes(n) ? ' checked' : ''}>${lbl}</label>`).join('')}</div>` +
+    `<div class="sched-times"><input type="time" class="s-start" value="${esc(b.start)}"> – <input type="time" class="s-end" value="${esc(b.end)}">` +
+    ` <input type="number" step="0.5" class="s-temp" value="${b.temp}" title="target °C"> °C` +
+    ` <button type="button" class="sched-del btn tiny" title="remove">&times;</button></div>`;
+  row.querySelector('.sched-del').addEventListener('click', () => { row.remove(); });
+  return row;
+}
+function loadScheduleUI(schedule) {
+  const on = !!(schedule && Array.isArray(schedule.blocks) && schedule.blocks.length);
+  $('#ed-sched-on').checked = on;
+  $('#ed-sched-body').classList.toggle('hidden', !on);
+  const wrap = $('#ed-sched-blocks'); wrap.innerHTML = '';
+  (on ? schedule.blocks : []).forEach((b) => wrap.appendChild(schedBlockRow(b)));
+  $('#ed-sched-fallback').value = schedule && schedule.fallback != null ? schedule.fallback : '';
+}
+function readScheduleUI() {
+  if (!$('#ed-sched-on').checked) return null;
+  const blocks = [...$('#ed-sched-blocks').querySelectorAll('.sched-row')].map((row) => ({
+    days: [...row.querySelectorAll('.sched-days input:checked')].map((c) => +c.value),
+    start: row.querySelector('.s-start').value,
+    end: row.querySelector('.s-end').value,
+    temp: Number(row.querySelector('.s-temp').value),
+  })).filter((b) => b.days.length && b.start && b.end && isFinite(b.temp));
+  if (!blocks.length) return null;
+  const fb = Number($('#ed-sched-fallback').value);
+  return { blocks, fallback: isFinite(fb) ? fb : null };
 }
 
 // warn if the bound relay/sensor entity no longer exists in HA (e.g. after a rename)
@@ -804,6 +845,7 @@ async function bind() {
     name: $('#ed-name').value.trim(), relay: $('#ed-relay').value, sensor: $('#ed-sensor').value,
     area: $('#ed-area').value, mode: $('#ed-mode').value,
     temp: Number($('#ed-temp').value), deadband: Number($('#ed-deadband').value),
+    schedule: readScheduleUI(),
   };
   Object.assign(r, body);
   try {
@@ -1097,6 +1139,11 @@ $('#ed-automation-toggle').addEventListener('click', toggleAutomation);
 $('#ed-relay-toggle').addEventListener('click', toggleRelayFromEditor);
 $('#ed-rename-relay').addEventListener('click', () => renameDevice($('#ed-relay').value));
 $('#ed-rename-sensor').addEventListener('click', () => renameDevice($('#ed-sensor').value));
+$('#ed-sched-on').addEventListener('change', (e) => {
+  $('#ed-sched-body').classList.toggle('hidden', !e.target.checked);
+  if (e.target.checked && !$('#ed-sched-blocks').children.length) $('#ed-sched-blocks').appendChild(schedBlockRow());
+});
+$('#ed-sched-add').addEventListener('click', () => $('#ed-sched-blocks').appendChild(schedBlockRow()));
 $('#de-close').addEventListener('click', closeDeviceEditor);
 $('#de-save').addEventListener('click', saveDevice);
 $('#de-add-output').addEventListener('change', (e) => { addOutputToDevice(e.target.value); e.target.value = ''; });
