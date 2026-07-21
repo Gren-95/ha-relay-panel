@@ -78,6 +78,12 @@
     <label><span data-i18n="switchback_gap">Switch-back gap (°C) — optional, 0 = switch exactly at target</span>
       <input id="ed-deadband" type="number" step="0.5" min="0" value="0" />
     </label>
+    <div class="ed-notify">
+      <label class="ed-sched-toggle"><input id="ed-notify" type="checkbox" /> <span data-i18n="notify_on_issues">Notify on issues</span></label>
+      <label id="ed-notify-deviation-label" class="hidden" style="margin-top:6px"><span data-i18n="notify_deviation">Alert if temp deviates by (°C)</span>
+        <input id="ed-notify-deviation" type="number" step="0.5" min="1" value="5" />
+      </label>
+    </div>
     <div class="ed-sched">
       <label class="ed-sched-toggle"><input id="ed-sched-on" type="checkbox" /> <span data-i18n="use_schedule">Use a schedule (different target by time)</span></label>
       <div id="ed-sched-body" class="hidden">
