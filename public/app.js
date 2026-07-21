@@ -26,6 +26,15 @@ const TR = {
     save_turn_on_auto: 'Salvesta ja lülita automaatjuhtimine sisse',
     duplicate_relay: 'Klooni', remove_automation: 'Eemalda automaatika',
     delete_this_relay: 'Kustuta see relee',
+    activity_log: 'Tegevuste logi', newer: 'Uuemad', older: 'Vanimad',
+    act_login: 'Sisselogimine', act_logout: 'Väljalogimine',
+    act_relay_bind: 'Relee sidumine', act_relay_unbind: 'Sidumise eemaldamine',
+    act_device_rename: 'Ümbernimetamine', act_switch_toggle: 'Käsitsi lülitamine',
+    act_automation_pause: 'Automaatika peatatud', act_automation_resume: 'Automaatika jätkatud',
+    act_automation_reapply: 'Automaatikate taaskandmine',
+    act_layout_save: 'Paigutus salvestatud', act_layout_restore: 'Paigutus taastatud',
+    act_relay_delete: 'Relee kustutatud', act_device_delete: 'Seade eemaldatud',
+    act_area_delete: 'Ala eemaldatud',
     physical_relay_h: 'Füüsiline relee', label_shown: 'Silt (kuvatakse kastil)',
     rename_device_ha: 'Nimeta seade Home Assistantis ümber', group_area: 'Rühm / ala',
     outputs: 'Väljundid', add_output_ph: '+ Lisa väljund…', remove_from_board: 'Eemalda tahvlilt',
@@ -71,6 +80,15 @@ const EN = {  // English fallbacks for dynamic (non-HTML) strings
   maint_badge: 'maint', relay_offline_short: 'relay offline', no_relay: 'no relay',
   click_turn_on: 'Click to turn ON', click_turn_off: 'Click to turn OFF',
   already_on_board: ' is already on the board', all_on: 'All on', all_off: 'All off',
+  activity_log: 'Activity log', newer: 'Newer', older: 'Older',
+  act_login: 'Login', act_logout: 'Logout',
+  act_relay_bind: 'Bind relay', act_relay_unbind: 'Unbind relay',
+  act_device_rename: 'Rename', act_switch_toggle: 'Manual switch',
+  act_automation_pause: 'Automation paused', act_automation_resume: 'Automation resumed',
+  act_automation_reapply: 'Reapply automations',
+  act_layout_save: 'Layout saved', act_layout_restore: 'Layout restored',
+  act_relay_delete: 'Relay deleted', act_device_delete: 'Device removed',
+  act_area_delete: 'Area removed',
 };
 let LANG = 'en';
 function t(key) { return (LANG === 'et' && TR.et[key] != null) ? TR.et[key] : (EN[key] != null ? EN[key] : key); }
@@ -366,6 +384,9 @@ function renderBox(g, kind) {
       e.stopPropagation();
       if (isDev) state.layout.devices = state.layout.devices.filter((x) => x.id !== g.id);
       else state.layout.areas = state.layout.areas.filter((x) => x.id !== g.id);
+      api('/api/audit', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: isDev ? 'device.delete' : 'area.delete', detail: { name: g.name, id: g.id } })
+      }).catch(() => {});
       render(); saveLayout();
     });
   }
@@ -759,6 +780,95 @@ function closeDeviceEditor() { state.selectedDev = null; $('#dev-editor').classL
 function deMsg(m, cls) { const e = $('#de-msg'); e.textContent = m || ''; e.className = 'ed-msg ' + (cls || ''); }
 function selectedDev() { return state.layout.devices.find((x) => x.id === state.selectedDev); }
 
+// ---- activity log ----
+const activity = { page: 1, total: 0, perPage: 50 };
+
+function openActivityLog(page) {
+  page = page || 1;
+  closeEditor(); closeDeviceEditor();
+  activity.page = page;
+  $('#activity-editor').classList.remove('hidden');
+  loadActivity(page);
+}
+
+function closeActivityLog() {
+  $('#activity-editor').classList.add('hidden');
+  $('#act-list').innerHTML = '';
+}
+
+async function loadActivity(page) {
+  page = page || activity.page;
+  $('#act-msg').textContent = '';
+  try {
+    const data = await api(`/api/activity-log?page=${page}&per_page=${activity.perPage}`);
+    activity.page = data.page;
+    activity.total = data.total;
+    renderActivity(data.entries, data.total, data.page);
+  } catch (e) {
+    $('#act-msg').textContent = e.message;
+    $('#act-msg').className = 'ed-msg err';
+  }
+}
+
+function renderActivity(entries, total, page) {
+  const list = $('#act-list');
+  list.innerHTML = '';
+  const totalPages = Math.ceil(total / activity.perPage) || 1;
+  $('#act-page-info').textContent = `${page} / ${totalPages}`;
+  $('#act-prev').classList.toggle('hidden', page <= 1);
+  $('#act-next').classList.toggle('hidden', page >= totalPages);
+
+  if (!entries || !entries.length) {
+    list.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--muted)">No events recorded yet.</div>`;
+    return;
+  }
+  entries.forEach((e) => {
+    const icon = actionIcon(e.action);
+    const time = fmtTime(e.created_at);
+    const actor = e.actor || 'anonymous';
+    const row = document.createElement('div');
+    row.className = 'act-entry';
+    row.innerHTML =
+      `<div class="act-icon ${icon.cls}"><i class="bi ${icon.icon}"></i></div>` +
+      `<div class="act-body"><div class="act-desc">${esc(t('act_' + e.action.replace('.','_'))) || esc(e.action)}</div>` +
+      `<div class="act-detail">${esc(actor)}${e.detail && Object.keys(e.detail).length ? ' · ' + esc(JSON.stringify(e.detail)) : ''}</div></div>` +
+      `<div class="act-time">${esc(time)}</div>`;
+    list.appendChild(row);
+  });
+}
+
+function actionIcon(action) {
+  const m = {
+    'login':               { icon: 'bi-box-arrow-in-right', cls: 'i-login' },
+    'logout':              { icon: 'bi-box-arrow-right',    cls: 'i-logout' },
+    'relay.bind':          { icon: 'bi-link-45deg',         cls: 'i-bind' },
+    'relay.unbind':        { icon: 'bi-link',               cls: 'i-unbind' },
+    'switch.toggle':       { icon: 'bi-power',              cls: 'i-switch' },
+    'device.rename':       { icon: 'bi-pencil',             cls: 'i-rename' },
+    'layout.save':         { icon: 'bi-floppy',             cls: 'i-save' },
+    'layout.restore':      { icon: 'bi-arrow-counterclockwise', cls: 'i-restore' },
+    'automation.reapply':  { icon: 'bi-arrow-repeat',       cls: 'i-reapply' },
+    'automation.pause':    { icon: 'bi-pause-fill',         cls: 'i-pause' },
+    'automation.resume':   { icon: 'bi-play-fill',          cls: 'i-resume' },
+    'relay.delete':        { icon: 'bi-trash',              cls: 'i-unbind' },
+    'device.delete':       { icon: 'bi-trash',              cls: 'i-unbind' },
+    'area.delete':         { icon: 'bi-trash',              cls: 'i-unbind' },
+  };
+  return m[action] || { icon: 'bi-circle', cls: 'i-logout' };
+}
+
+function fmtTime(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts + (ts.endsWith('Z') ? '' : 'Z'));
+  const now = Date.now();
+  const diff = now - d.getTime();
+  if (diff < 60000) return 'just now';
+  if (diff < 3600000) return Math.round(diff / 60000) + 'm ago';
+  if (diff < 86400000) return Math.round(diff / 3600000) + 'h ago';
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) +
+    ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+}
+
 function saveDevice() {
   const g = selectedDev(); if (!g) return;
   g.name = $('#de-name').value.trim() || g.name;
@@ -784,10 +894,13 @@ async function renameDeviceHa() {
   } catch (e) { deMsg('error: ' + e.message, 'err'); }
 }
 
-function deleteDevice() {
+async function deleteDevice() {
   const g = selectedDev(); if (!g) return;
   const n = state.layout.relays.filter((r) => r.device === g.id).length;
   if (!confirm(`Remove "${g.name || 'physical relay'}" and its ${n} output${n === 1 ? '' : 's'} from the board?`)) return;
+  api('/api/audit', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'device.delete', detail: { name: g.name, device_id: g.deviceId, outputs: n } })
+  }).catch(() => {});
   state.layout.relays = state.layout.relays.filter((r) => r.device !== g.id);
   state.layout.devices = state.layout.devices.filter((x) => x.id !== g.id);
   closeDeviceEditor(); render(); saveLayout();
@@ -916,6 +1029,9 @@ async function deleteRelay() {
   const r = selected(); if (!r) return;
   if (!confirm(`Delete relay "${r.name || r.relay || 'relay'}"?` + (r.bound ? '\nIts automatic control will also be removed.' : ''))) return;
   if (r.bound) { try { await api(`/api/relays/${r.id}/unbind`, { method: 'POST' }); } catch {} }
+  api('/api/audit', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'relay.delete', detail: { rid: r.id, name: r.name, relay: r.relay } })
+  }).catch(() => {});
   state.layout.relays = state.layout.relays.filter((x) => x.id !== r.id);
   closeEditor(); render(); saveLayout();
 }
@@ -1060,6 +1176,7 @@ $('#btn-advanced').addEventListener('click', (e) => { e.stopPropagation(); $('#a
 document.addEventListener('click', (e) => { if (!e.target.closest('.tb-advanced')) $('#advanced-menu').classList.add('hidden'); });
 $('#btn-export').addEventListener('click', exportLayout);
 $('#btn-import').addEventListener('click', () => { $('#advanced-menu').classList.add('hidden'); $('#import-file').click(); });
+$('#btn-activity').addEventListener('click', () => { closeAdvanced(); openActivityLog(); });
 $('#import-file').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) importLayout(f); e.target.value = ''; });
 $('#area-picker').addEventListener('change', (e) => { closeAdvanced(); addArea(e.target.value); e.target.value = ''; });
 $('#device-picker').addEventListener('change', (e) => { closeAdvanced(); addPhysicalRelay(e.target.value); e.target.value = ''; });
@@ -1079,6 +1196,7 @@ $('#btn-mode').addEventListener('click', toggleMode);
 function closeTopmost() {
   if (!$('#login-modal').classList.contains('hidden')) { closeLogin(); return true; }
   if (!$('#advanced-menu').classList.contains('hidden')) { $('#advanced-menu').classList.add('hidden'); return true; }
+  if (!$('#activity-editor').classList.contains('hidden')) { closeActivityLog(); return true; }
   if (!$('#editor').classList.contains('hidden')) { closeEditor(); return true; }
   if (!$('#dev-editor').classList.contains('hidden')) { closeDeviceEditor(); return true; }
   return false;
@@ -1175,6 +1293,9 @@ $('#de-save').addEventListener('click', saveDevice);
 $('#de-add-output').addEventListener('change', (e) => { addOutputToDevice(e.target.value); e.target.value = ''; });
 $('#de-rename-ha').addEventListener('click', renameDeviceHa);
 $('#de-delete').addEventListener('click', deleteDevice);
+$('#act-close').addEventListener('click', closeActivityLog);
+$('#act-prev').addEventListener('click', () => { if (activity.page > 1) loadActivity(activity.page - 1); });
+$('#act-next').addEventListener('click', () => loadActivity(activity.page + 1));
 
 // re-render when crossing the mobile/desktop breakpoint
 let _wasMobile = isMobile();

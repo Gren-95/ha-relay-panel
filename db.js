@@ -31,6 +31,17 @@ async function initDb() {
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `);
+  // Audit trail for "who did what and when".
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS audit_log (
+      id         INT AUTO_INCREMENT PRIMARY KEY,
+      actor      VARCHAR(190) NOT NULL DEFAULT '',
+      action     VARCHAR(60)  NOT NULL,
+      detail     JSON,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_created (created_at)
+    )
+  `);
   await pool.query(
     `INSERT IGNORE INTO panel (id, name, layout) VALUES (1, 'Main', ?)`,
     [JSON.stringify({ relays: [], areas: [], devices: [] })]
@@ -77,4 +88,25 @@ async function restoreBackup(id) {
   return saveLayout(normalize(rows[0].layout)); // saving also snapshots current first
 }
 
-module.exports = { initDb, getLayout, saveLayout, listBackups, restoreBackup };
+async function addAuditLog(actor, action, detail) {
+  await pool.query(
+    'INSERT INTO audit_log (actor, action, detail) VALUES (?, ?, ?)',
+    [actor || '', action, JSON.stringify(detail || {})]
+  );
+  await pool.query(
+    `DELETE FROM audit_log WHERE id NOT IN
+      (SELECT id FROM (SELECT id FROM audit_log ORDER BY id DESC LIMIT 1000) x)`
+  );
+}
+
+async function getActivityLog(page, perPage) {
+  page = Math.max(1, page || 1);
+  perPage = Math.min(100, Math.max(1, perPage || 50));
+  const offset = (page - 1) * perPage;
+  const [countRows] = await pool.query('SELECT COUNT(*) AS total FROM audit_log');
+  const [rows] = await pool.query('SELECT id, actor, action, detail, created_at FROM audit_log ORDER BY id DESC LIMIT ? OFFSET ?', [perPage, offset]);
+  const total = Number((countRows[0] && countRows[0].total) || 0);
+  return { entries: rows, total, page, per_page: perPage };
+}
+
+module.exports = { initDb, getLayout, saveLayout, listBackups, restoreBackup, addAuditLog, getActivityLog };

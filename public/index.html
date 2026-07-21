@@ -35,6 +35,8 @@
           <span class="tb-menu-sep edit-only"></span>
           <button id="btn-export" class="btn menu-item"><i class="bi bi-download"></i> <span data-i18n="export_layout">Export layout</span></button>
           <button id="btn-import" class="btn menu-item"><i class="bi bi-upload"></i> <span data-i18n="import_layout">Import layout</span></button>
+          <span class="tb-menu-sep"></span>
+          <button id="btn-activity" class="btn menu-item"><i class="bi bi-clock-history"></i> <span data-i18n="activity_log">Activity log</span></button>
         </div>
         <input id="import-file" type="file" accept="application/json,.json" hidden />
       </div>
@@ -129,6 +131,21 @@
       <button id="de-delete" class="btn danger" data-i18n="remove_from_board">Remove from board</button>
     </div>
     <p id="de-msg" class="ed-msg"></p>
+  </aside>
+
+  <!-- Activity log panel -->
+  <aside id="activity-editor" class="editor hidden">
+    <div class="editor-head">
+      <h2><i class="bi bi-clock-history"></i> <span data-i18n="activity_log">Activity log</span></h2>
+      <button id="act-close" class="x">&times;</button>
+    </div>
+    <div id="act-list" class="act-list"></div>
+    <div id="act-pager" class="act-pager">
+      <button id="act-prev" class="btn tiny hidden"><i class="bi bi-chevron-left"></i> <span data-i18n="newer">Newer</span></button>
+      <span id="act-page-info"></span>
+      <button id="act-next" class="btn tiny hidden"><i class="bi bi-chevron-right"></i> <span data-i18n="older">Older</span></button>
+    </div>
+    <p id="act-msg" class="ed-msg"></p>
   </aside>
 
   <!-- Login (validates against your Home Assistant account) -->
