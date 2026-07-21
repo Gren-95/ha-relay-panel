@@ -370,6 +370,15 @@ function buildAutomation({ id, alias, sensor, relay, mode, temp, deadband = 0, s
   };
 }
 
+// Send a notification via HA's notify.<service> REST API.
+async function sendNotification(service, message, title) {
+  const svc = service.startsWith('notify.') ? service.slice(7) : service;
+  await haFetch(`/api/services/notify/${encodeURIComponent(svc)}`, {
+    method: 'POST',
+    body: JSON.stringify({ message, title: title || 'Relay Panel' }),
+  });
+}
+
 module.exports = {
   HA_URL,
   getEntities,
@@ -390,4 +399,5 @@ module.exports = {
   listRelayAutomations,
   setAutomationEnabled,
   buildAutomation,
+  sendNotification,
 };

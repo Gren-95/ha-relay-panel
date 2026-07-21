@@ -35,6 +35,7 @@ const TR = {
     act_layout_save: 'Paigutus salvestatud', act_layout_restore: 'Paigutus taastatud',
     act_relay_delete: 'Relee kustutatud', act_device_delete: 'Seade eemaldatud',
     act_area_delete: 'Ala eemaldatud', download_csv: 'Laadi alla CSV',
+    notify_on_issues: 'Teavita probleemidest', notify_deviation: 'Teavita kui temp hälbib (°C)',
     physical_relay_h: 'Füüsiline relee', label_shown: 'Silt (kuvatakse kastil)',
     rename_device_ha: 'Nimeta seade Home Assistantis ümber', group_area: 'Rühm / ala',
     outputs: 'Väljundid', add_output_ph: '+ Lisa väljund…', remove_from_board: 'Eemalda tahvlilt',
@@ -89,6 +90,7 @@ const EN = {  // English fallbacks for dynamic (non-HTML) strings
   act_layout_save: 'Layout saved', act_layout_restore: 'Layout restored',
   act_relay_delete: 'Relay deleted', act_device_delete: 'Device removed',
   act_area_delete: 'Area removed', download_csv: 'Download CSV',
+  notify_on_issues: 'Notify on issues', notify_deviation: 'Alert if temp deviates by (°C)',
 };
 let LANG = 'en';
 function t(key) { return (LANG === 'et' && TR.et[key] != null) ? TR.et[key] : (EN[key] != null ? EN[key] : key); }
@@ -575,6 +577,9 @@ function openEditor(r) {
   $('#ed-mode').value = r.mode || 'below';
   $('#ed-temp').value = r.temp != null ? r.temp : 20;
   $('#ed-deadband').value = r.deadband != null ? r.deadband : 0;
+  $('#ed-notify').checked = !!r.notify;
+  $('#ed-notify-deviation').value = r.notify_deviation != null ? r.notify_deviation : 5;
+  $('#ed-notify-deviation-label').classList.toggle('hidden', !r.notify);
   loadScheduleUI(r.schedule);
   edMsg('');
   loadAutomationState(r);
@@ -1058,6 +1063,7 @@ async function bind() {
     name: $('#ed-name').value.trim(), relay: $('#ed-relay').value, sensor: $('#ed-sensor').value,
     area: $('#ed-area').value, mode: $('#ed-mode').value,
     temp: Number($('#ed-temp').value), deadband: Number($('#ed-deadband').value),
+    notify: $('#ed-notify').checked, notify_deviation: Number($('#ed-notify-deviation').value) || 5,
     schedule: readScheduleUI(),
   };
   Object.assign(r, body);
@@ -1363,6 +1369,9 @@ $('#ed-sched-on').addEventListener('change', (e) => {
   if (e.target.checked && !$('#ed-sched-blocks').children.length) $('#ed-sched-blocks').appendChild(schedBlockRow());
 });
 $('#ed-sched-add').addEventListener('click', () => $('#ed-sched-blocks').appendChild(schedBlockRow()));
+$('#ed-notify').addEventListener('change', (e) => {
+  $('#ed-notify-deviation-label').classList.toggle('hidden', !e.target.checked);
+});
 $('#ed-csv').addEventListener('click', exportHistory);
 $('#de-close').addEventListener('click', closeDeviceEditor);
 $('#de-save').addEventListener('click', saveDevice);

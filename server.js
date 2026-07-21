@@ -127,7 +127,8 @@ app.post('/api/relays/:rid/bind', requireAuth, wrap(async (req, res) => {
   const layout = await db.getLayout();
   const r = (layout.relays || []).find((x) => x.id === rid);
   if (r) {
-    Object.assign(r, { name, relay, sensor, mode: md, temp: t, deadband: band, area: area || null, schedule: sched, automationId, bound: true });
+    Object.assign(r, { name, relay, sensor, mode: md, temp: t, deadband: band, area: area || null, schedule: sched, automationId, bound: true,
+      notify: !!req.body.notify, notify_deviation: Number(req.body.notify_deviation) || 5 });
     await db.saveLayout(layout);
   }
   await db.addAuditLog(currentUser(req), 'relay.bind',
@@ -286,6 +287,102 @@ app.get('/api/activity-log', wrap(async (req, res) => {
 }));
 
 const PORT = process.env.PORT || 3000;
+
+// --- notification watcher: alerts on offline sensors/relays or temp deviations ---
+const NOTIFY_SERVICE = (process.env.NOTIFY_SERVICE || '').trim();
+const NOTIFY_INTERVAL = 60 * 1000; // check every 60s
+const notifyAlerts = new Map(); // key -> timestamp of last alert
+
+function notifyKey(rid, type) { return `${rid}:${type}`; }
+
+async function runNotifyCheck() {
+  if (!NOTIFY_SERVICE) return;
+  let layout;
+  try { layout = await db.getLayout(); } catch { return; }
+  const relays = (layout.relays || []).filter((r) => r.relay && r.sensor && r.bound);
+  if (!relays.length) return;
+
+  // Collect entity IDs and fetch live states
+  const ids = new Set();
+  for (const r of relays) { ids.add(r.relay); ids.add(r.sensor); }
+  let live;
+  try { live = await ha.getStates([...ids]); } catch { return; }
+
+  for (const r of relays) {
+    if (!r.notify) continue;
+    const rl = live[r.relay] || {};
+    const sn = live[r.sensor] || {};
+    const threshold = Number(r.notify_deviation) || 5;
+    const name = r.name || r.relay;
+
+    // Relay offline
+    if (rl.state === 'unavailable' || rl.state === 'unknown' || rl.missing) {
+      const key = notifyKey(r.id, 'relay_offline');
+      if (!notifyAlerts.has(key)) {
+        notifyAlerts.set(key, Date.now());
+        ha.sendNotification(NOTIFY_SERVICE,
+          `Relay "${name}" (${r.relay}) is offline/unreachable.`, 'Relay Panel').catch(() => {});
+      }
+    } else {
+      // Relay recovered
+      const key = notifyKey(r.id, 'relay_offline');
+      if (notifyAlerts.has(key)) {
+        notifyAlerts.delete(key);
+        ha.sendNotification(NOTIFY_SERVICE,
+          `Relay "${name}" (${r.relay}) is back online.`, 'Relay Panel').catch(() => {});
+      }
+    }
+
+    // Sensor offline
+    if (sn.state === 'unavailable' || sn.state === 'unknown' || sn.missing) {
+      const key = notifyKey(r.id, 'sensor_offline');
+      if (!notifyAlerts.has(key)) {
+        notifyAlerts.set(key, Date.now());
+        ha.sendNotification(NOTIFY_SERVICE,
+          `Sensor "${name}" (${r.sensor}) is offline. Automatic control is paused.`, 'Relay Panel').catch(() => {});
+      }
+    } else {
+      const key = notifyKey(r.id, 'sensor_offline');
+      if (notifyAlerts.has(key)) {
+        notifyAlerts.delete(key);
+        ha.sendNotification(NOTIFY_SERVICE,
+          `Sensor "${name}" (${r.sensor}) is back online.`, 'Relay Panel').catch(() => {});
+      }
+    }
+
+    // Temp deviation (only if relay and sensor are both online)
+    if (r.temp != null && sn.state && !isNaN(parseFloat(sn.state)) &&
+        rl.state !== 'unavailable' && rl.state !== 'unknown' && !rl.missing &&
+        sn.state !== 'unavailable' && sn.state !== 'unknown' && !sn.missing) {
+      const current = parseFloat(sn.state);
+      const target = Number(r.temp);
+      const diff = Math.abs(current - target);
+      if (diff >= threshold) {
+        const dir = current > target ? 'above' : 'below';
+        const key = notifyKey(r.id, 'temp_' + dir);
+        if (!notifyAlerts.has(key)) {
+          notifyAlerts.set(key, Date.now());
+          ha.sendNotification(NOTIFY_SERVICE,
+            `"${name}" is ${current.toFixed(1)}°C (target ${target}°C, off by ${diff.toFixed(1)}°C).`,
+            'Relay Panel').catch(() => {});
+        }
+      } else {
+        // Temp back in range — clear both directions
+        ['temp_above', 'temp_below'].forEach((d) => notifyAlerts.delete(notifyKey(r.id, d)));
+      }
+    }
+  }
+}
+
 db.initDb()
-  .then(() => app.listen(PORT, () => console.log(`relay-panel on :${PORT}, HA ${ha.HA_URL}`)))
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`relay-panel on :${PORT}, HA ${ha.HA_URL}`);
+      if (NOTIFY_SERVICE) {
+        console.log(`notify watcher active: ${NOTIFY_SERVICE}`);
+        runNotifyCheck();
+        setInterval(runNotifyCheck, NOTIFY_INTERVAL);
+      }
+    });
+  })
   .catch((e) => { console.error('DB init failed:', e.message); process.exit(1); });
