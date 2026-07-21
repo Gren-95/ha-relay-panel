@@ -29,7 +29,9 @@ Self-hosted, no cloud. Talks to your own Home Assistant over its REST/WebSocket 
 - **Maintenance mode** — pause a relay's automation without deleting it.
 - **Health at a glance** — offline / missing-entity warnings per card, a header summary,
   and a Home-Assistant-unreachable banner.
-- **24h history** — a temperature sparkline in the editor.
+- **24h history** — a temperature sparkline in the editor, with CSV export.
+- **Activity log** — audit trail of who did what (login, bind, switch, rename, etc.),
+  viewable from the Advanced menu; keeps the latest 1 000 events.
 - **Light / dark themes** (follows the OS by default) and **English / Estonian** UI.
 - **Sign-in with your Home Assistant account** — viewing is open; editing requires login,
   validated against HA (no passwords stored).
