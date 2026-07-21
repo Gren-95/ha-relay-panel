@@ -812,7 +812,7 @@ function deMsg(m, cls) { const e = $('#de-msg'); e.textContent = m || ''; e.clas
 function selectedDev() { return state.layout.devices.find((x) => x.id === state.selectedDev); }
 
 // ---- activity log ----
-const activity = { page: 1, total: 0, perPage: 50 };
+const activity = { page: 1, total: 0, perPage: 15 };
 
 function openActivityLog(page) {
   page = page || 1;
@@ -824,12 +824,12 @@ function openActivityLog(page) {
 
 async function exportActivityCSV() {
   try {
-    const data = await api(`/api/activity-log?page=1&per_page=${activity.total || 100}`);
+    const data = await api(`/api/activity-log?page=1&per_page=1000`);
     if (!data.entries || !data.entries.length) return;
     const csvEscape = (v) => String(v == null ? '' : v).replace(/"/g, '""');
     const header = 'timestamp,actor,action,detail';
     const csv = header + '\n' + data.entries.map((e) =>
-      `"${csvEscape(new Date(e.created_at + 'Z').toISOString())}","${csvEscape(e.actor || '')}","${csvEscape(t('act_' + e.action.replace('.','_')) || e.action)}","${csvEscape(JSON.stringify(e.detail || {}))}"`
+      `"${csvEscape(new Date(e.created_at).toISOString())}","${csvEscape(e.actor || '')}","${csvEscape(t('act_' + e.action.replace('.','_')) || e.action)}","${csvEscape(JSON.stringify(e.detail || {}))}"`
     ).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
