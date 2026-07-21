@@ -24,7 +24,8 @@ const TR = {
     sched_hint: 'Kui ükski plokk ei sobi, kasutatakse ülemist sihttemperatuuri (kui varuväärtus pole seatud).',
     last_24h: 'Viimased 24 tundi',
     save_turn_on_auto: 'Salvesta ja lülita automaatjuhtimine sisse',
-    remove_automation: 'Eemalda automaatika', delete_this_relay: 'Kustuta see relee',
+    duplicate_relay: 'Klooni', remove_automation: 'Eemalda automaatika',
+    delete_this_relay: 'Kustuta see relee',
     physical_relay_h: 'Füüsiline relee', label_shown: 'Silt (kuvatakse kastil)',
     rename_device_ha: 'Nimeta seade Home Assistantis ümber', group_area: 'Rühm / ala',
     outputs: 'Väljundid', add_output_ph: '+ Lisa väljund…', remove_from_board: 'Eemalda tahvlilt',
@@ -838,6 +839,30 @@ function addRelay() {
   render(); saveLayout(); openEditor(state.layout.relays[state.layout.relays.length - 1]);
 }
 
+function duplicateRelay() {
+  const src = selected(); if (!src) return;
+  const id = 'r' + Date.now().toString(36);
+  const schedule = src.schedule ? JSON.parse(JSON.stringify(src.schedule)) : undefined;
+  const dup = {
+    id,
+    name: (src.name || 'Relay') + ' (copy)',
+    x: (src.x || 40) + 24,
+    y: (src.y || 40) + 24,
+    relay: '',
+    sensor: src.sensor || '',
+    area: src.area || '',
+    mode: src.mode || 'below',
+    temp: src.temp != null ? src.temp : 20,
+    deadband: src.deadband != null ? src.deadband : 0,
+    bound: false,
+    schedule,
+  };
+  state.layout.relays.push(dup);
+  closeEditor();
+  render(); saveLayout();
+  openEditor(state.layout.relays[state.layout.relays.length - 1]);
+}
+
 async function bind() {
   const r = selected(); if (!r) return;
   const oldArea = r.area;
@@ -1132,6 +1157,7 @@ $('#btn-logout').addEventListener('click', doLogout);
 checkSession();
 applyMode();
 $('#ed-close').addEventListener('click', closeEditor);
+$('#ed-duplicate').addEventListener('click', duplicateRelay);
 $('#ed-bind').addEventListener('click', bind);
 $('#ed-unbind').addEventListener('click', unbind);
 $('#ed-delete').addEventListener('click', deleteRelay);
