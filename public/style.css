@@ -338,7 +338,7 @@ html[data-theme="dark"] .ed-stale { background: #3f1414; color: #fca5a5; border-
 .ed-sched-hint { font-size: .75rem; color: var(--muted); }
 .relay .sched-badge { color: var(--cool); font-size: 1rem; margin-left: 4px; }
 .ed-history { display: flex; flex-direction: column; gap: 4px; }
-.ed-history-head { font-size: .85rem; font-weight: 700; color: var(--muted); }
+.ed-history-head { display: flex; align-items: center; justify-content: space-between; font-size: .85rem; font-weight: 700; color: var(--muted); }
 .spark { width: 100%; height: 56px; background: var(--surface-2); border: 1.5px solid var(--border); border-radius: 8px; }
 .spark-line { fill: none; stroke: #f59e0b; stroke-width: 2; vector-effect: non-scaling-stroke; }
 .spark-target { stroke: var(--ok); stroke-width: 1.5; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }

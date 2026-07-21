@@ -119,6 +119,35 @@ async function getHistory(entity, hours = 24) {
     .filter((p) => isFinite(p.v));
 }
 
+// Merged sensor + relay history for CSV export. Returns [{t, temp, state}].
+async function getHistoryExport(sensor, relay, hours = 24) {
+  const end = new Date();
+  const start = new Date(end.getTime() - hours * 3600 * 1000);
+  const base = `/api/history/period/${start.toISOString()}?minimal_response&significant_changes_only&end_time=${encodeURIComponent(end.toISOString())}`;
+  const [sData, rData] = await Promise.all([
+    haFetch(`${base}&filter_entity_id=${encodeURIComponent(sensor)}`),
+    relay ? haFetch(`${base}&filter_entity_id=${encodeURIComponent(relay)}`) : Promise.resolve(null),
+  ]);
+  const sPoints = ((sData && sData[0]) || []).map((p) => ({
+    t: Date.parse(p.last_changed || p.last_updated), temp: parseFloat(p.state),
+  })).filter((p) => isFinite(p.temp));
+
+  if (!rData) return sPoints.map((p) => ({ ...p, state: '?' }));
+
+  // Build a timeline of relay state changes
+  const rSeries = ((rData && rData[0]) || []);
+  const states = rSeries.map((p) => ({
+    t: Date.parse(p.last_changed || p.last_updated), state: p.state,
+  })).sort((a, b) => a.t - b.t);
+
+  // For each sensor point, find the relay state at that time
+  let si = 0;
+  return sPoints.map((p) => {
+    while (si < states.length - 1 && states[si + 1].t <= p.t) si++;
+    return { ...p, state: states[si] ? states[si].state : '?' };
+  });
+}
+
 // Validate a username+password against Home Assistant using its login-flow API
 // (the same flow the HA frontend uses). Returns {ok, user} or {ok:false, error}.
 async function verifyHaLogin(username, password) {
@@ -348,6 +377,7 @@ module.exports = {
   getRelayDevices,
   getStates,
   getHistory,
+  getHistoryExport,
   haReachable,
   verifyHaLogin,
   setSwitch,
