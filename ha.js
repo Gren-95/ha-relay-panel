@@ -265,17 +265,50 @@ async function deleteAutomation(automationId) {
 // Optional hysteresis (deadband > 0) shifts the ON point away from the target so
 // it won't switch back until the temp drifts a bit (avoids chatter near the line).
 // Re-evaluates on sensor change AND every 5 min (so it self-corrects reliably).
-function buildAutomation({ id, alias, sensor, relay, mode, temp, deadband = 0 }) {
+// "HH:MM" -> minutes since midnight (clamped 0..1440)
+function hhmmToMin(s) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(s || '').trim());
+  if (!m) return null;
+  return Math.min(1440, Math.max(0, (+m[1]) * 60 + (+m[2])));
+}
+
+// Build the Jinja lines that compute `ns.t` = the effective target right now,
+// from a schedule ({ blocks:[{days:[1..7], start:"HH:MM", end:"HH:MM", temp}], fallback }).
+// Returns null when there is no usable schedule (caller uses the fixed target).
+function scheduleTargetSetup(schedule, fixedTarget) {
+  if (!schedule || !Array.isArray(schedule.blocks) || !schedule.blocks.length) return null;
+  const fb = Number(schedule.fallback);
+  const fallback = isFinite(fb) ? fb : Number(fixedTarget);
+  let out = `{% set ns = namespace(t = ${fallback}) %}` +
+    `{% set c = now().hour*60 + now().minute %}{% set d = now().isoweekday() %}`;
+  let used = 0;
+  for (const b of schedule.blocks) {
+    const s = hhmmToMin(b.start), e = hhmmToMin(b.end), tp = Number(b.temp);
+    const days = (Array.isArray(b.days) ? b.days : []).map(Number).filter((x) => x >= 1 && x <= 7);
+    if (s == null || e == null || !isFinite(tp) || !days.length) continue;
+    // overnight block (end <= start) wraps past midnight
+    const within = e > s ? `c >= ${s} and c < ${e}` : `(c >= ${s} or c < ${e})`;
+    out += `{% if d in ${JSON.stringify(days)} and ${within} %}{% set ns.t = ${tp} %}{% endif %}`;
+    used++;
+  }
+  return used ? out : null;
+}
+
+function buildAutomation({ id, alias, sensor, relay, mode, temp, deadband = 0, schedule = null }) {
   const heat = mode !== 'above';
   const target = Number(temp);
   const band = Math.max(0, Number(deadband) || 0);
-  const onCond = heat ? `<= ${target - band}` : `>= ${target + band}`;
-  const offCond = heat ? `>= ${target}` : `<= ${target}`;
+  // effective target: from a runtime-evaluated schedule, or the fixed number
+  const setup = scheduleTargetSetup(schedule, target);
+  const tgt = setup ? 'ns.t' : String(target);
+  const onCond = heat ? `<= ${tgt} - ${band}` : `>= ${tgt} + ${band}`;
+  const offCond = heat ? `>= ${tgt}` : `<= ${tgt}`;
   // SAFETY: only act on a valid numeric reading. If the sensor is unavailable/
   // unknown (device offline), fail to OFF — never leave a heater running because
   // states()|float(-999) looked "below target".
   const valid = `is_number(states('${sensor}'))`;
-  const cond = (cmp) => `{{ ${valid} and states('${sensor}')|float ${cmp} }}`;
+  // schedule setup uses {% %} statements, which must go BEFORE the {{ }} output.
+  const cond = (cmp) => `${setup || ''}{{ ${valid} and states('${sensor}')|float ${cmp} }}`;
   return {
     id,
     alias,

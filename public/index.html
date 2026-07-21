@@ -75,6 +75,17 @@
     <label><span data-i18n="switchback_gap">Switch-back gap (°C) — optional, 0 = switch exactly at target</span>
       <input id="ed-deadband" type="number" step="0.5" min="0" value="0" />
     </label>
+    <div class="ed-sched">
+      <label class="ed-sched-toggle"><input id="ed-sched-on" type="checkbox" /> <span data-i18n="use_schedule">Use a schedule (different target by time)</span></label>
+      <div id="ed-sched-body" class="hidden">
+        <div id="ed-sched-blocks" class="ed-sched-blocks"></div>
+        <button id="ed-sched-add" class="btn tiny" type="button"><i class="bi bi-plus-lg"></i> <span data-i18n="add_time_block">Add time block</span></button>
+        <label class="ed-sched-fb"><span data-i18n="fallback_temp">Other times, target (°C)</span>
+          <input id="ed-sched-fallback" type="number" step="0.5" />
+        </label>
+        <div class="ed-sched-hint" data-i18n="sched_hint">The main target above is used when no block matches (if no fallback set).</div>
+      </div>
+    </div>
     <div id="ed-stale" class="ed-stale hidden"></div>
     <div id="ed-history" class="ed-history hidden">
       <div class="ed-history-head" data-i18n="last_24h">Last 24 hours</div>

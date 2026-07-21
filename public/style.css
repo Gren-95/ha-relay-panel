@@ -292,6 +292,22 @@ body.live-mode .area-master { display: none !important; }
   padding: 8px 10px; font-size: .85rem; font-weight: 600;
 }
 html[data-theme="dark"] .ed-stale { background: #3f1414; color: #fca5a5; border-color: #7f1d1d; }
+/* schedule editor */
+.ed-sched { border: 1px solid var(--border); border-radius: 10px; padding: 10px; background: var(--surface-2); display: flex; flex-direction: column; gap: 8px; }
+.ed-sched-toggle { flex-direction: row !important; align-items: center; gap: 8px; font-weight: 600; }
+.ed-sched-toggle input { min-height: 0; width: auto; }
+.ed-sched-blocks { display: flex; flex-direction: column; gap: 8px; }
+.sched-row { border: 1px solid var(--border); border-radius: 8px; padding: 8px; background: var(--surface); display: flex; flex-direction: column; gap: 6px; }
+.sched-days { display: flex; flex-wrap: wrap; gap: 4px; }
+.sched-day { display: inline-flex; align-items: center; gap: 3px; font-size: .8rem; font-weight: 600; color: var(--muted); flex-direction: row !important; }
+.sched-day input { min-height: 0; width: auto; }
+.sched-times { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: .9rem; }
+.sched-times input[type=time] { min-height: 0; padding: 6px 8px; font-size: .9rem; width: auto; }
+.sched-times .s-temp { width: 72px; min-height: 0; padding: 6px 8px; }
+.sched-del { margin-left: auto; padding: 2px 9px !important; }
+.ed-sched-fb { flex-direction: column; }
+.ed-sched-hint { font-size: .75rem; color: var(--muted); }
+.relay .sched-badge { color: var(--cool); font-size: 1rem; margin-left: 4px; }
 .ed-history { display: flex; flex-direction: column; gap: 4px; }
 .ed-history-head { font-size: .85rem; font-weight: 700; color: var(--muted); }
 .spark { width: 100%; height: 56px; background: var(--surface-2); border: 1.5px solid var(--border); border-radius: 8px; }
