@@ -185,6 +185,17 @@ app.get('/api/history', wrap(async (req, res) => {
   res.json({ ok: true, points: await ha.getHistory(entity, Number(req.query.hours) || 24) });
 }));
 
+// --- merged sensor + relay history for CSV export ---
+app.get('/api/history/export', wrap(async (req, res) => {
+  const sensor = String(req.query.sensor || '');
+  const relay = String(req.query.relay || '');
+  if (!/^sensor\./.test(sensor)) return res.status(400).json({ ok: false, error: 'sensor entity required' });
+  const hours = Number(req.query.hours) || 24;
+  const target = parseFloat(req.query.target);
+  const rows = await ha.getHistoryExport(sensor, relay || null, hours);
+  res.json({ ok: true, rows, target: isFinite(target) ? target : null });
+}));
+
 // --- HA reachability (for the connection banner) ---
 app.get('/api/ha-status', wrap(async (req, res) => {
   res.json({ ok: true, reachable: await ha.haReachable() });

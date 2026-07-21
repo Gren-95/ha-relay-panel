@@ -34,7 +34,7 @@ const TR = {
     act_automation_reapply: 'Automaatikate taaskandmine',
     act_layout_save: 'Paigutus salvestatud', act_layout_restore: 'Paigutus taastatud',
     act_relay_delete: 'Relee kustutatud', act_device_delete: 'Seade eemaldatud',
-    act_area_delete: 'Ala eemaldatud',
+    act_area_delete: 'Ala eemaldatud', download_csv: 'Laadi alla CSV',
     physical_relay_h: 'Füüsiline relee', label_shown: 'Silt (kuvatakse kastil)',
     rename_device_ha: 'Nimeta seade Home Assistantis ümber', group_area: 'Rühm / ala',
     outputs: 'Väljundid', add_output_ph: '+ Lisa väljund…', remove_from_board: 'Eemalda tahvlilt',
@@ -88,7 +88,7 @@ const EN = {  // English fallbacks for dynamic (non-HTML) strings
   act_automation_reapply: 'Reapply automations',
   act_layout_save: 'Layout saved', act_layout_restore: 'Layout restored',
   act_relay_delete: 'Relay deleted', act_device_delete: 'Device removed',
-  act_area_delete: 'Area removed',
+  act_area_delete: 'Area removed', download_csv: 'Download CSV',
 };
 let LANG = 'en';
 function t(key) { return (LANG === 'et' && TR.et[key] != null) ? TR.et[key] : (EN[key] != null ? EN[key] : key); }
@@ -655,6 +655,29 @@ async function loadHistory(r) {
     const vs = points.map((p) => p.v);
     info.textContent = `${dur}min ${Math.min(...vs).toFixed(1)}° · max ${Math.max(...vs).toFixed(1)}° · now ${vs[vs.length - 1].toFixed(1)}°`;
   } catch { info.textContent = dur + '(history unavailable)'; }
+}
+
+async function exportHistory() {
+  const r = selected(); if (!r || !r.sensor) return;
+  try {
+    const params = new URLSearchParams({ sensor: r.sensor, hours: '24' });
+    if (r.relay) params.set('relay', r.relay);
+    if (r.temp != null) params.set('target', String(r.temp));
+    const data = await api('/api/history/export?' + params.toString());
+    if (!data.rows || !data.rows.length) { edMsg('no data to export', 'err'); return; }
+    const header = 'timestamp,temperature,relay_state' + (data.target != null ? ',target' : '');
+    const csv = header + '\n' + data.rows.map((p) =>
+      `${new Date(p.t).toISOString()},${p.temp.toFixed(1)},${p.state}` +
+      (data.target != null ? `,${data.target}` : '')
+    ).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${r.sensor.replace('.','_')}_24h.csv`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    edMsg('CSV downloaded', 'ok');
+  } catch (e) { edMsg('export error: ' + e.message, 'err'); }
 }
 
 function fmtAgo(ms) {
@@ -1322,6 +1345,7 @@ $('#ed-sched-on').addEventListener('change', (e) => {
   if (e.target.checked && !$('#ed-sched-blocks').children.length) $('#ed-sched-blocks').appendChild(schedBlockRow());
 });
 $('#ed-sched-add').addEventListener('click', () => $('#ed-sched-blocks').appendChild(schedBlockRow()));
+$('#ed-csv').addEventListener('click', exportHistory);
 $('#de-close').addEventListener('click', closeDeviceEditor);
 $('#de-save').addEventListener('click', saveDevice);
 $('#de-add-output').addEventListener('change', (e) => { addOutputToDevice(e.target.value); e.target.value = ''; });
