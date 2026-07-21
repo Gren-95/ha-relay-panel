@@ -822,6 +822,24 @@ function openActivityLog(page) {
   loadActivity(page);
 }
 
+async function exportActivityCSV() {
+  try {
+    const data = await api(`/api/activity-log?page=1&per_page=${activity.total || 100}`);
+    if (!data.entries || !data.entries.length) return;
+    const csvEscape = (v) => String(v == null ? '' : v).replace(/"/g, '""');
+    const header = 'timestamp,actor,action,detail';
+    const csv = header + '\n' + data.entries.map((e) =>
+      `"${csvEscape(new Date(e.created_at + 'Z').toISOString())}","${csvEscape(e.actor || '')}","${csvEscape(t('act_' + e.action.replace('.','_')) || e.action)}","${csvEscape(JSON.stringify(e.detail || {}))}"`
+    ).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'activity-log.csv';
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  } catch {}
+}
+
 function closeActivityLog() {
   $('#activity-editor').classList.add('hidden');
   $('#act-list').innerHTML = '';
@@ -1354,6 +1372,7 @@ $('#de-delete').addEventListener('click', deleteDevice);
 $('#act-close').addEventListener('click', closeActivityLog);
 $('#act-prev').addEventListener('click', () => { if (activity.page > 1) loadActivity(activity.page - 1); });
 $('#act-next').addEventListener('click', () => loadActivity(activity.page + 1));
+$('#act-csv').addEventListener('click', exportActivityCSV);
 
 // re-render when crossing the mobile/desktop breakpoint
 let _wasMobile = isMobile();
