@@ -831,10 +831,29 @@ function renderActivity(entries, total, page) {
     row.innerHTML =
       `<div class="act-icon ${icon.cls}"><i class="bi ${icon.icon}"></i></div>` +
       `<div class="act-body"><div class="act-desc">${esc(t('act_' + e.action.replace('.','_'))) || esc(e.action)}</div>` +
-      `<div class="act-detail">${esc(actor)}${e.detail && Object.keys(e.detail).length ? ' · ' + esc(JSON.stringify(e.detail)) : ''}</div></div>` +
+      `<div class="act-detail">${esc(actor)}${formatDetail(e.action, e.detail) ? ' · ' + formatDetail(e.action, e.detail) : ''}</div></div>` +
       `<div class="act-time">${esc(time)}</div>`;
     list.appendChild(row);
   });
+}
+
+function formatDetail(action, d) {
+  if (!d || !Object.keys(d).length) return '';
+  switch (action) {
+    case 'relay.delete': return esc(d.name || d.rid || '');
+    case 'device.delete': return esc(d.name || d.device_id || '');
+    case 'area.delete': return esc(d.name || '');
+    case 'relay.bind': return `${esc(d.relay || '')} · ${esc(d.sensor || '')} · ${d.mode === 'above' ? 'cool' : 'heat'} ${d.temp}°C`;
+    case 'relay.unbind': return esc(d.name || d.rid || '');
+    case 'switch.toggle': return `${esc(d.entity_id || '')} → ${esc(d.action || '')}`;
+    case 'device.rename': return `${esc(d.entity_id || '')} → ${esc(d.new_name || '')}`;
+    case 'layout.save': return `${d.relays || 0} relays, ${d.areas || 0} areas, ${d.devices || 0} devices`;
+    case 'layout.restore': return `backup #${d.backup_id || '?'}`;
+    case 'automation.reapply': return `${d.count || 0} automation${d.count === 1 ? '' : 's'}`;
+    case 'automation.pause':
+    case 'automation.resume': return esc(d.rid || '');
+    default: return '';
+  }
 }
 
 function actionIcon(action) {
