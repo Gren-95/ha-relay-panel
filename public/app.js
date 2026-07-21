@@ -382,6 +382,9 @@ function renderBox(g, kind) {
       () => { if (isDev) pinDeviceToArea(g); for (const r of state.layout.relays.filter(isMember)) clampToBox(r, g); render(); saveLayout(); });
     el.querySelector('.area-del').addEventListener('click', (e) => {
       e.stopPropagation();
+      if (!confirm(isDev
+        ? `Remove "${g.name || 'physical relay'}" from the board?`
+        : `Remove area "${g.name || 'group'}"? Relays inside will stay on the board.`)) return;
       if (isDev) state.layout.devices = state.layout.devices.filter((x) => x.id !== g.id);
       else state.layout.areas = state.layout.areas.filter((x) => x.id !== g.id);
       api('/api/audit', { method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -577,6 +580,11 @@ function openEditor(r) {
   loadAutomationState(r);
   showStaleWarning(r);
   loadHistory(r);
+  // Hide mutation buttons when not signed in (they'd silently fail or 401)
+  const show = !!state.authed;
+  ['ed-bind', 'ed-duplicate', 'ed-unbind', 'ed-delete'].forEach((id) => {
+    const btn = $('#' + id); if (btn) btn.classList.toggle('hidden', !show);
+  });
   $('#editor').classList.remove('hidden');
 }
 
@@ -896,10 +904,17 @@ async function renameDeviceHa() {
 
 async function deleteDevice() {
   const g = selectedDev(); if (!g) return;
-  const n = state.layout.relays.filter((r) => r.device === g.id).length;
-  if (!confirm(`Remove "${g.name || 'physical relay'}" and its ${n} output${n === 1 ? '' : 's'} from the board?`)) return;
+  const outputs = state.layout.relays.filter((r) => r.device === g.id);
+  const bound = outputs.filter((r) => r.bound);
+  const msg = `Remove "${g.name || 'physical relay'}" and its ${outputs.length} output${outputs.length === 1 ? '' : 's'} from the board?` +
+    (bound.length ? `\n${bound.length} bound automation${bound.length === 1 ? '' : 's'} will also be removed.` : '');
+  if (!confirm(msg)) return;
+  // Unbind each bound output so HA automations are cleaned up
+  for (const r of bound) {
+    try { await api(`/api/relays/${r.id}/unbind`, { method: 'POST' }); } catch {}
+  }
   api('/api/audit', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'device.delete', detail: { name: g.name, device_id: g.deviceId, outputs: n } })
+    body: JSON.stringify({ action: 'device.delete', detail: { name: g.name, device_id: g.deviceId, outputs: outputs.length } })
   }).catch(() => {});
   state.layout.relays = state.layout.relays.filter((r) => r.device !== g.id);
   state.layout.devices = state.layout.devices.filter((x) => x.id !== g.id);
