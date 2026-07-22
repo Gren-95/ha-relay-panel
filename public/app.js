@@ -37,6 +37,9 @@ const TR = {
     act_area_delete: 'Ala eemaldatud', download_csv: 'Laadi alla CSV',
     notify_on_issues: 'Teavita probleemidest', notify_deviation: 'Teavita kui temp hälbib (°C)',
     bulk_edit: 'Hulgimuutmine', all_relays: 'Kõik releed', apply_to_n: 'Rakenda',
+    min_on: 'Minimaalne tööaeg (min)', min_off: 'Minimaalne puhkeaeg (min)',
+    min_on_hint: 'Väldi lühitsükleid: relee ei lülitu välja enne seda aega',
+    min_off_hint: 'Väldi lühitsükleid: relee ei lülitu sisse enne seda aega',
     physical_relay_h: 'Füüsiline relee', label_shown: 'Silt (kuvatakse kastil)',
     rename_device_ha: 'Nimeta seade Home Assistantis ümber', group_area: 'Rühm / ala',
     outputs: 'Väljundid', add_output_ph: '+ Lisa väljund…', remove_from_board: 'Eemalda tahvlilt',
@@ -93,6 +96,9 @@ const EN = {  // English fallbacks for dynamic (non-HTML) strings
   act_area_delete: 'Area removed', download_csv: 'Download CSV',
   notify_on_issues: 'Notify on issues', notify_deviation: 'Alert if temp deviates by (°C)',
   bulk_edit: 'Bulk edit', all_relays: 'All relays', apply_to_n: 'Apply',
+  min_on: 'Minimum on-time (min)', min_off: 'Minimum off-time (min)',
+  min_on_hint: 'Prevent short cycling: relay won\'t turn off before this time',
+  min_off_hint: 'Prevent short cycling: relay won\'t turn on before this time',
 };
 let LANG = 'en';
 function t(key) { return (LANG === 'et' && TR.et[key] != null) ? TR.et[key] : (EN[key] != null ? EN[key] : key); }
@@ -532,6 +538,7 @@ function card(r, mobile) {
   const modeIcon = on
     ? (r.mode === 'above' ? '<i class="bi bi-arrow-down mode-active"></i>' : '<i class="bi bi-arrow-up mode-active"></i>')
     : '';
+  const limitIcon = (r.min_on || r.min_off) ? '<i class="bi bi-shield-lock limit-icon" title="Cycle protection active"></i>' : '';
   // automation paused for maintenance?
   const maint = r.bound && r.automationId && state.autoStates[r.automationId] === false;
   if (maint) el.classList.add('maint');
@@ -542,7 +549,7 @@ function card(r, mobile) {
       <div class="r-name">${esc(r.name || 'Relay')}${r.bound ? '' : ' <span class="r-unset"><i class="bi bi-circle"></i></span>'}${(r.schedule && r.schedule.blocks && r.schedule.blocks.length) ? ' <i class="bi bi-clock sched-badge" title="scheduled"></i>' : ''}</div>
       <div class="r-relay">${esc(r.relay || 'no relay')}${r.area ? ' · ' + esc(areaName(r.area)) : ''}</div>
     </div>
-    ${warnIcon}${maint ? '<span class="maint-badge"><i class="bi bi-pause-fill"></i> ' + t('maint_badge') + '</span>' : ''}
+    ${warnIcon}${limitIcon}${maint ? '<span class="maint-badge"><i class="bi bi-pause-fill"></i> ' + t('maint_badge') + '</span>' : ''}
     <div class="r-metric">
       <div class="cur ${curClass}">${temp}${temp === '—' ? '' : '<span class="deg">°</span>'}</div>
       <div class="tgt">${modeIcon}${modeIcon ? '&nbsp;' : ''}${r.temp != null ? r.temp + '°' : '—'}${r.deadband ? `<span class="band">±${r.deadband}</span>` : ''}</div>
@@ -581,6 +588,8 @@ function openEditor(r) {
   $('#ed-mode').value = r.mode || 'below';
   $('#ed-temp').value = r.temp != null ? r.temp : 20;
   $('#ed-deadband').value = r.deadband != null ? r.deadband : 0;
+  $('#ed-minon').value = r.min_on != null ? r.min_on : 0;
+  $('#ed-minoff').value = r.min_off != null ? r.min_off : 0;
   $('#ed-notify').checked = !!r.notify;
   $('#ed-notify-deviation').value = r.notify_deviation != null ? r.notify_deviation : 5;
   $('#ed-notify-deviation-label').classList.toggle('hidden', !r.notify);
@@ -954,6 +963,7 @@ async function applyBulk() {
           name: r.name, relay: r.relay, sensor: r.sensor, area: r.area || '',
           mode, temp, deadband,
           schedule: r.schedule || null,
+          min_on: Number(r.min_on) || 0, min_off: Number(r.min_off) || 0,
           notify: !!r.notify, notify_deviation: Number(r.notify_deviation) || 5,
         }),
       });
@@ -1186,6 +1196,7 @@ async function bind() {
     name: $('#ed-name').value.trim(), relay: $('#ed-relay').value, sensor: $('#ed-sensor').value,
     area: $('#ed-area').value, mode: $('#ed-mode').value,
     temp: Number($('#ed-temp').value), deadband: Number($('#ed-deadband').value),
+    min_on: Number($('#ed-minon').value) || 0, min_off: Number($('#ed-minoff').value) || 0,
     notify: $('#ed-notify').checked, notify_deviation: Number($('#ed-notify-deviation').value) || 5,
     schedule: readScheduleUI(),
   };

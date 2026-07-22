@@ -110,7 +110,7 @@ app.get('/api/live', wrap(async (req, res) => {
 // --- bind: create/update the HA automation for a relay widget ---
 app.post('/api/relays/:rid/bind', requireAuth, wrap(async (req, res) => {
   const { rid } = req.params;
-  const { name, relay, sensor, mode, temp, deadband, area, schedule } = req.body || {};
+  const { name, relay, sensor, mode, temp, deadband, area, schedule, min_on, min_off } = req.body || {};
   if (!/^switch\./.test(relay || '')) return res.status(400).json({ ok: false, error: 'pick a relay (switch.*)' });
   if (!/^sensor\./.test(sensor || '')) return res.status(400).json({ ok: false, error: 'pick a temperature sensor' });
   const t = Number(temp);
@@ -121,13 +121,14 @@ app.post('/api/relays/:rid/bind', requireAuth, wrap(async (req, res) => {
 
   const automationId = `relaypanel_${slug(rid)}`;
   const alias = `RelayPanel: ${name || relay}`;
-  const config = ha.buildAutomation({ id: automationId, alias, sensor, relay, mode: md, temp: t, deadband: band, schedule: sched });
+  const config = ha.buildAutomation({ id: automationId, alias, sensor, relay, mode: md, temp: t, deadband: band, schedule: sched, min_on: Number(min_on) || 0, min_off: Number(min_off) || 0 });
   await ha.upsertAutomation(automationId, config);
 
   const layout = await db.getLayout();
   const r = (layout.relays || []).find((x) => x.id === rid);
   if (r) {
     Object.assign(r, { name, relay, sensor, mode: md, temp: t, deadband: band, area: area || null, schedule: sched, automationId, bound: true,
+      min_on: Number(min_on) || 0, min_off: Number(min_off) || 0,
       notify: !!req.body.notify, notify_deviation: Number(req.body.notify_deviation) || 5 });
     await db.saveLayout(layout);
   }
@@ -213,6 +214,7 @@ app.post('/api/reapply', requireAuth, wrap(async (req, res) => {
       id: automationId, alias: `RelayPanel: ${r.name || r.relay}`,
       sensor: r.sensor, relay: r.relay, mode: r.mode === 'above' ? 'above' : 'below',
       temp: Number(r.temp), deadband: Number(r.deadband) || 0, schedule: sanitizeSchedule(r.schedule),
+      min_on: Number(r.min_on) || 0, min_off: Number(r.min_off) || 0,
     });
     await ha.upsertAutomation(automationId, config);
     n++;

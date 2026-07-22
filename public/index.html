@@ -80,6 +80,16 @@
     <label><span data-i18n="switchback_gap">Switch-back gap (°C) — optional, 0 = switch exactly at target</span>
       <input id="ed-deadband" type="number" step="0.5" min="0" value="0" />
     </label>
+    <div class="ed-limits">
+      <label><span data-i18n="min_on">Minimum on-time (min)</span>
+        <input id="ed-minon" type="number" step="1" min="0" value="0" />
+        <span class="ed-hint" data-i18n="min_on_hint">Prevent short cycling: relay won't turn off before this time</span>
+      </label>
+      <label><span data-i18n="min_off">Minimum off-time (min)</span>
+        <input id="ed-minoff" type="number" step="1" min="0" value="0" />
+        <span class="ed-hint" data-i18n="min_off_hint">Prevent short cycling: relay won't turn on before this time</span>
+      </label>
+    </div>
     <div class="ed-notify">
       <label class="ed-sched-toggle"><input id="ed-notify" type="checkbox" /> <span data-i18n="notify_on_issues">Notify on issues</span></label>
       <label id="ed-notify-deviation-label" class="hidden" style="margin-top:6px"><span data-i18n="notify_deviation">Alert if temp deviates by (°C)</span>
