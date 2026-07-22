@@ -529,7 +529,9 @@ function card(r, mobile) {
     if (r.mode === 'above') curClass = curNum > r.temp ? 'demand-cool' : 'satisfied';
     else curClass = curNum < r.temp ? 'demand-heat' : 'satisfied';
   }
-  const modeIcon = r.mode === 'above' ? '<i class="bi bi-snow"></i>' : '<i class="bi bi-fire"></i>';
+  const modeIcon = on
+    ? (r.mode === 'above' ? '<i class="bi bi-arrow-down mode-active"></i>' : '<i class="bi bi-arrow-up mode-active"></i>')
+    : '';
   // automation paused for maintenance?
   const maint = r.bound && r.automationId && state.autoStates[r.automationId] === false;
   if (maint) el.classList.add('maint');
@@ -543,7 +545,7 @@ function card(r, mobile) {
     ${warnIcon}${maint ? '<span class="maint-badge"><i class="bi bi-pause-fill"></i> ' + t('maint_badge') + '</span>' : ''}
     <div class="r-metric">
       <div class="cur ${curClass}">${temp}${temp === '—' ? '' : '<span class="deg">°</span>'}</div>
-      <div class="tgt">${modeIcon}&nbsp;${r.temp != null ? r.temp + '°' : '—'}${r.deadband ? `<span class="band">±${r.deadband}</span>` : ''}</div>
+      <div class="tgt">${modeIcon}${modeIcon ? '&nbsp;' : ''}${r.temp != null ? r.temp + '°' : '—'}${r.deadband ? `<span class="band">±${r.deadband}</span>` : ''}</div>
     </div>`;
 
   // manual on/off toggle (works in both edit & live modes)

@@ -167,6 +167,13 @@ header h1 .bi { color: #eab308; }
   background: #fde68a; color: #7c2d12; font-size: .68rem; font-weight: 800;
   padding: 2px 7px; border-radius: 6px; white-space: nowrap; flex: 0 0 auto;
 }
+@keyframes mode-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .3; }
+}
+.mode-active { animation: mode-pulse 1.2s ease-in-out infinite; }
+.relay .bi-arrow-up { color: var(--heat); }
+.relay .bi-arrow-down { color: var(--cool); }
 .relay .r-relay { font-size: .82rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .relay .r-metric { text-align: right; flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
 .relay .r-metric .cur { font-size: 2rem; font-weight: 800; line-height: 1; color: var(--text); font-variant-numeric: tabular-nums; }
