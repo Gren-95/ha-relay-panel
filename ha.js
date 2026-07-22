@@ -323,10 +323,11 @@ function scheduleTargetSetup(schedule, fixedTarget) {
   return used ? out : null;
 }
 
-function buildAutomation({ id, alias, sensor, relay, mode, temp, deadband = 0, schedule = null }) {
+function buildAutomation({ id, alias, sensor, relay, mode, temp, deadband = 0, schedule = null, min_on = 0, min_off = 0 }) {
   const heat = mode !== 'above';
   const target = Number(temp);
   const band = Math.max(0, Number(deadband) || 0);
+  const mo = Math.max(0, Number(min_on) || 0), mf = Math.max(0, Number(min_off) || 0);
   // effective target: from a runtime-evaluated schedule, or the fixed number
   const setup = scheduleTargetSetup(schedule, target);
   const tgt = setup ? 'ns.t' : String(target);
@@ -338,6 +339,17 @@ function buildAutomation({ id, alias, sensor, relay, mode, temp, deadband = 0, s
   const valid = `is_number(states('${sensor}'))`;
   // schedule setup uses {% %} statements, which must go BEFORE the {{ }} output.
   const cond = (cmp) => `${setup || ''}{{ ${valid} and states('${sensor}')|float ${cmp} }}`;
+  // anti-short-cycle: relay must be off long enough before turning on, and on
+  // long enough before turning off
+  const lastChanged = `states.${relay}.last_changed`;
+  const sinceChanged = `now()|as_timestamp - as_timestamp(${lastChanged})`;
+  const onConditions = [];
+  if (mf > 0) onConditions.push({ condition: 'template', value_template: `{{ ${sinceChanged} >= ${mf * 60} }}` });
+  onConditions.push({ condition: 'template', value_template: cond(onCond) });
+  const offConditions = [];
+  if (mo > 0) offConditions.push({ condition: 'template', value_template: `{{ ${sinceChanged} >= ${mo * 60} }}` });
+  offConditions.push({ condition: 'template', value_template: cond(offCond) });
+
   return {
     id,
     alias,
@@ -357,11 +369,11 @@ function buildAutomation({ id, alias, sensor, relay, mode, temp, deadband = 0, s
             sequence: [{ action: 'switch.turn_off', target: { entity_id: relay } }],
           },
           {
-            conditions: [{ condition: 'template', value_template: cond(onCond) }],
+            conditions: onConditions,
             sequence: [{ action: 'switch.turn_on', target: { entity_id: relay } }],
           },
           {
-            conditions: [{ condition: 'template', value_template: cond(offCond) }],
+            conditions: offConditions,
             sequence: [{ action: 'switch.turn_off', target: { entity_id: relay } }],
           },
         ],
