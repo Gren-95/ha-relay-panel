@@ -61,7 +61,7 @@ header {
   gap: 1rem; padding: 12px 20px;
   background: var(--surface);
   border-bottom: 1px solid var(--border); box-shadow: 0 1px 3px rgba(27,35,54,.05);
-  position: sticky; top: 0; z-index: 10;
+  position: sticky; top: 0; z-index: 21;
 }
 header h1 { font-size: 1.35rem; margin: 0; font-weight: 800; letter-spacing: .2px; white-space: nowrap; }
 .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -176,6 +176,30 @@ header h1 .bi { color: #eab308; }
 .relay .bi-arrow-down { color: var(--cool); }
 .limit-icon { font-size: .8rem; color: var(--muted); margin: 0 2px; }
 .ed-hint { font-size: .75rem; color: var(--muted); line-height: 1.2; }
+/* resize handle on the left edge of editor panels */
+.editor-resize {
+  position: fixed; width: 6px; cursor: ew-resize; z-index: 5; pointer-events: auto;
+}
+.editor-resize:hover, .editor-resize:active { background: rgba(59,110,245,.15); }
+/* expanded chart modal */
+.chart-modal {
+  position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.5); padding: 16px;
+}
+.chart-modal.hidden { display: none; }
+.chart-modal-card {
+  background: var(--surface); border-radius: 14px; padding: 20px; width: min(95vw, 1000px);
+  box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px;
+}
+.chart-modal-head { display: flex; align-items: center; justify-content: space-between; font-weight: 700; }
+.chart-modal-card .spark { height: auto; aspect-ratio: auto; border: none; background: var(--surface); }
+.chart-tooltip {
+  position: absolute; pointer-events: none; background: var(--surface); color: var(--text);
+  border: 1.5px solid var(--border-strong); border-radius: 8px; padding: 6px 10px;
+  font-size: .8rem; line-height: 1.4; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  transform: translate(-50%, -110%);
+}
+.chart-tooltip.hidden { display: none; }
 .relay .r-relay { font-size: .82rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .relay .r-metric { text-align: right; flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
 .relay .r-metric .cur { font-size: 2rem; font-weight: 800; line-height: 1; color: var(--text); font-variant-numeric: tabular-nums; }
