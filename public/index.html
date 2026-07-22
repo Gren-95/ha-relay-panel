@@ -98,10 +98,15 @@
     <div id="ed-stale" class="ed-stale hidden"></div>
     <div id="ed-history" class="ed-history hidden">
       <div class="ed-history-head">
-        <span data-i18n="last_24h">Last 24 hours</span>
+        <span data-i18n="last_24h">History</span>
+        <div class="ed-history-range">
+          <button class="btn tiny range-btn active" data-range="24">24h</button>
+          <button class="btn tiny range-btn" data-range="168">7d</button>
+          <button class="btn tiny range-btn" data-range="720">30d</button>
+        </div>
         <button id="ed-csv" class="btn tiny" data-i18n-title="download_csv" title="Download CSV"><i class="bi bi-download"></i> CSV</button>
       </div>
-      <svg id="ed-spark" class="spark" viewBox="0 0 240 56" preserveAspectRatio="none"></svg>
+      <svg id="ed-spark" class="spark" viewBox="0 0 440 220" preserveAspectRatio="xMidYMid meet"></svg>
       <div id="ed-history-info" class="ed-history-info"></div>
     </div>
     <div class="editor-actions">

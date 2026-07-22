@@ -640,7 +640,8 @@ function showStaleWarning(r) {
   box.classList.remove('hidden');
 }
 
-// relay last-changed duration + 24h sensor sparkline
+// relay last-changed duration + temperature chart
+let historyRange = 24;
 async function loadHistory(r) {
   const box = $('#ed-history'), info = $('#ed-history-info'), spark = $('#ed-spark');
   if (!r.sensor && !r.relay) { box.classList.add('hidden'); return; }
@@ -654,11 +655,14 @@ async function loadHistory(r) {
   }
   if (!r.sensor) { info.textContent = dur || 'no sensor bound'; spark.innerHTML = ''; return; }
   try {
-    const { points } = await api('/api/history?entity=' + encodeURIComponent(r.sensor));
-    if (!points || points.length < 2) { info.textContent = dur + 'not enough history'; return; }
-    drawSpark(spark, points, r.temp);
-    const vs = points.map((p) => p.v);
-    info.textContent = `${dur}min ${Math.min(...vs).toFixed(1)}° · max ${Math.max(...vs).toFixed(1)}° · now ${vs[vs.length - 1].toFixed(1)}°`;
+    const params = `sensor=${encodeURIComponent(r.sensor)}&hours=${historyRange}` +
+      (r.relay ? `&relay=${encodeURIComponent(r.relay)}` : '') +
+      (r.temp != null ? `&target=${r.temp}` : '');
+    const data = await api('/api/history/export?' + params);
+    if (!data.rows || data.rows.length < 2) { info.textContent = dur + 'not enough history'; return; }
+    drawChart(spark, data.rows, data.target);
+    const temps = data.rows.map((p) => p.temp);
+    info.textContent = `${dur}min ${Math.min(...temps).toFixed(1)}° · max ${Math.max(...temps).toFixed(1)}° · now ${temps[temps.length - 1].toFixed(1)}°`;
   } catch { info.textContent = dur + '(history unavailable)'; }
 }
 
@@ -692,23 +696,65 @@ function fmtAgo(ms) {
   return h + 'h ' + (m % 60) + 'm';
 }
 
-// draw a temperature sparkline (with a dashed target line) into the svg
-function drawSpark(svg, points, target) {
-  const W = 240, H = 56, pad = 3;
-  const vs = points.map((p) => p.v), ts = points.map((p) => p.t);
-  let lo = Math.min(...vs), hi = Math.max(...vs);
+// draw a temperature chart with axes, target line, and relay-ON bands
+function drawChart(svg, rows, target) {
+  const W = 440, H = 220, padL = 45, padR = 10, padT = 12, padB = 28;
+  const cw = W - padL - padR, ch = H - padT - padB;
+  if (!rows || rows.length < 2) { svg.innerHTML = ''; return; }
+  const temps = rows.map((p) => p.temp), ts = rows.map((p) => p.t);
+  let lo = Math.min(...temps), hi = Math.max(...temps);
   if (target != null && isFinite(+target)) { lo = Math.min(lo, +target); hi = Math.max(hi, +target); }
   if (hi - lo < 1) { hi += 0.5; lo -= 0.5; }
   const t0 = ts[0], t1 = ts[ts.length - 1] || t0 + 1;
-  const x = (t) => pad + ((t - t0) / (t1 - t0 || 1)) * (W - 2 * pad);
-  const y = (v) => pad + (1 - (v - lo) / (hi - lo)) * (H - 2 * pad);
-  const d = points.map((p, i) => (i ? 'L' : 'M') + x(p.t).toFixed(1) + ' ' + y(p.v).toFixed(1)).join(' ');
+  const x = (t) => padL + ((t - t0) / (t1 - t0 || 1)) * cw;
+  const y = (v) => padT + (1 - (v - lo) / (hi - lo)) * ch;
+
   let out = '';
-  if (target != null && isFinite(+target)) {
-    const ty = y(+target).toFixed(1);
-    out += `<line x1="${pad}" y1="${ty}" x2="${W - pad}" y2="${ty}" class="spark-target"/>`;
+
+  // Relay-ON bands
+  let bandStart = null;
+  for (const p of rows) {
+    if (p.state === 'on' && bandStart == null) { bandStart = p.t; }
+    else if (p.state !== 'on' && bandStart != null) {
+      out += `<rect x="${x(bandStart).toFixed(1)}" y="${padT}" width="${Math.max(0.5, x(p.t) - x(bandStart)).toFixed(1)}" height="${ch.toFixed(1)}" class="spark-band"/>`;
+      bandStart = null;
+    }
   }
+  if (bandStart != null) {
+    out += `<rect x="${x(bandStart).toFixed(1)}" y="${padT}" width="${Math.max(0.5, x(t1) - x(bandStart)).toFixed(1)}" height="${ch.toFixed(1)}" class="spark-band"/>`;
+  }
+
+  // Y-axis ticks
+  const yTicks = 5;
+  for (let i = 0; i <= yTicks; i++) {
+    const val = lo + (i / yTicks) * (hi - lo);
+    const yy = y(val);
+    out += `<line x1="${padL - 4}" y1="${yy.toFixed(1)}" x2="${W - padR}" y2="${yy.toFixed(1)}" stroke="var(--border)" stroke-width="0.5"/>`;
+    out += `<text x="${padL - 6}" y="${(yy + 3).toFixed(1)}" class="spark-axis" text-anchor="end">${val.toFixed(1)}°</text>`;
+  }
+
+  // X-axis time labels
+  const xTicks = 4;
+  for (let i = 0; i <= xTicks; i++) {
+    const mt = t0 + (i / xTicks) * (t1 - t0);
+    const xx = x(mt);
+    const d = new Date(mt);
+    const label = xTicks > 4 ? d.toLocaleDateString(undefined, { month:'short', day:'numeric' })
+      : d.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
+    out += `<text x="${xx.toFixed(1)}" y="${H - 4}" class="spark-axis" text-anchor="middle">${label}</text>`;
+  }
+
+  // Target line
+  if (target != null && isFinite(+target)) {
+    const ty = y(+target);
+    out += `<line x1="${padL}" y1="${ty.toFixed(1)}" x2="${W - padR}" y2="${ty.toFixed(1)}" class="spark-target"/>`;
+    out += `<text x="${W - padR}" y="${(ty - 3).toFixed(1)}" class="spark-axis" text-anchor="end">${+target}°</text>`;
+  }
+
+  // Temperature line
+  const d = rows.map((p, i) => (i ? 'L' : 'M') + x(p.t).toFixed(1) + ' ' + y(p.temp).toFixed(1)).join(' ');
   out += `<path d="${d}" class="spark-line"/>`;
+
   svg.innerHTML = out;
 }
 
@@ -1373,6 +1419,12 @@ $('#ed-notify').addEventListener('change', (e) => {
   $('#ed-notify-deviation-label').classList.toggle('hidden', !e.target.checked);
 });
 $('#ed-csv').addEventListener('click', exportHistory);
+document.querySelectorAll('.range-btn').forEach((b) => b.addEventListener('click', () => {
+  historyRange = parseInt(b.dataset.range);
+  document.querySelectorAll('.range-btn').forEach((x) => x.classList.remove('active'));
+  b.classList.add('active');
+  const r = selected(); if (r) loadHistory(r);
+}));
 $('#de-close').addEventListener('click', closeDeviceEditor);
 $('#de-save').addEventListener('click', saveDevice);
 $('#de-add-output').addEventListener('change', (e) => { addOutputToDevice(e.target.value); e.target.value = ''; });
