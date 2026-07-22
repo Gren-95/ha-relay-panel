@@ -38,6 +38,8 @@
           <button id="btn-import" class="btn menu-item"><i class="bi bi-upload"></i> <span data-i18n="import_layout">Import layout</span></button>
           <span class="tb-menu-sep"></span>
           <button id="btn-activity" class="btn menu-item"><i class="bi bi-clock-history"></i> <span data-i18n="activity_log">Activity log</span></button>
+          <span class="tb-menu-sep"></span>
+          <button id="btn-bulk" class="btn menu-item"><i class="bi bi-collection"></i> <span data-i18n="bulk_edit">Bulk edit</span></button>
         </div>
         <input id="import-file" type="file" accept="application/json,.json" hidden />
       </div>
@@ -162,6 +164,35 @@
       <button id="act-csv" class="btn tiny" data-i18n-title="download_csv" title="Download CSV"><i class="bi bi-download"></i></button>
     </div>
     <p id="act-msg" class="ed-msg"></p>
+  </aside>
+
+  <!-- Bulk edit panel -->
+  <aside id="bulk-editor" class="editor hidden">
+    <div class="editor-head">
+      <h2><i class="bi bi-collection"></i> <span data-i18n="bulk_edit">Bulk edit</span></h2>
+      <button id="bk-close" class="x">&times;</button>
+    </div>
+    <label><span data-i18n="area">Area</span>
+      <select id="bk-area"><option value="" data-i18n="all_relays">All relays</option></select>
+    </label>
+    <label><span data-i18n="heat_or_cool">Heat or cool?</span>
+      <select id="bk-mode">
+        <option value="below" data-i18n="heating_opt">Heating</option>
+        <option value="above" data-i18n="cooling_opt">Cooling</option>
+      </select>
+    </label>
+    <label><span data-i18n="target_temp">Target temperature (°C)</span>
+      <input id="bk-temp" type="number" step="0.5" value="20" />
+    </label>
+    <label><span data-i18n="switchback_gap">Deadband (°C)</span>
+      <input id="bk-deadband" type="number" step="0.5" min="0" value="0" />
+    </label>
+    <div id="bk-list" class="bk-list"></div>
+    <p id="bk-count" class="bk-count"></p>
+    <div class="editor-actions">
+      <button id="bk-apply" class="btn primary" data-i18n="apply_to_n">Apply to N relays</button>
+    </div>
+    <p id="bk-msg" class="ed-msg"></p>
   </aside>
 
   <!-- Login (validates against your Home Assistant account) -->

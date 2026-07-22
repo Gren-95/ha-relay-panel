@@ -254,6 +254,16 @@ html[data-theme="dark"] .act-entry:hover { background: #2d2b27; }
 .act-time { color: var(--muted); font-size: .75rem; flex-shrink: 0; text-align: right; white-space: nowrap; }
 .act-pager { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; }
 .act-pager .btn.tiny { min-height: 36px; }
+/* Bulk edit */
+.bk-list { display: flex; flex-direction: column; gap: 4px; }
+.bk-row {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  background: var(--surface-2); border: 1.5px solid var(--border); border-radius: 10px; font-size: .85rem;
+}
+.bk-row-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.bk-row-arrow { color: var(--muted); }
+.bk-row-new { font-weight: 600; color: var(--primary); }
+.bk-count { font-size: .85rem; font-weight: 600; color: var(--muted); margin-top: 4px; }
 /* Login modal */
 .login-modal {
   position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
