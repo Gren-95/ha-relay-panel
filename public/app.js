@@ -604,6 +604,7 @@ function openEditor(r) {
     const btn = $('#' + id); if (btn) btn.classList.toggle('hidden', !show);
   });
   $('#editor').classList.remove('hidden');
+  requestAnimationFrame(positionResizeHandles);
 }
 
 // ---- schedule editor ----
@@ -674,6 +675,7 @@ async function loadHistory(r) {
     const data = await api('/api/history/export?' + params);
     if (!data.rows || data.rows.length < 2) { info.textContent = dur + 'not enough history'; return; }
     drawChart(spark, data.rows, data.target);
+    addChartTooltip(spark, data.rows, '#ed-tooltip');
     const temps = data.rows.map((p) => p.temp);
     info.textContent = `${dur}min ${Math.min(...temps).toFixed(1)}° · max ${Math.max(...temps).toFixed(1)}° · now ${temps[temps.length - 1].toFixed(1)}°`;
   } catch { info.textContent = dur + '(history unavailable)'; }
@@ -682,7 +684,8 @@ async function loadHistory(r) {
 async function exportHistory() {
   const r = selected(); if (!r || !r.sensor) return;
   try {
-    const params = new URLSearchParams({ sensor: r.sensor, hours: '24' });
+    const hours = $('#chart-modal').classList.contains('hidden') ? historyRange : modalRange;
+    const params = new URLSearchParams({ sensor: r.sensor, hours: String(hours) });
     if (r.relay) params.set('relay', r.relay);
     if (r.temp != null) params.set('target', String(r.temp));
     const data = await api('/api/history/export?' + params.toString());
@@ -711,7 +714,11 @@ function fmtAgo(ms) {
 
 // draw a temperature chart with axes, target line, and relay-ON bands
 function drawChart(svg, rows, target) {
-  const W = 440, H = 220, padL = 45, padR = 10, padT = 12, padB = 28;
+  if (target != null && isFinite(target)) svg.dataset.target = target;
+  else delete svg.dataset.target;
+  // Use the SVG's viewBox dimensions so the chart fills whatever size it's given
+  const vb = svg.viewBox.baseVal;
+  const W = vb.width, H = vb.height, padL = 45, padR = 10, padT = 12, padB = 28;
   const cw = W - padL - padR, ch = H - padT - padB;
   if (!rows || rows.length < 2) { svg.innerHTML = ''; return; }
   const temps = rows.map((p) => p.temp), ts = rows.map((p) => p.t);
@@ -853,6 +860,7 @@ function openDeviceEditor(g) {
   sel.classList.toggle('hidden', avail.length === 0);
   deMsg('');
   $('#dev-editor').classList.remove('hidden');
+  requestAnimationFrame(positionResizeHandles);
 }
 
 // Add one of the device's own outputs back into its box.
@@ -883,6 +891,7 @@ function openActivityLog(page) {
   closeEditor(); closeDeviceEditor();
   activity.page = page;
   $('#activity-editor').classList.remove('hidden');
+  requestAnimationFrame(positionResizeHandles);
   loadActivity(page);
 }
 
@@ -914,6 +923,7 @@ function openBulkEdit() {
   sel.value = '';
   updateBulkList();
   $('#bulk-editor').classList.remove('hidden');
+  requestAnimationFrame(positionResizeHandles);
 }
 
 function closeBulkEdit() {
@@ -1410,6 +1420,7 @@ function toggleMode() {
 $('#btn-mode').addEventListener('click', toggleMode);
 // Esc closes the top-most open thing (in priority order)
 function closeTopmost() {
+  if (!$('#chart-modal').classList.contains('hidden')) { $('#chart-modal').classList.add('hidden'); return true; }
   if (!$('#login-modal').classList.contains('hidden')) { closeLogin(); return true; }
   if (!$('#advanced-menu').classList.contains('hidden')) { $('#advanced-menu').classList.add('hidden'); return true; }
   if (!$('#activity-editor').classList.contains('hidden')) { closeActivityLog(); return true; }
@@ -1508,6 +1519,154 @@ $('#ed-sched-add').addEventListener('click', () => $('#ed-sched-blocks').appendC
 $('#ed-notify').addEventListener('change', (e) => {
   $('#ed-notify-deviation-label').classList.toggle('hidden', !e.target.checked);
 });
+$('#chart-modal-close').addEventListener('click', () => $('#chart-modal').classList.add('hidden'));
+$('#chart-modal-csv').addEventListener('click', exportHistory);
+$('#chart-modal').addEventListener('click', (e) => { if (e.target === $('#chart-modal')) $('#chart-modal').classList.add('hidden'); });
+
+// ---- resizable sidebar ----
+function initResizeHandles() {
+  document.querySelectorAll('.editor').forEach((el) => {
+    if (el.querySelector('.editor-resize')) return;
+    const h = document.createElement('div');
+    h.className = 'editor-resize';
+    h.dataset.target = el.id;
+    el.appendChild(h);
+  });
+}
+initResizeHandles();
+
+function positionResizeHandles() {
+  document.querySelectorAll('.editor-resize').forEach((h) => {
+    const editor = h.closest('.editor');
+    if (!editor || editor.classList.contains('hidden')) { h.style.display = 'none'; return; }
+    const r = editor.getBoundingClientRect();
+    h.style.display = '';
+    h.style.top = r.top + 'px';
+    h.style.left = r.left + 'px';
+    h.style.height = r.height + 'px';
+  });
+}
+window.addEventListener('scroll', positionResizeHandles, { passive: true });
+window.addEventListener('resize', positionResizeHandles);
+
+let resizeState = null;
+document.addEventListener('mousedown', (e) => {
+  if (!e.target.classList.contains('editor-resize')) return;
+  const editor = e.target.closest('.editor');
+  if (!editor) return;
+  resizeState = { editor, startX: e.clientX, startW: editor.offsetWidth };
+  e.preventDefault();
+});
+document.addEventListener('mousemove', (e) => {
+  if (!resizeState) return;
+  const dx = resizeState.startX - e.clientX;
+  const w = Math.max(280, Math.min(800, resizeState.startW + dx));
+  resizeState.editor.style.width = w + 'px';
+  positionResizeHandles();
+  if (resizeState.editor.id === 'editor') setEditorWidth(w);
+});
+document.addEventListener('mouseup', () => { resizeState = null; });
+
+function setEditorWidth(w) { try { localStorage.setItem('rp-editor-w', w); } catch {} }
+function getEditorWidth() { try { return parseInt(localStorage.getItem('rp-editor-w')) || 400; } catch { return 400; } }
+const editorWidth = getEditorWidth();
+$('#editor').style.width = editorWidth + 'px';
+
+// ---- expandable history chart ----
+let modalRange = 24;
+
+function openChartModal(r) {
+  if (!r) { r = selected(); } if (!r || !r.sensor) return;
+  // sync range to sidebar
+  document.querySelectorAll('#chart-modal-range .range-btn').forEach((b) => {
+    b.classList.toggle('active', parseInt(b.dataset.range) === historyRange);
+  });
+  modalRange = historyRange;
+  loadChartModal(r);
+  $('#chart-modal').classList.remove('hidden');
+}
+
+async function loadChartModal(r) {
+  const svg = $('#chart-modal-svg');
+  const params = `sensor=${encodeURIComponent(r.sensor)}&hours=${modalRange}` +
+    (r.relay ? `&relay=${encodeURIComponent(r.relay)}` : '') +
+    (r.temp != null ? `&target=${r.temp}` : '');
+  try {
+    const data = await api('/api/history/export?' + params);
+    if (data.rows) {
+      $('#chart-modal-title').textContent = `${r.name || r.sensor} — ${modalRange}h`;
+      drawChart(svg, data.rows, data.target);
+      addChartTooltip(svg, data.rows, '#chart-tooltip');
+    }
+  } catch {}
+}
+
+$('#ed-spark').addEventListener('click', () => openChartModal());
+
+// Modal range buttons
+document.querySelectorAll('#chart-modal-range .range-btn').forEach((b) => b.addEventListener('click', () => {
+  modalRange = parseInt(b.dataset.range);
+  document.querySelectorAll('#chart-modal-range .range-btn').forEach((x) => x.classList.remove('active'));
+  b.classList.add('active');
+  loadChartModal(selected());
+}));
+
+// ---- chart tooltip ----
+function addChartTooltip(svg, data, tipSel) {
+  const tip = $(tipSel || '#chart-tooltip');
+  if (!tip) return;
+  if (svg._mm) svg.removeEventListener('mousemove', svg._mm);
+  if (svg._ml) svg.removeEventListener('mouseleave', svg._ml);
+  // Create a marker circle if it doesn't exist
+  let marker = svg.querySelector('.spark-marker');
+  if (!marker) {
+    marker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    marker.setAttribute('class', 'spark-marker');
+    marker.setAttribute('r', '4');
+    marker.setAttribute('fill', '#f59e0b');
+    marker.setAttribute('stroke', '#fff');
+    marker.setAttribute('stroke-width', '2');
+    svg.appendChild(marker);
+  }
+  const mm = (e) => {
+    const rect = svg.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const vb = svg.viewBox.baseVal;
+    const vx = (mx / rect.width) * vb.width;
+    const W = vb.width, H = vb.height, padL = 45, padR = 10, padT = 12, padB = 28;
+    const ch = H - padT - padB, cw = W - padL - padR;
+    const t0 = data[0].t, t1 = data[data.length - 1].t;
+    let nearest = data[0], best = Infinity;
+    for (const p of data) {
+      const px = padL + ((p.t - t0) / (t1 - t0 || 1)) * cw;
+      const d = Math.abs(px - vx);
+      if (d < best) { best = d; nearest = p; }
+    }
+    if (best > 30) { tip.classList.add('hidden'); marker.setAttribute('display', 'none'); return; }
+    const temps = data.map((p) => p.temp);
+    let lo = Math.min(...temps), hi = Math.max(...temps);
+    const target = parseFloat(svg.dataset.target);
+    if (isFinite(target)) { lo = Math.min(lo, target); hi = Math.max(hi, target); }
+    if (hi - lo < 1) { hi += 0.5; lo -= 0.5; }
+    const y = (v) => padT + (1 - (v - lo) / (hi - lo)) * ch;
+    const px = padL + ((nearest.t - t0) / (t1 - t0 || 1)) * cw;
+    const py = y(nearest.temp);
+    marker.setAttribute('cx', px.toFixed(1));
+    marker.setAttribute('cy', py.toFixed(1));
+    marker.removeAttribute('display');
+    const d = new Date(nearest.t);
+    const time = d.toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    tip.innerHTML = `${time}<br>${nearest.temp.toFixed(1)}°C · ${nearest.state === 'on' ? 'ON' : nearest.state === 'off' ? 'OFF' : nearest.state}`;
+    tip.style.left = mx + 'px';
+    tip.style.top = my + 'px';
+    tip.classList.remove('hidden');
+  };
+  const ml = () => { tip.classList.add('hidden'); marker.setAttribute('display', 'none'); };
+  svg.addEventListener('mousemove', mm);
+  svg.addEventListener('mouseleave', ml);
+  svg._mm = mm; svg._ml = ml;
+}
 $('#ed-csv').addEventListener('click', exportHistory);
 document.querySelectorAll('.range-btn').forEach((b) => b.addEventListener('click', () => {
   historyRange = parseInt(b.dataset.range);
