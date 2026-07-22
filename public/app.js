@@ -40,6 +40,11 @@ const TR = {
     min_on: 'Minimaalne tööaeg (min)', min_off: 'Minimaalne puhkeaeg (min)',
     min_on_hint: 'Väldi lühitsükleid: relee ei lülitu välja enne seda aega',
     min_off_hint: 'Väldi lühitsükleid: relee ei lülitu sisse enne seda aega',
+    presets: 'Eelseaded', preset_name_ph: 'Eelseade nimi',
+    preset_saved: 'Eelseade salvestatud', preset_deleted: 'Eelseade kustutatud',
+    preset_applied: 'Eelseade rakendatud',
+    all_off_confirm: 'Lülita kõik releed välja?', all_off_done: 'Kõik releed välja lülitatud',
+    all_off_title: 'Lülita kõik releed välja',
     physical_relay_h: 'Füüsiline relee', label_shown: 'Silt (kuvatakse kastil)',
     rename_device_ha: 'Nimeta seade Home Assistantis ümber', group_area: 'Rühm / ala',
     outputs: 'Väljundid', add_output_ph: '+ Lisa väljund…', remove_from_board: 'Eemalda tahvlilt',
@@ -99,6 +104,11 @@ const EN = {  // English fallbacks for dynamic (non-HTML) strings
   min_on: 'Minimum on-time (min)', min_off: 'Minimum off-time (min)',
   min_on_hint: 'Prevent short cycling: relay won\'t turn off before this time',
   min_off_hint: 'Prevent short cycling: relay won\'t turn on before this time',
+  presets: 'Presets', preset_name_ph: 'Preset name',
+  preset_saved: 'Preset saved', preset_deleted: 'Preset deleted',
+  preset_applied: 'Preset applied',
+  all_off_confirm: 'Turn off all relays?', all_off_done: 'All relays turned off',
+  all_off_title: 'Turn all relays off',
 };
 let LANG = 'en';
 function t(key) { return (LANG === 'et' && TR.et[key] != null) ? TR.et[key] : (EN[key] != null ? EN[key] : key); }
@@ -926,6 +936,99 @@ function openBulkEdit() {
   requestAnimationFrame(positionResizeHandles);
 }
 
+// ---- global all-off ----
+async function allOff() {
+  const relays = state.layout.relays.filter((r) => r.relay);
+  if (!relays.length) return;
+  if (!confirm(t('all_off_confirm'))) return;
+  setStatus('turning all off…');
+  await Promise.all(relays.map((r) => api('/api/switch', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ entity_id: r.relay, action: 'off' }),
+  }).then((res) => { state.live[r.relay] = { ...(state.live[r.relay] || {}), state: res.state }; }).catch(() => {})));
+  setStatus(t('all_off_done')); setTimeout(() => setStatus(''), 1500);
+  render();
+}
+
+// ---- presets ----
+function openPresets() {
+  closeEditor(); closeDeviceEditor();
+  state.layout.presets = state.layout.presets || [];
+  renderPresets();
+  $('#preset-editor').classList.remove('hidden');
+  requestAnimationFrame(positionResizeHandles);
+}
+
+function closePresets() {
+  $('#preset-editor').classList.add('hidden');
+  $('#pr-list').innerHTML = '';
+}
+
+function renderPresets() {
+  const presets = state.layout.presets || [];
+  const list = $('#pr-list');
+  list.innerHTML = presets.length
+    ? presets.map((p, i) => `<div class="bk-row">
+        <span class="bk-row-name">${esc(p.name)}</span>
+        <span class="bk-row-arrow">${Object.keys(p.relays || {}).length} relays</span>
+        <button class="btn tiny pr-apply" data-idx="${i}"><i class="bi bi-play-fill"></i></button>
+        <button class="btn tiny danger pr-del" data-idx="${i}"><i class="bi bi-trash"></i></button>
+      </div>`).join('')
+    : '<div style="text-align:center;padding:20px;color:var(--muted)">No presets saved yet</div>';
+  list.querySelectorAll('.pr-apply').forEach((b) => b.addEventListener('click', () => applyPreset(parseInt(b.dataset.idx))));
+  list.querySelectorAll('.pr-del').forEach((b) => b.addEventListener('click', () => deletePreset(parseInt(b.dataset.idx))));
+  $('#pr-msg').textContent = '';
+}
+
+async function savePreset() {
+  const name = $('#pr-name').value.trim();
+  if (!name) return;
+  const relays = {};
+  for (const r of state.layout.relays) {
+    if (!r.bound || !r.relay || !r.sensor) continue;
+    relays[r.id] = { temp: r.temp, mode: r.mode, deadband: r.deadband };
+  }
+  if (!Object.keys(relays).length) { $('#pr-msg').textContent = 'No bound relays to save'; return; }
+  state.layout.presets = state.layout.presets || [];
+  state.layout.presets.push({ name, relays });
+  await saveLayout();
+  $('#pr-name').value = '';
+  renderPresets();
+  $('#pr-msg').textContent = t('preset_saved');
+}
+
+async function applyPreset(idx) {
+  const preset = (state.layout.presets || [])[idx];
+  if (!preset) return;
+  for (const [rid, cfg] of Object.entries(preset.relays || {})) {
+    const r = state.layout.relays.find((x) => x.id === rid);
+    if (!r || !r.bound) continue;
+    try {
+      await api(`/api/relays/${r.id}/bind`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: r.name, relay: r.relay, sensor: r.sensor, area: r.area || '',
+          mode: cfg.mode, temp: cfg.temp, deadband: cfg.deadband != null ? cfg.deadband : (r.deadband || 0),
+          schedule: r.schedule || null,
+          min_on: Number(r.min_on) || 0, min_off: Number(r.min_off) || 0,
+          notify: !!r.notify, notify_deviation: Number(r.notify_deviation) || 5,
+        }),
+      });
+      r.mode = cfg.mode; r.temp = cfg.temp; if (cfg.deadband != null) r.deadband = cfg.deadband;
+    } catch {}
+  }
+  await saveLayout(); render(); refreshLive();
+  $('#pr-msg').textContent = t('preset_applied');
+}
+
+async function deletePreset(idx) {
+  if (!confirm('Delete preset?')) return;
+  state.layout.presets.splice(idx, 1);
+  await saveLayout();
+  renderPresets();
+  $('#pr-msg').textContent = t('preset_deleted');
+}
+
 function closeBulkEdit() {
   $('#bulk-editor').classList.add('hidden');
   $('#bk-list').innerHTML = '';
@@ -1403,6 +1506,8 @@ $('#btn-export').addEventListener('click', exportLayout);
 $('#btn-import').addEventListener('click', () => { $('#advanced-menu').classList.add('hidden'); $('#import-file').click(); });
 $('#btn-activity').addEventListener('click', () => { closeAdvanced(); openActivityLog(); });
 $('#btn-bulk').addEventListener('click', () => { closeAdvanced(); openBulkEdit(); });
+$('#btn-presets').addEventListener('click', () => { closeAdvanced(); openPresets(); });
+$('#btn-alloff').addEventListener('click', allOff);
 $('#import-file').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) importLayout(f); e.target.value = ''; });
 $('#area-picker').addEventListener('change', (e) => { closeAdvanced(); addArea(e.target.value); e.target.value = ''; });
 $('#device-picker').addEventListener('change', (e) => { closeAdvanced(); addPhysicalRelay(e.target.value); e.target.value = ''; });
@@ -1424,6 +1529,7 @@ function closeTopmost() {
   if (!$('#login-modal').classList.contains('hidden')) { closeLogin(); return true; }
   if (!$('#advanced-menu').classList.contains('hidden')) { $('#advanced-menu').classList.add('hidden'); return true; }
   if (!$('#activity-editor').classList.contains('hidden')) { closeActivityLog(); return true; }
+  if (!$('#preset-editor').classList.contains('hidden')) { closePresets(); return true; }
   if (!$('#bulk-editor').classList.contains('hidden')) { closeBulkEdit(); return true; }
   if (!$('#editor').classList.contains('hidden')) { closeEditor(); return true; }
   if (!$('#dev-editor').classList.contains('hidden')) { closeDeviceEditor(); return true; }
@@ -1691,6 +1797,8 @@ $('#bk-area').addEventListener('change', updateBulkList);
   $('#bk-deadband').addEventListener(ev, updateBulkList);
 });
 $('#bk-apply').addEventListener('click', applyBulk);
+$('#pr-close').addEventListener('click', closePresets);
+$('#pr-save').addEventListener('click', savePreset);
 
 // re-render when crossing the mobile/desktop breakpoint
 let _wasMobile = isMobile();
