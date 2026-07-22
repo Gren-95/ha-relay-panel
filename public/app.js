@@ -36,6 +36,7 @@ const TR = {
     act_relay_delete: 'Relee kustutatud', act_device_delete: 'Seade eemaldatud',
     act_area_delete: 'Ala eemaldatud', download_csv: 'Laadi alla CSV',
     notify_on_issues: 'Teavita probleemidest', notify_deviation: 'Teavita kui temp hälbib (°C)',
+    bulk_edit: 'Hulgimuutmine', all_relays: 'Kõik releed', apply_to_n: 'Rakenda',
     physical_relay_h: 'Füüsiline relee', label_shown: 'Silt (kuvatakse kastil)',
     rename_device_ha: 'Nimeta seade Home Assistantis ümber', group_area: 'Rühm / ala',
     outputs: 'Väljundid', add_output_ph: '+ Lisa väljund…', remove_from_board: 'Eemalda tahvlilt',
@@ -91,6 +92,7 @@ const EN = {  // English fallbacks for dynamic (non-HTML) strings
   act_relay_delete: 'Relay deleted', act_device_delete: 'Device removed',
   act_area_delete: 'Area removed', download_csv: 'Download CSV',
   notify_on_issues: 'Notify on issues', notify_deviation: 'Alert if temp deviates by (°C)',
+  bulk_edit: 'Bulk edit', all_relays: 'All relays', apply_to_n: 'Apply',
 };
 let LANG = 'en';
 function t(key) { return (LANG === 'et' && TR.et[key] != null) ? TR.et[key] : (EN[key] != null ? EN[key] : key); }
@@ -891,6 +893,79 @@ async function exportActivityCSV() {
   } catch {}
 }
 
+// ---- bulk edit ----
+function openBulkEdit() {
+  closeEditor(); closeDeviceEditor();
+  // populate area dropdown
+  const sel = $('#bk-area');
+  sel.innerHTML = '<option value="" data-i18n="all_relays">All relays</option>' +
+    state.haAreas.map((a) => `<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('');
+  sel.value = '';
+  updateBulkList();
+  $('#bulk-editor').classList.remove('hidden');
+}
+
+function closeBulkEdit() {
+  $('#bulk-editor').classList.add('hidden');
+  $('#bk-list').innerHTML = '';
+}
+
+function updateBulkList() {
+  const area = $('#bk-area').value;
+  const mode = $('#bk-mode').value;
+  const temp = Number($('#bk-temp').value);
+  const deadband = Number($('#bk-deadband').value) || 0;
+  const matches = state.layout.relays.filter((r) =>
+    r.bound && r.relay && r.sensor && (!area || r.area === area)
+  );
+  const list = $('#bk-list');
+  list.innerHTML = matches.map((r) => {
+    const curTemp = r.temp != null ? r.temp : '?';
+    const curMode = r.mode === 'above' ? 'cool' : 'heat';
+    const newTemp = isFinite(temp) ? temp : curTemp;
+    return `<div class="bk-row">
+      <span class="bk-row-name">${esc(r.name || r.relay)}</span>
+      <span class="bk-row-arrow">${curMode} ${curTemp}° → ${newTemp}° @ ${mode === 'above' ? 'cool' : 'heat'}</span>
+    </div>`;
+  }).join('') || `<div style="text-align:center;padding:20px;color:var(--muted)">No bound relays match</div>`;
+  $('#bk-count').textContent = matches.length ? `${matches.length} relay${matches.length === 1 ? '' : 's'}` : '';
+  $('#bk-apply').innerHTML = `<i class="bi bi-check-lg"></i> <span data-i18n="apply_to_n">Apply to ${matches.length || 0} relays</span>`;
+}
+
+async function applyBulk() {
+  const area = $('#bk-area').value;
+  const mode = $('#bk-mode').value;
+  const temp = Number($('#bk-temp').value);
+  const deadband = Number($('#bk-deadband').value) || 0;
+  if (!isFinite(temp)) { $('#bk-msg').textContent = 'Enter a target temperature'; $('#bk-msg').className = 'ed-msg err'; return; }
+  const matches = state.layout.relays.filter((r) =>
+    r.bound && r.relay && r.sensor && (!area || r.area === area)
+  );
+  if (!matches.length) { $('#bk-msg').textContent = 'No bound relays match'; $('#bk-msg').className = 'ed-msg err'; return; }
+  $('#bk-apply').disabled = true;
+  let ok = 0, fail = 0;
+  for (const r of matches) {
+    try {
+      await api(`/api/relays/${r.id}/bind`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: r.name, relay: r.relay, sensor: r.sensor, area: r.area || '',
+          mode, temp, deadband,
+          schedule: r.schedule || null,
+          notify: !!r.notify, notify_deviation: Number(r.notify_deviation) || 5,
+        }),
+      });
+      r.mode = mode; r.temp = temp; r.deadband = deadband; r.bound = true;
+      ok++;
+    } catch { fail++; }
+  }
+  $('#bk-apply').disabled = false;
+  $('#bk-msg').textContent = `Applied to ${ok} relay${ok === 1 ? '' : 's'}` + (fail ? `, ${fail} failed` : '');
+  $('#bk-msg').className = fail ? 'ed-msg err' : 'ed-msg ok';
+  render(); saveLayout(); refreshLive();
+  updateBulkList();
+}
+
 function closeActivityLog() {
   $('#activity-editor').classList.add('hidden');
   $('#act-list').innerHTML = '';
@@ -1304,6 +1379,7 @@ document.addEventListener('click', (e) => { if (!e.target.closest('.tb-advanced'
 $('#btn-export').addEventListener('click', exportLayout);
 $('#btn-import').addEventListener('click', () => { $('#advanced-menu').classList.add('hidden'); $('#import-file').click(); });
 $('#btn-activity').addEventListener('click', () => { closeAdvanced(); openActivityLog(); });
+$('#btn-bulk').addEventListener('click', () => { closeAdvanced(); openBulkEdit(); });
 $('#import-file').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) importLayout(f); e.target.value = ''; });
 $('#area-picker').addEventListener('change', (e) => { closeAdvanced(); addArea(e.target.value); e.target.value = ''; });
 $('#device-picker').addEventListener('change', (e) => { closeAdvanced(); addPhysicalRelay(e.target.value); e.target.value = ''; });
@@ -1324,6 +1400,7 @@ function closeTopmost() {
   if (!$('#login-modal').classList.contains('hidden')) { closeLogin(); return true; }
   if (!$('#advanced-menu').classList.contains('hidden')) { $('#advanced-menu').classList.add('hidden'); return true; }
   if (!$('#activity-editor').classList.contains('hidden')) { closeActivityLog(); return true; }
+  if (!$('#bulk-editor').classList.contains('hidden')) { closeBulkEdit(); return true; }
   if (!$('#editor').classList.contains('hidden')) { closeEditor(); return true; }
   if (!$('#dev-editor').classList.contains('hidden')) { closeDeviceEditor(); return true; }
   return false;
@@ -1434,6 +1511,14 @@ $('#act-close').addEventListener('click', closeActivityLog);
 $('#act-prev').addEventListener('click', () => { if (activity.page > 1) loadActivity(activity.page - 1); });
 $('#act-next').addEventListener('click', () => loadActivity(activity.page + 1));
 $('#act-csv').addEventListener('click', exportActivityCSV);
+$('#bk-close').addEventListener('click', closeBulkEdit);
+$('#bk-area').addEventListener('change', updateBulkList);
+['change', 'input'].forEach((ev) => {
+  $('#bk-mode').addEventListener(ev, updateBulkList);
+  $('#bk-temp').addEventListener(ev, updateBulkList);
+  $('#bk-deadband').addEventListener(ev, updateBulkList);
+});
+$('#bk-apply').addEventListener('click', applyBulk);
 
 // re-render when crossing the mobile/desktop breakpoint
 let _wasMobile = isMobile();
