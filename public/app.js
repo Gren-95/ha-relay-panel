@@ -137,6 +137,7 @@ const state = {
   haAreas: [],
   relayDevices: [],
   edit: false,      // start in view (Live) mode; editing requires sign-in
+  kiosk: false,     // ?kiosk=1 — fullscreen read-only, no toolbar, no edit
   loaded: false,    // true only after the layout loads from the DB (never save before)
   authed: false,
   user: null,
@@ -190,6 +191,16 @@ async function boot() {
   if (state.loaded && state.layout.devices.length) saveLayout();
   refreshLive();
   setInterval(refreshLive, 10000);
+
+  // Kiosk mode: ?kiosk=1 — fullscreen read-only, no toolbar, no edit
+  const qs = new URLSearchParams(window.location.search);
+  if (qs.get('kiosk') === '1') {
+    state.kiosk = true;
+    document.body.classList.add('kiosk');
+    // Disable edit — kiosk is view-only
+    if (state.edit) { state.edit = false; applyMode(); }
+    updateAuthUI();
+  }
 }
 
 function fillSelects() {
@@ -1519,6 +1530,7 @@ function applyMode() {
   if (!state.edit) { closeEditor(); closeDeviceEditor(); }
 }
 function toggleMode() {
+  if (state.kiosk) return; // kiosk: view-only, no edit toggle
   if (!state.edit && !state.authed) { openLogin(); return; } // entering Edit needs sign-in
   state.edit = !state.edit; applyMode(); render();
 }

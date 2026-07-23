@@ -297,6 +297,23 @@ html[data-theme="dark"] .act-entry:hover { background: #2d2b27; }
 .bk-row-arrow { color: var(--muted); }
 .bk-row-new { font-weight: 600; color: var(--primary); }
 .bk-count { font-size: .85rem; font-weight: 600; color: var(--muted); margin-top: 4px; }
+/* Kiosk mode: fullscreen read-only, hidden toolbar, larger cards */
+body.kiosk header { display: none; }
+body.kiosk .canvas {
+  margin: 0; border: none; border-radius: 0; min-height: 100vh;
+  background: var(--surface);
+  background-image: radial-gradient(var(--border) 1.3px, transparent 1.3px);
+  background-size: 32px 32px;
+}
+body.kiosk .relay { width: 380px; height: 100px; padding: 0 18px; }
+body.kiosk .relay .r-metric .cur { font-size: 2.4rem; }
+body.kiosk .relay .r-toggle { width: 52px; height: 52px; }
+body.kiosk .area { border-width: 3px; }
+/* Subtle hint to exit kiosk */
+body.kiosk .canvas::after {
+  content: ''; position: fixed; bottom: 0; left: 0; right: 0; height: 4px;
+  background: rgba(59,110,245,.4); z-index: 1;
+}
 /* Login modal */
 .login-modal {
   position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
