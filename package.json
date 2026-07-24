@@ -5,14 +5,33 @@
   "type": "commonjs",
   "main": "server.js",
   "license": "MIT",
-  "repository": { "type": "git", "url": "https://github.com/Gren-95/ha-relay-panel.git" },
-  "keywords": ["home-assistant", "thermostat", "relay", "iot", "mqtt", "self-hosted"],
-  "engines": { "node": ">=20" },
-  "scripts": { "start": "node server.js" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Gren-95/ha-relay-panel.git"
+  },
+  "keywords": [
+    "home-assistant",
+    "thermostat",
+    "relay",
+    "iot",
+    "mqtt",
+    "self-hosted"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "build:css": "tailwindcss -i ./src/input.css -o ./public/style.css --minify",
+    "watch:css": "tailwindcss -i ./src/input.css -o ./public/style.css --watch"
+  },
   "dependencies": {
     "express": "^4.19.2",
     "mqtt": "^5.10.1",
     "mysql2": "^3.11.0",
     "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
   }
 }
