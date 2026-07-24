@@ -1851,7 +1851,7 @@ function addChartTooltip(svg, data, tipSel) {
       const d = Math.abs(px - vx);
       if (d < best) { best = d; nearest = p; }
     }
-    if (best > 30) { tip.classList.add('hidden'); marker.setAttribute('display', 'none'); return; }
+    if (best > 80) { tip.classList.add('hidden'); marker.setAttribute('display', 'none'); return; }
     const temps = data.map((p) => p.temp);
     let lo = Math.min(...temps), hi = Math.max(...temps);
     const target = parseFloat(svg.dataset.target);
