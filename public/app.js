@@ -826,12 +826,12 @@ function drawChart(svg, rows, target) {
   for (const p of rows) {
     if (p.state === 'on' && bandStart == null) { bandStart = p.t; }
     else if (p.state !== 'on' && bandStart != null) {
-      out += `<rect x="${x(bandStart).toFixed(1)}" y="${padT}" width="${Math.max(0.5, x(p.t) - x(bandStart)).toFixed(1)}" height="${ch.toFixed(1)}" class="[fill:rgba(34,197,94,.12)]"/>`;
+      out += `<rect x="${x(bandStart).toFixed(1)}" y="${padT}" width="${Math.max(0.5, x(p.t) - x(bandStart)).toFixed(1)}" height="${ch.toFixed(1)}" class="[fill:rgba(34,197,94,.12)] pointer-events-none"/>`;
       bandStart = null;
     }
   }
   if (bandStart != null) {
-    out += `<rect x="${x(bandStart).toFixed(1)}" y="${padT}" width="${Math.max(0.5, x(t1) - x(bandStart)).toFixed(1)}" height="${ch.toFixed(1)}" class="[fill:rgba(34,197,94,.12)]"/>`;
+    out += `<rect x="${x(bandStart).toFixed(1)}" y="${padT}" width="${Math.max(0.5, x(t1) - x(bandStart)).toFixed(1)}" height="${ch.toFixed(1)}" class="[fill:rgba(34,197,94,.12)] pointer-events-none"/>`;
   }
 
   // Y-axis ticks
