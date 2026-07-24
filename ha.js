@@ -93,17 +93,24 @@ async function getRelayDevices() {
 
 // Live state for a set of entity_ids.
 async function getStates(ids) {
+  const idSet = new Set(ids);
   const out = {};
-  await Promise.all(
-    ids.map(async (id) => {
-      try {
-        const s = await haFetch(`/api/states/${encodeURIComponent(id)}`);
-        out[id] = { state: s.state, unit: (s.attributes || {}).unit_of_measurement || '', last_changed: s.last_changed };
-      } catch (e) {
-        out[id] = { state: 'unavailable', unit: '', missing: / -> 404/.test(e.message) };
+  // Fetch all states in one call, then filter to the requested IDs
+  try {
+    const all = await haFetch('/api/states');
+    for (const s of all) {
+      if (idSet.has(s.entity_id)) {
+        out[s.entity_id] = { state: s.state, unit: (s.attributes || {}).unit_of_measurement || '', last_changed: s.last_changed };
       }
-    })
-  );
+    }
+  } catch {
+    // If the bulk fetch fails, mark all requested IDs as unavailable
+    for (const id of ids) out[id] = { state: 'unavailable', unit: '', missing: true };
+  }
+  // Any ID not found in the response was removed/renamed
+  for (const id of ids) {
+    if (!out[id]) out[id] = { state: 'unavailable', unit: '', missing: true };
+  }
   return out;
 }
 
