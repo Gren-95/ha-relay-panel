@@ -393,6 +393,8 @@ async function runNotifyCheck() {
         const dir = current > target ? 'above' : 'below';
         const key = notifyKey(r.id, 'temp_' + dir);
         if (!notifyAlerts.has(key)) {
+          // Clear opposite direction so a swing from above→below triggers a new alert
+          notifyAlerts.delete(notifyKey(r.id, 'temp_' + (dir === 'above' ? 'below' : 'above')));
           notifyAlerts.set(key, Date.now());
           ha.sendNotification(NOTIFY_SERVICE,
             `"${name}" is ${current.toFixed(1)}°C (target ${target}°C, off by ${diff.toFixed(1)}°C).`,
