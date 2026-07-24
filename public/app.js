@@ -868,6 +868,7 @@ function drawChart(svg, rows, target) {
     const d = new Date(mt);
     const label = xTicks > 4 ? d.toLocaleDateString(undefined, { month:'short', day:'numeric' })
       : d.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
+    out += `<line x1="${xx.toFixed(1)}" y1="${padT}" x2="${xx.toFixed(1)}" y2="${H - padB}" stroke="var(--border)" stroke-width="0.5"/>`;
     out += `<text x="${xx.toFixed(1)}" y="${H - 4}" class="[fill:var(--muted)] [font-size:9px]" text-anchor="middle">${label}</text>`;
   }
 
