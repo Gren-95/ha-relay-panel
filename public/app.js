@@ -680,7 +680,7 @@ function card(r, mobile) {
 }
 
 function openEditor(r) {
-  closeDeviceEditor();
+  closeDeviceEditor(); closeActivityLog(); closeBulkEdit(); closePresets();
   state.selected = r.id;
   $('#ed-name').value = r.name || '';
   $('#ed-relay').value = r.relay || '';
@@ -935,7 +935,7 @@ function selected() { return state.layout.relays.find((x) => x.id === state.sele
 
 // ---- device (physical relay) editor ----
 function openDeviceEditor(g) {
-  closeEditor();
+  closeEditor(); closeActivityLog(); closeBulkEdit(); closePresets();
   state.selectedDev = g.id;
   $('#de-name').value = g.name || '';
   $('#de-area').innerHTML = '<option value="">— none —</option>' +
@@ -991,7 +991,7 @@ const activity = { page: 1, total: 0, perPage: 15 };
 
 function openActivityLog(page) {
   page = page || 1;
-  closeEditor(); closeDeviceEditor();
+  closeEditor(); closeDeviceEditor(); closeBulkEdit(); closePresets();
   activity.page = page;
   $('#activity-editor').classList.remove('hidden');
   requestAnimationFrame(positionResizeHandles);
@@ -1018,7 +1018,7 @@ async function exportActivityCSV() {
 
 // ---- bulk edit ----
 function openBulkEdit() {
-  closeEditor(); closeDeviceEditor();
+  closeEditor(); closeDeviceEditor(); closeActivityLog(); closePresets();
   // populate area dropdown
   const sel = $('#bk-area');
   sel.innerHTML = '<option value="" data-i18n="all_relays">All relays</option>' +
@@ -1045,7 +1045,7 @@ async function allOff() {
 
 // ---- presets ----
 function openPresets() {
-  closeEditor(); closeDeviceEditor();
+  closeEditor(); closeDeviceEditor(); closeActivityLog(); closeBulkEdit();
   state.layout.presets = state.layout.presets || [];
   renderPresets();
   $('#preset-editor').classList.remove('hidden');
