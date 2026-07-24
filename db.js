@@ -31,6 +31,16 @@ async function initDb() {
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `);
+  // Persistent login sessions (survive container restarts).
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      token      VARCHAR(64) PRIMARY KEY,
+      username   VARCHAR(190) NOT NULL,
+      expires_at DATETIME NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_expires (expires_at)
+    )
+  `);
   // Audit trail for "who did what and when".
   await pool.query(`
     CREATE TABLE IF NOT EXISTS audit_log (
@@ -113,4 +123,23 @@ async function getActivityLog(page, perPage) {
   return { entries: rows, total, page, per_page: perPage };
 }
 
-module.exports = { initDb, getLayout, saveLayout, listBackups, restoreBackup, addAuditLog, getActivityLog };
+async function saveSession(token, username, expiresAt) {
+  await pool.query(
+    'INSERT INTO sessions (token, username, expires_at) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE username = VALUES(username), expires_at = VALUES(expires_at)',
+    [token, username, new Date(expiresAt)]
+  );
+}
+
+async function getSession(token) {
+  // Clean expired sessions on read (lazy cleanup)
+  await pool.query('DELETE FROM sessions WHERE expires_at < NOW()');
+  const [rows] = await pool.query('SELECT username, expires_at FROM sessions WHERE token = ? AND expires_at >= NOW()', [token]);
+  if (!rows.length) return null;
+  return { user: rows[0].username, exp: new Date(rows[0].expires_at).getTime() };
+}
+
+async function deleteSession(token) {
+  await pool.query('DELETE FROM sessions WHERE token = ?', [token]);
+}
+
+module.exports = { initDb, getLayout, saveLayout, listBackups, restoreBackup, addAuditLog, getActivityLog, saveSession, getSession, deleteSession };
