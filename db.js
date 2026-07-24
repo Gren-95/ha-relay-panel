@@ -50,11 +50,15 @@ async function initDb() {
 }
 
 function normalize(l) {
-  const layout = typeof l === 'string' ? JSON.parse(l) : (l || {});
-  if (!Array.isArray(layout.relays)) layout.relays = [];
-  if (!Array.isArray(layout.areas)) layout.areas = [];
-  if (!Array.isArray(layout.devices)) layout.devices = [];
-  return layout;
+  try {
+    const layout = typeof l === 'string' ? JSON.parse(l) : (l || {});
+    if (!Array.isArray(layout.relays)) layout.relays = [];
+    if (!Array.isArray(layout.areas)) layout.areas = [];
+    if (!Array.isArray(layout.devices)) layout.devices = [];
+    return layout;
+  } catch {
+    return { relays: [], areas: [], devices: [] };
+  }
 }
 const isEmpty = (l) => !l || (!l.relays.length && !l.devices.length && !l.areas.length);
 
