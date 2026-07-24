@@ -246,13 +246,41 @@ app.post('/api/relays/:rid/automation', requireAuth, wrap(async (req, res) => {
 }));
 
 // --- auth endpoints ---
+// --- simple rate limiter for login ---
+const loginAttempts = new Map(); // ip -> { count, blockedUntil }
+function checkLoginRate(req, res) {
+  const ip = req.ip || req.socket.remoteAddress || 'unknown';
+  let entry = loginAttempts.get(ip);
+  const now = Date.now();
+  if (entry && entry.blockedUntil > now) {
+    const wait = Math.ceil((entry.blockedUntil - now) / 1000);
+    res.status(429).json({ ok: false, error: `Too many login attempts. Try again in ${wait}s.` });
+    return false;
+  }
+  if (!entry || entry.blockedUntil <= now) entry = { count: 0, blockedUntil: 0 };
+  loginAttempts.set(ip, entry);
+  // Clean old entries every 100 logins
+  if (loginAttempts.size > 500) {
+    for (const [k, v] of loginAttempts) { if (v.blockedUntil < now) loginAttempts.delete(k); }
+  }
+  req._loginEntry = entry;
+  return true;
+}
+
 app.post('/api/login', wrap(async (req, res) => {
+  if (!checkLoginRate(req, res)) return;
   const { username, password } = req.body || {};
-  if (!username || !password) return res.status(400).json({ ok: false, error: 'username and password required' });
+  if (!username || !password) { req._loginEntry.count++; return res.status(400).json({ ok: false, error: 'username and password required' }); }
   const r = await ha.verifyHaLogin(String(username), String(password));
-  if (!r.ok) return res.status(401).json({ ok: false, error: r.error });
+  if (!r.ok) {
+    req._loginEntry.count++;
+    if (req._loginEntry.count >= 10) req._loginEntry.blockedUntil = Date.now() + 300000;      // 5 min
+    else if (req._loginEntry.count >= 5) req._loginEntry.blockedUntil = Date.now() + 60000;   // 1 min
+    return res.status(401).json({ ok: false, error: r.error });
+  }
   const token = crypto.randomBytes(24).toString('hex');
   sessions.set(token, { user: r.user, exp: Date.now() + SESSION_MS });
+  loginAttempts.delete(req.ip || req.socket.remoteAddress || 'unknown'); // reset rate limit on success
   await db.addAuditLog(r.user, 'login', {});
   res.setHeader('Set-Cookie', `rp_session=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${SESSION_MS / 1000}`);
   res.json({ ok: true, user: r.user });
