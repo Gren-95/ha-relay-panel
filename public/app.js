@@ -1319,9 +1319,11 @@ async function deleteDevice() {
 async function saveLayout() {
   if (!state.authed) return; // viewers don't persist layout (and shouldn't be prompted to log in)
   if (!state.loaded) return; // never overwrite the DB before the real layout has loaded
-  pushHistory();
-  try { await api('/api/layout', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(state.layout) }); setStatus(t('saved')); setTimeout(() => setStatus(''), 1000); }
-  catch { setStatus(t('save_error')); }
+  try {
+    await api('/api/layout', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(state.layout) });
+    pushHistory();
+    setStatus(t('saved')); setTimeout(() => setStatus(''), 1000);
+  } catch { setStatus(t('save_error')); }
 }
 
 // --- undo / redo history (snapshots of the layout) ---
