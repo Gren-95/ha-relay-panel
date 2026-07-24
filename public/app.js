@@ -834,18 +834,22 @@ function drawChart(svg, rows, target) {
 
   let out = '';
 
-  // Relay-ON bands
-  let bandStart = null;
-  for (const p of rows) {
-    if (p.state === 'on' && bandStart == null) { bandStart = p.t; }
-    else if (p.state !== 'on' && bandStart != null) {
-      out += `<rect x="${x(bandStart).toFixed(1)}" y="${padT}" width="${Math.max(0.5, x(p.t) - x(bandStart)).toFixed(1)}" height="${ch.toFixed(1)}" class="[fill:rgba(34,197,94,.12)] pointer-events-none"/>`;
-      bandStart = null;
+  // Band drawing helper
+  function drawBands(stateClass, fillColor) {
+    let start = null;
+    for (const p of rows) {
+      if (p.state === stateClass && start == null) { start = p.t; }
+      else if (p.state !== stateClass && start != null) {
+        out += `<rect x="${x(start).toFixed(1)}" y="${padT}" width="${Math.max(0.5, x(p.t) - x(start)).toFixed(1)}" height="${ch.toFixed(1)}" class="${fillColor} pointer-events-none"/>`;
+        start = null;
+      }
+    }
+    if (start != null) {
+      out += `<rect x="${x(start).toFixed(1)}" y="${padT}" width="${Math.max(0.5, x(t1) - x(start)).toFixed(1)}" height="${ch.toFixed(1)}" class="${fillColor} pointer-events-none"/>`;
     }
   }
-  if (bandStart != null) {
-    out += `<rect x="${x(bandStart).toFixed(1)}" y="${padT}" width="${Math.max(0.5, x(t1) - x(bandStart)).toFixed(1)}" height="${ch.toFixed(1)}" class="[fill:rgba(34,197,94,.12)] pointer-events-none"/>`;
-  }
+  drawBands('unavailable', '[fill:rgba(220,38,38,.10)]');  // red — offline
+  drawBands('on', '[fill:rgba(34,197,94,.12)]');           // green — running
 
   // Y-axis ticks
   const yTicks = 5;
