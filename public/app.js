@@ -200,7 +200,7 @@ function setMsg(el, m, cls) { if (!el) return; el.textContent = m || ''; el.clas
 // range button active state: toggle the primary-fill utilities
 function setRangeActive(btn, on) { ['bg-primary', 'border-primary', 'text-white'].forEach((c) => btn.classList.toggle(c, on)); }
 // canvas class strings (JS rebuilds #canvas.className each render)
-const CANVAS_DESKTOP = 'canvas relative m-5 min-h-[calc(100vh_-_130px)] bg-surface-2 border border-border rounded-2xl overflow-hidden [background-image:radial-gradient(var(--dot)_1.4px,transparent_1.4px)] [background-size:26px_26px] mobile:m-2.5 mobile:overflow-auto [.kiosk_&]:m-0 [.kiosk_&]:border-0 [.kiosk_&]:rounded-none [.kiosk_&]:min-h-screen [.kiosk_&]:bg-surface [.kiosk_&]:[background-image:radial-gradient(var(--border)_1.3px,transparent_1.3px)] [.kiosk_&]:[background-size:32px_32px]';
+const CANVAS_DESKTOP = 'canvas relative m-5 min-h-[calc(100vh_-_130px)] bg-surface-2 border border-border rounded-2xl overflow-auto [background-image:radial-gradient(var(--dot)_1.4px,transparent_1.4px)] [background-size:26px_26px] mobile:m-2.5 mobile:overflow-auto [.kiosk_&]:m-0 [.kiosk_&]:border-0 [.kiosk_&]:rounded-none [.kiosk_&]:min-h-screen [.kiosk_&]:bg-surface [.kiosk_&]:[background-image:radial-gradient(var(--border)_1.3px,transparent_1.3px)] [.kiosk_&]:[background-size:32px_32px]';
 const CANVAS_MOBILE = 'canvas flex flex-col gap-3.5 bg-transparent border-0 p-0 m-3 min-h-0 overflow-visible';
 
 async function api(path, opts) {
@@ -386,6 +386,19 @@ function render() {
   for (const a of state.layout.areas) canvas.appendChild(renderBox(a, 'area'));
   for (const d of state.layout.devices) canvas.appendChild(renderBox(d, 'device'));
   for (const r of state.layout.relays) canvas.appendChild(card(r));
+
+  // Auto-size canvas to fit all content with padding
+  let maxX = 600, maxY = 400;
+  for (const r of state.layout.relays) {
+    maxX = Math.max(maxX, (r.x || 0) + 400);
+    maxY = Math.max(maxY, (r.y || 0) + 150);
+  }
+  for (const g of [...state.layout.areas, ...state.layout.devices]) {
+    maxX = Math.max(maxX, (g.x || 0) + (g.w || 320) + 40);
+    maxY = Math.max(maxY, (g.y || 0) + (g.h || 220) + 40);
+  }
+  canvas.style.minWidth = Math.max(maxX, window.innerWidth - 40) + 'px';
+  canvas.style.minHeight = Math.max(maxY, window.innerHeight - 130) + 'px';
 }
 
 // shared area master on/off buttons (keeps .area-master hook for live-mode hide + .am-btn hooks)
