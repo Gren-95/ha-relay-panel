@@ -243,7 +243,7 @@ async function boot() {
   initHistory();
   if (state.loaded && state.layout.devices.length) saveLayout();
   refreshLive();
-  setInterval(refreshLive, 10000);
+  (function poll() { refreshLive().finally(() => setTimeout(poll, 10000)); })();
 
   // Kiosk mode: ?kiosk=1 — fullscreen read-only, no toolbar, no edit
   const qs = new URLSearchParams(window.location.search);
