@@ -13,7 +13,7 @@
   <div id="ha-banner" class="hidden bg-[#b45309] text-white text-center font-bold py-2 px-3 text-[.95rem]"><i class="bi bi-exclamation-triangle-fill"></i> <span data-i18n="ha_unreachable">Home Assistant unreachable — readings may be stale</span></div>
   <header class="flex items-center justify-between gap-4 px-5 py-3 bg-surface border-b border-border shadow-[0_1px_3px_rgba(27,35,54,.05)] sticky top-0 z-[21] mobile:gap-2 mobile:px-[14px]">
     <h1 class="m-0 text-[1.35rem] font-extrabold tracking-[.2px] whitespace-nowrap mobile:text-[1.25rem]"><i class="bi bi-lightning-charge-fill text-[#eab308]"></i> <span data-i18n="app_title" class="mobile:hidden">Relay Panel</span> <span id="summary" class="text-[.8rem] font-semibold text-muted ml-2.5 whitespace-nowrap"></span></h1>
-    <button id="btn-menu" class="hidden mobile:inline-flex mobile:items-center mobile:justify-center mobile:min-w-[52px] mobile:min-h-[48px] mobile:text-[1.4rem] border border-border-strong bg-surface text-fg rounded-[11px] cursor-pointer active:translate-y-px" aria-label="Menu"><i class="bi bi-list"></i></button>
+    <button id="btn-menu" class="hidden mobile:inline-flex mobile:items-center mobile:justify-center mobile:min-w-[52px] mobile:min-h-[48px] mobile:text-[1.4rem] border border-border-strong bg-surface text-fg rounded-[11px] cursor-pointer active:translate-y-px" aria-label="Menu" aria-expanded="false"><i class="bi bi-list"></i></button>
     <div id="toolbar" class="toolbar flex items-center gap-2.5 flex-wrap mobile:hidden mobile:absolute mobile:top-full mobile:left-0 mobile:right-0 mobile:flex-col mobile:items-stretch mobile:gap-2.5 mobile:bg-surface mobile:border-b-2 mobile:border-border mobile:p-[14px] mobile:m-0 mobile:shadow-panel mobile:z-[15]">
       <span id="status" class="text-base text-ok font-bold min-w-0 transition-opacity duration-200 empty:opacity-0 mobile:w-full mobile:m-0 mobile:text-center"></span>
       <div class="flex items-center gap-2 mobile:grid mobile:grid-cols-2 mobile:gap-2.5 [.live-mode_&]:hidden">
@@ -52,10 +52,10 @@
   <main id="canvas" class="canvas edit"></main>
 
   <!-- Editor panel -->
-  <aside id="editor" class="editor hidden fixed top-0 right-0 w-[400px] h-full bg-surface border-l-2 border-border pt-[90px] px-[22px] pb-[22px] flex flex-col gap-3 z-20 overflow-y-auto shadow-[-4px_0_16px_rgba(20,18,15,.1)] mobile:w-full mobile:left-0 mobile:right-0 mobile:top-auto mobile:bottom-0 mobile:h-auto mobile:max-h-[85vh] mobile:border-l-0 mobile:border-t-2 mobile:rounded-t-2xl mobile:p-4">
+  <aside id="editor" role="dialog" aria-modal="true" class="editor hidden fixed top-0 right-0 w-[400px] h-full bg-surface border-l-2 border-border pt-[90px] px-[22px] pb-[22px] flex flex-col gap-3 z-20 overflow-y-auto shadow-[-4px_0_16px_rgba(20,18,15,.1)] mobile:w-full mobile:left-0 mobile:right-0 mobile:top-auto mobile:bottom-0 mobile:h-auto mobile:max-h-[85vh] mobile:border-l-0 mobile:border-t-2 mobile:rounded-t-2xl mobile:p-4">
     <div class="flex items-center justify-between">
       <h2 class="m-0 text-[1.25rem] font-extrabold" data-i18n="edit_relay">Edit relay</h2>
-      <button id="ed-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none">&times;</button>
+      <button id="ed-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none" aria-label="Close">&times;</button>
     </div>
     <label class="flex flex-col gap-[5px] text-[.95rem] font-semibold text-muted"><span data-i18n="name">Name</span>
       <input id="ed-name" type="text" data-i18n-ph="name_ph" placeholder="e.g. Masterwood heater" class="bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary placeholder:text-muted placeholder:opacity-80 mobile:text-[1.1rem] mobile:min-h-[54px]" />
@@ -144,10 +144,10 @@
   </aside>
 
   <!-- Device (physical relay) editor panel -->
-  <aside id="dev-editor" class="editor hidden fixed top-0 right-0 w-[400px] h-full bg-surface border-l-2 border-border pt-[90px] px-[22px] pb-[22px] flex flex-col gap-3 z-20 overflow-y-auto shadow-[-4px_0_16px_rgba(20,18,15,.1)] mobile:w-full mobile:left-0 mobile:right-0 mobile:top-auto mobile:bottom-0 mobile:h-auto mobile:max-h-[85vh] mobile:border-l-0 mobile:border-t-2 mobile:rounded-t-2xl mobile:p-4">
+  <aside id="dev-editor" role="dialog" aria-modal="true" class="editor hidden fixed top-0 right-0 w-[400px] h-full bg-surface border-l-2 border-border pt-[90px] px-[22px] pb-[22px] flex flex-col gap-3 z-20 overflow-y-auto shadow-[-4px_0_16px_rgba(20,18,15,.1)] mobile:w-full mobile:left-0 mobile:right-0 mobile:top-auto mobile:bottom-0 mobile:h-auto mobile:max-h-[85vh] mobile:border-l-0 mobile:border-t-2 mobile:rounded-t-2xl mobile:p-4">
     <div class="flex items-center justify-between">
       <h2 class="m-0 text-[1.25rem] font-extrabold" data-i18n="physical_relay_h">Physical relay</h2>
-      <button id="de-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none">&times;</button>
+      <button id="de-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none" aria-label="Close"><button id="de-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none">&times;</button>times;</button>
     </div>
     <label class="flex flex-col gap-[5px] text-[.95rem] font-semibold text-muted"><span data-i18n="label_shown">Label (shown on the box)</span>
       <input id="de-name" type="text" class="bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary mobile:text-[1.1rem] mobile:min-h-[54px]" />
@@ -167,10 +167,10 @@
   </aside>
 
   <!-- Activity log panel -->
-  <aside id="activity-editor" class="editor hidden fixed top-0 right-0 w-[400px] h-full bg-surface border-l-2 border-border pt-[90px] px-[22px] pb-[22px] flex flex-col gap-3 z-20 overflow-y-auto shadow-[-4px_0_16px_rgba(20,18,15,.1)] mobile:w-full mobile:left-0 mobile:right-0 mobile:top-auto mobile:bottom-0 mobile:h-auto mobile:max-h-[85vh] mobile:border-l-0 mobile:border-t-2 mobile:rounded-t-2xl mobile:p-4">
+  <aside id="activity-editor" role="dialog" aria-modal="true" class="editor hidden fixed top-0 right-0 w-[400px] h-full bg-surface border-l-2 border-border pt-[90px] px-[22px] pb-[22px] flex flex-col gap-3 z-20 overflow-y-auto shadow-[-4px_0_16px_rgba(20,18,15,.1)] mobile:w-full mobile:left-0 mobile:right-0 mobile:top-auto mobile:bottom-0 mobile:h-auto mobile:max-h-[85vh] mobile:border-l-0 mobile:border-t-2 mobile:rounded-t-2xl mobile:p-4">
     <div class="flex items-center justify-between">
       <h2 class="m-0 text-[1.25rem] font-extrabold"><i class="bi bi-clock-history"></i> <span data-i18n="activity_log">Activity log</span></h2>
-      <button id="act-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none">&times;</button>
+      <button id="act-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none" aria-label="Close"><button id="act-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none">&times;</button>times;</button>
     </div>
     <div id="act-list" class="flex flex-col gap-1 flex-1 overflow-y-auto"></div>
     <div id="act-pager" class="flex items-center justify-center gap-2 mt-2">
@@ -183,10 +183,10 @@
   </aside>
 
   <!-- Bulk edit panel -->
-  <aside id="bulk-editor" class="editor hidden fixed top-0 right-0 w-[400px] h-full bg-surface border-l-2 border-border pt-[90px] px-[22px] pb-[22px] flex flex-col gap-3 z-20 overflow-y-auto shadow-[-4px_0_16px_rgba(20,18,15,.1)] mobile:w-full mobile:left-0 mobile:right-0 mobile:top-auto mobile:bottom-0 mobile:h-auto mobile:max-h-[85vh] mobile:border-l-0 mobile:border-t-2 mobile:rounded-t-2xl mobile:p-4">
+  <aside id="bulk-editor" role="dialog" aria-modal="true" class="editor hidden fixed top-0 right-0 w-[400px] h-full bg-surface border-l-2 border-border pt-[90px] px-[22px] pb-[22px] flex flex-col gap-3 z-20 overflow-y-auto shadow-[-4px_0_16px_rgba(20,18,15,.1)] mobile:w-full mobile:left-0 mobile:right-0 mobile:top-auto mobile:bottom-0 mobile:h-auto mobile:max-h-[85vh] mobile:border-l-0 mobile:border-t-2 mobile:rounded-t-2xl mobile:p-4">
     <div class="flex items-center justify-between">
       <h2 class="m-0 text-[1.25rem] font-extrabold"><i class="bi bi-collection"></i> <span data-i18n="bulk_edit">Bulk edit</span></h2>
-      <button id="bk-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none">&times;</button>
+      <button id="bk-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none" aria-label="Close"><button id="bk-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none">&times;</button>times;</button>
     </div>
     <label class="flex flex-col gap-[5px] text-[.95rem] font-semibold text-muted"><span data-i18n="area">Area</span>
       <select id="bk-area" class="bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary mobile:text-[1.1rem] mobile:min-h-[54px]"><option value="" data-i18n="all_relays">All relays</option></select>
@@ -222,7 +222,7 @@
           <button class="range-btn min-h-[30px] px-2.5 py-1 text-[.78rem] rounded-[7px] font-semibold border-[1.5px] border-border bg-surface-2 text-muted cursor-pointer" data-range="720">30d</button>
         </div>
         <button id="chart-modal-csv" class="self-start min-h-0 px-3 py-[7px] text-[.82rem] font-semibold rounded-lg bg-surface-2 text-muted border-[1.5px] border-border inline-flex items-center gap-[5px] cursor-pointer active:translate-y-px" data-i18n-title="download_csv" title="Download CSV"><i class="bi bi-download"></i> CSV</button>
-        <button id="chart-modal-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none">&times;</button>
+        <button id="chart-modal-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none" aria-label="Close"><button id="chart-modal-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none">&times;</button>times;</button>
       </div>
       <div class="relative">
         <svg id="chart-modal-svg" viewBox="0 0 900 400" preserveAspectRatio="xMidYMid meet"></svg>
@@ -232,10 +232,10 @@
   </div>
 
   <!-- Presets panel -->
-  <aside id="preset-editor" class="editor hidden fixed top-0 right-0 w-[400px] h-full bg-surface border-l-2 border-border pt-[90px] px-[22px] pb-[22px] flex flex-col gap-3 z-20 overflow-y-auto shadow-[-4px_0_16px_rgba(20,18,15,.1)] mobile:w-full mobile:left-0 mobile:right-0 mobile:top-auto mobile:bottom-0 mobile:h-auto mobile:max-h-[85vh] mobile:border-l-0 mobile:border-t-2 mobile:rounded-t-2xl mobile:p-4">
+  <aside id="preset-editor" role="dialog" aria-modal="true" class="editor hidden fixed top-0 right-0 w-[400px] h-full bg-surface border-l-2 border-border pt-[90px] px-[22px] pb-[22px] flex flex-col gap-3 z-20 overflow-y-auto shadow-[-4px_0_16px_rgba(20,18,15,.1)] mobile:w-full mobile:left-0 mobile:right-0 mobile:top-auto mobile:bottom-0 mobile:h-auto mobile:max-h-[85vh] mobile:border-l-0 mobile:border-t-2 mobile:rounded-t-2xl mobile:p-4">
     <div class="flex items-center justify-between">
       <h2 class="m-0 text-[1.25rem] font-extrabold"><i class="bi bi-bookmark"></i> <span data-i18n="presets">Presets</span></h2>
-      <button id="pr-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none">&times;</button>
+      <button id="pr-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none" aria-label="Close"><button id="pr-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none">&times;</button>times;</button>
     </div>
     <div class="flex gap-2">
       <input id="pr-name" type="text" data-i18n-ph="preset_name_ph" placeholder="Preset name" class="flex-1 bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary placeholder:text-muted placeholder:opacity-80 mobile:text-[1.1rem] mobile:min-h-[54px]" />
