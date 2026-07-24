@@ -52,6 +52,19 @@ const TR = {
     confirm_delete_relay_bound: 'Selle automaatjuhtimine eemaldatakse ka.',
     confirm_import_layout: 'Import asendab praeguse paigutuse:',
     confirm_continue: 'Jätka?',
+    loading: 'laadin…', no_sensor_bound: 'andur pole seotud',
+    not_enough_history: 'pole piisavalt ajalugu', history_unavailable: '(ajalugu pole saadaval)',
+    no_data_to_export: 'pole andmeid eksportimiseks', export_error: 'ekspordi viga',
+    automation_state_unknown: 'automaatika olek teadmata',
+    automation_enabled: 'automaatika lubatud', automation_disabled_maint: 'automaatika hoolduseks peatatud',
+    output_not_on_device: 'see väljund pole sellel seadmel', already_added: 'juba lisatud',
+    no_bound_relays: 'Ühtegi seotud releed pole', no_bound_relays_match: 'Ühtegi seotud releed ei leitud',
+    enter_target_temp: 'Sisesta sihttemperatuur', applied_to_n: 'Rakendatud {n} releele',
+    n_failed: '{n} ebaõnnestus', new_name_for: 'Uus nimi:',
+    turning_area_on: 'ala sisse lülitamine…', turning_area_off: 'ala välja lülitamine…',
+    switching: 'lülitamine…', switch_error: 'lülitamise viga',
+    no_presets: 'Ühtegi eelseadet pole salvestatud',
+    no_output_to_rename: 'pole ümbernimetatavat väljundit',
     physical_relay_h: 'Füüsiline relee', label_shown: 'Silt (kuvatakse kastil)',
     rename_device_ha: 'Nimeta seade Home Assistantis ümber', group_area: 'Rühm / ala',
     outputs: 'Väljundid', add_output_ph: '+ Lisa väljund…', remove_from_board: 'Eemalda tahvlilt',
@@ -123,6 +136,19 @@ const EN = {  // English fallbacks for dynamic (non-HTML) strings
   confirm_delete_relay_bound: 'Its automatic control will also be removed.',
   confirm_import_layout: 'Import will REPLACE the current layout with:',
   confirm_continue: 'Continue?',
+  loading: 'loading…', no_sensor_bound: 'no sensor bound',
+  not_enough_history: 'not enough history', history_unavailable: '(history unavailable)',
+  no_data_to_export: 'no data to export', export_error: 'export error',
+  automation_state_unknown: 'automation state unknown',
+  automation_enabled: 'automation enabled', automation_disabled_maint: 'automation disabled for maintenance',
+  output_not_on_device: 'that output is not on this device', already_added: 'already added',
+  no_bound_relays: 'No bound relays to save', no_bound_relays_match: 'No bound relays match',
+  enter_target_temp: 'Enter a target temperature', applied_to_n: 'Applied to {n} relays',
+  n_failed: '{n} failed', new_name_for: 'New name for',
+  turning_area_on: 'turning area on…', turning_area_off: 'turning area off…',
+  switching: 'switching…', switch_error: 'switch error',
+  no_presets: 'No presets saved yet',
+  no_output_to_rename: 'no output entity to rename',
 };
 let LANG = 'en';
 function t(key) { return (LANG === 'et' && TR.et[key] != null) ? TR.et[key] : (EN[key] != null ? EN[key] : key); }
@@ -723,25 +749,25 @@ async function loadHistory(r) {
   const box = $('#ed-history'), info = $('#ed-history-info'), spark = $('#ed-spark');
   if (!r.sensor && !r.relay) { box.classList.add('hidden'); return; }
   box.classList.remove('hidden');
-  spark.innerHTML = ''; info.textContent = 'loading…';
+  spark.innerHTML = ''; info.textContent = t('loading');
   // relay on/off duration
   const rl = state.live[r.relay] || {};
   let dur = '';
   if (r.relay && rl.last_changed && (rl.state === 'on' || rl.state === 'off')) {
     dur = `Relay ${rl.state.toUpperCase()} for ${fmtAgo(Date.now() - Date.parse(rl.last_changed))}. `;
   }
-  if (!r.sensor) { info.textContent = dur || 'no sensor bound'; spark.innerHTML = ''; return; }
+  if (!r.sensor) { info.textContent = dur || t('no_sensor_bound'); spark.innerHTML = ''; return; }
   try {
     const params = `sensor=${encodeURIComponent(r.sensor)}&hours=${historyRange}` +
       (r.relay ? `&relay=${encodeURIComponent(r.relay)}` : '') +
       (r.temp != null ? `&target=${r.temp}` : '');
     const data = await api('/api/history/export?' + params);
-    if (!data.rows || data.rows.length < 2) { info.textContent = dur + 'not enough history'; return; }
+    if (!data.rows || data.rows.length < 2) { info.textContent = dur + t('not_enough_history'); return; }
     drawChart(spark, data.rows, data.target);
     addChartTooltip(spark, data.rows, '#ed-tooltip');
     const temps = data.rows.map((p) => p.temp);
     info.textContent = `${dur}min ${Math.min(...temps).toFixed(1)}° · max ${Math.max(...temps).toFixed(1)}° · now ${temps[temps.length - 1].toFixed(1)}°`;
-  } catch { info.textContent = dur + '(history unavailable)'; }
+  } catch { info.textContent = dur + t('history_unavailable'); }
 }
 
 async function exportHistory() {
@@ -752,7 +778,7 @@ async function exportHistory() {
     if (r.relay) params.set('relay', r.relay);
     if (r.temp != null) params.set('target', String(r.temp));
     const data = await api('/api/history/export?' + params.toString());
-    if (!data.rows || !data.rows.length) { edMsg('no data to export', 'err'); return; }
+    if (!data.rows || !data.rows.length) { edMsg(t('no_data_to_export'), 'err'); return; }
     const header = 'timestamp,temperature,relay_state' + (data.target != null ? ',target' : '');
     const csv = header + '\n' + data.rows.map((p) =>
       `${new Date(p.t).toISOString()},${p.temp.toFixed(1)},${p.state}` +
@@ -765,7 +791,7 @@ async function exportHistory() {
     a.download = `${r.sensor.replace('.','_')}_24h.csv`;
     document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     edMsg('CSV downloaded', 'ok');
-  } catch (e) { edMsg('export error: ' + e.message, 'err'); }
+  } catch (e) { edMsg(t('export_error') + ': ' + e.message, 'err'); }
 }
 
 function fmtAgo(ms) {
@@ -855,7 +881,7 @@ async function loadAutomationState(r) {
   $('#ed-automation-status').textContent = 'checking…';
   $('#ed-automation-toggle').disabled = true;
   try { updateAutomationUI(await api(`/api/relays/${r.id}/automation`)); }
-  catch { $('#ed-automation-status').textContent = 'automation state unknown'; }
+  catch { $('#ed-automation-status').textContent = t('automation_state_unknown'); }
 }
 
 function updateRelayToggleBtn(r) {
@@ -886,7 +912,7 @@ async function toggleAutomation() {
     updateAutomationUI(await api(`/api/relays/${r.id}/automation`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled: enable }),
     }));
-    edMsg(enable ? 'automation enabled' : 'automation disabled for maintenance', 'ok');
+    edMsg(enable ? t('automation_enabled') : t('automation_disabled_maint'), 'ok');
   } catch (e) { edMsg('error: ' + e.message, 'err'); loadAutomationState(r); }
 }
 function closeEditor() { state.selected = null; $('#editor').classList.add('hidden'); }
@@ -931,8 +957,8 @@ function addOutputToDevice(entityId) {
   const g = selectedDev(); if (!g || !entityId) return;
   const dev = state.relayDevices.find((d) => d.device_id === g.deviceId);
   const o = dev && dev.outputs.find((x) => x.entity_id === entityId);
-  if (!o) { deMsg('that output is not on this device', 'err'); return; }
-  if (state.layout.relays.some((r) => r.device === g.id && r.relay === entityId)) { deMsg('already added', 'err'); return; }
+  if (!o) { deMsg(t('output_not_on_device'), 'err'); return; }
+  if (state.layout.relays.some((r) => r.device === g.id && r.relay === entityId)) { deMsg(t('already_added'), 'err'); return; }
   state.layout.relays.push({
     id: 'r' + Date.now().toString(36), name: o.name, relay: o.entity_id,
     sensor: '', area: g.area || '', device: g.id, mode: 'below', temp: 20, deadband: 0, bound: false, x: 0, y: 0,
@@ -1027,7 +1053,7 @@ function renderPresets() {
         <button class="pr-apply ${TINY}" data-idx="${i}"><i class="bi bi-play-fill"></i></button>
         <button class="pr-del ${TINY} bg-danger border-danger text-white" data-idx="${i}"><i class="bi bi-trash"></i></button>
       </div>`).join('')
-    : '<div style="text-align:center;padding:20px;color:var(--muted)">No presets saved yet</div>';
+    : `<div style="text-align:center;padding:20px;color:var(--muted)">${t('no_presets')}</div>`;
   list.querySelectorAll('.pr-apply').forEach((b) => b.addEventListener('click', () => applyPreset(parseInt(b.dataset.idx))));
   list.querySelectorAll('.pr-del').forEach((b) => b.addEventListener('click', () => deletePreset(parseInt(b.dataset.idx))));
   $('#pr-msg').textContent = '';
@@ -1041,7 +1067,7 @@ async function savePreset() {
     if (!r.bound || !r.relay || !r.sensor) continue;
     relays[r.id] = { temp: r.temp, mode: r.mode, deadband: r.deadband };
   }
-  if (!Object.keys(relays).length) { $('#pr-msg').textContent = 'No bound relays to save'; return; }
+  if (!Object.keys(relays).length) { $('#pr-msg').textContent = t('no_bound_relays'); return; }
   state.layout.presets = state.layout.presets || [];
   state.layout.presets.push({ name, relays });
   await saveLayout();
@@ -1104,7 +1130,7 @@ function updateBulkList() {
       <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-semibold">${esc(r.name || r.relay)}</span>
       <span class="text-muted">${curMode} ${curTemp}° → ${newTemp}° @ ${mode === 'above' ? 'cool' : 'heat'}</span>
     </div>`;
-  }).join('') || `<div style="text-align:center;padding:20px;color:var(--muted)">No bound relays match</div>`;
+  }).join('') || `<div style="text-align:center;padding:20px;color:var(--muted)">${t('no_bound_relays_match')}</div>`;
   $('#bk-count').textContent = matches.length ? `${matches.length} relay${matches.length === 1 ? '' : 's'}` : '';
   $('#bk-apply').innerHTML = `<i class="bi bi-check-lg"></i> <span data-i18n="apply_to_n">Apply to ${matches.length || 0} relays</span>`;
 }
@@ -1114,11 +1140,11 @@ async function applyBulk() {
   const mode = $('#bk-mode').value;
   const temp = Number($('#bk-temp').value);
   const deadband = Number($('#bk-deadband').value) || 0;
-  if (!isFinite(temp)) { setMsg($('#bk-msg'), 'Enter a target temperature', 'err'); return; }
+  if (!isFinite(temp)) { setMsg($('#bk-msg'), t('enter_target_temp'), 'err'); return; }
   const matches = state.layout.relays.filter((r) =>
     r.bound && r.relay && r.sensor && (!area || r.area === area)
   );
-  if (!matches.length) { setMsg($('#bk-msg'), 'No bound relays match', 'err'); return; }
+  if (!matches.length) { setMsg($('#bk-msg'), t('no_bound_relays_match'), 'err'); return; }
   $('#bk-apply').disabled = true;
   let ok = 0, fail = 0;
   for (const r of matches) {
@@ -1138,7 +1164,7 @@ async function applyBulk() {
     } catch { fail++; }
   }
   $('#bk-apply').disabled = false;
-  setMsg($('#bk-msg'), `Applied to ${ok} relay${ok === 1 ? '' : 's'}` + (fail ? `, ${fail} failed` : ''), fail ? 'err' : 'ok');
+  setMsg($('#bk-msg'), t('applied_to_n').replace('{n}', ok) + (fail ? ', ' + t('n_failed').replace('{n}', fail) : ''), fail ? 'err' : 'ok');
   render(); saveLayout(); refreshLive();
   updateBulkList();
 }
@@ -1258,7 +1284,7 @@ function saveDevice() {
 async function renameDeviceHa() {
   const g = selectedDev(); if (!g) return;
   const first = state.layout.relays.find((r) => r.device === g.id && r.relay);
-  if (!first) { deMsg('no output entity to rename', 'err'); return; }
+  if (!first) { deMsg(t('no_output_to_rename'), 'err'); return; }
   const nm = prompt('New Home Assistant name for this physical relay:', g.name || '');
   if (nm == null || !nm.trim()) return;
   try {
@@ -1387,7 +1413,7 @@ async function bind() {
 // rename the HA device behind an entity (and Z2M too if it's zigbee)
 async function renameDevice(entityId) {
   if (!entityId) { edMsg('pick a device first', 'err'); return; }
-  const nm = prompt('New name for ' + entityId + ':');
+  const nm = prompt(t('new_name_for') + ' ' + entityId + ':');
   if (nm == null || !nm.trim()) return;
   try {
     edMsg('renaming…');
@@ -1425,7 +1451,7 @@ async function deleteRelay() {
 async function setAreaRelays(areaId, on) {
   const relays = state.layout.relays.filter((r) => r.area === areaId && r.relay);
   if (!relays.length) return;
-  setStatus(on ? 'turning area on…' : 'turning area off…');
+  setStatus(on ? t('turning_area_on') : t('turning_area_off'));
   await Promise.all(relays.map((r) => api('/api/switch', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity_id: r.relay, action: on ? 'on' : 'off' }),
   }).then((res) => { state.live[r.relay] = { ...(state.live[r.relay] || {}), state: res.state }; }).catch(() => {})));
@@ -1455,11 +1481,11 @@ async function toggleRelay(r) {
   if (!r.relay) return;
   const cur = (state.live[r.relay] || {}).state;
   try {
-    setStatus('switching…');
+    setStatus(t('switching'));
     const res = await api('/api/switch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity_id: r.relay, action: cur === 'on' ? 'off' : 'on' }) });
     state.live[r.relay] = { ...(state.live[r.relay] || {}), state: res.state };
     setStatus(''); render();
-  } catch (e) { setStatus('switch error'); }
+  } catch (e) { setStatus(t('switch_error')); }
 }
 
 async function refreshLive() {
