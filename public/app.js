@@ -45,6 +45,13 @@ const TR = {
     preset_applied: 'Eelseade rakendatud',
     all_off_confirm: 'Lülita kõik releed välja?', all_off_done: 'Kõik releed välja lülitatud',
     all_off_title: 'Lülita kõik releed välja',
+    confirm_remove_device: 'Eemalda "{name}" tahvlilt?',
+    confirm_remove_area: 'Eemalda ala "{name}"? Releed jäävad tahvlile.',
+    confirm_delete_preset: 'Kustuta eelseade?',
+    confirm_delete_relay: 'Kustuta relee "{name}"?',
+    confirm_delete_relay_bound: 'Selle automaatjuhtimine eemaldatakse ka.',
+    confirm_import_layout: 'Import asendab praeguse paigutuse:',
+    confirm_continue: 'Jätka?',
     physical_relay_h: 'Füüsiline relee', label_shown: 'Silt (kuvatakse kastil)',
     rename_device_ha: 'Nimeta seade Home Assistantis ümber', group_area: 'Rühm / ala',
     outputs: 'Väljundid', add_output_ph: '+ Lisa väljund…', remove_from_board: 'Eemalda tahvlilt',
@@ -109,6 +116,13 @@ const EN = {  // English fallbacks for dynamic (non-HTML) strings
   preset_applied: 'Preset applied',
   all_off_confirm: 'Turn off all relays?', all_off_done: 'All relays turned off',
   all_off_title: 'Turn all relays off',
+  confirm_remove_device: 'Remove "{name}" from the board?',
+  confirm_remove_area: 'Remove area "{name}"? Relays inside will stay on the board.',
+  confirm_delete_preset: 'Delete preset?',
+  confirm_delete_relay: 'Delete relay "{name}"?',
+  confirm_delete_relay_bound: 'Its automatic control will also be removed.',
+  confirm_import_layout: 'Import will REPLACE the current layout with:',
+  confirm_continue: 'Continue?',
 };
 let LANG = 'en';
 function t(key) { return (LANG === 'et' && TR.et[key] != null) ? TR.et[key] : (EN[key] != null ? EN[key] : key); }
@@ -432,8 +446,8 @@ function renderBox(g, kind) {
     el.querySelector('.area-del').addEventListener('click', (e) => {
       e.stopPropagation();
       if (!confirm(isDev
-        ? `Remove "${g.name || 'physical relay'}" from the board?`
-        : `Remove area "${g.name || 'group'}"? Relays inside will stay on the board.`)) return;
+        ? t('confirm_remove_device').replace('{name}', g.name || 'physical relay')
+        : t('confirm_remove_area').replace('{name}', g.name || 'group'))) return;
       if (isDev) state.layout.devices = state.layout.devices.filter((x) => x.id !== g.id);
       else state.layout.areas = state.layout.areas.filter((x) => x.id !== g.id);
       api('/api/audit', { method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1061,7 +1075,7 @@ async function applyPreset(idx) {
 }
 
 async function deletePreset(idx) {
-  if (!confirm('Delete preset?')) return;
+  if (!confirm(t('confirm_delete_preset'))) return;
   state.layout.presets.splice(idx, 1);
   await saveLayout();
   renderPresets();
@@ -1398,7 +1412,7 @@ async function unbind() {
 
 async function deleteRelay() {
   const r = selected(); if (!r) return;
-  if (!confirm(`Delete relay "${r.name || r.relay || 'relay'}"?` + (r.bound ? '\nIts automatic control will also be removed.' : ''))) return;
+  if (!confirm(t('confirm_delete_relay').replace('{name}', r.name || r.relay || 'relay') + (r.bound ? '\n' + t('confirm_delete_relay_bound') : ''))) return;
   if (r.bound) { try { await api(`/api/relays/${r.id}/unbind`, { method: 'POST' }); } catch {} }
   api('/api/audit', { method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'relay.delete', detail: { rid: r.id, name: r.name, relay: r.relay } })
@@ -1532,7 +1546,7 @@ async function importLayout(file) {
   const l = data && data.layout ? data.layout : data; // accept wrapped export or a raw layout
   if (!l || !Array.isArray(l.relays)) { setStatus('not a relay-panel layout'); return; }
   const counts = `${(l.relays || []).length} relays, ${(l.devices || []).length} devices, ${(l.areas || []).length} areas`;
-  if (!confirm(`Import will REPLACE the current layout with:\n${counts}\n\nContinue?`)) return;
+  if (!confirm(t('confirm_import_layout') + '\n' + counts + '\n\n' + t('confirm_continue'))) return;
   state.layout = { relays: l.relays || [], areas: l.areas || [], devices: l.devices || [] };
   for (const d of state.layout.devices) reflowDeviceOutputs(d);
   for (const a of state.layout.areas) fitAreaToContents(a);
