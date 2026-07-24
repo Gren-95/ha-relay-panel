@@ -164,13 +164,12 @@ async function verifyHaLogin(username, password) {
 
   let sf;
   try { sf = await jfetch(`${HA_URL}/auth/login_flow`, { client_id: cid, handler: ['homeassistant', null], redirect_uri: cid }); }
-  catch (e) { console.log('login start error:', e.message); return { ok: false, error: 'cannot reach Home Assistant' }; }
-  if (!sf || !sf.flow_id) { console.log('login start bad resp:', JSON.stringify(sf).slice(0, 200)); return { ok: false, error: 'HA login unavailable' }; }
+  catch (e) { return { ok: false, error: 'cannot reach Home Assistant' }; }
+  if (!sf || !sf.flow_id) { return { ok: false, error: 'HA login unavailable' }; }
 
   let r;
   try { r = await jfetch(`${HA_URL}/auth/login_flow/${sf.flow_id}`, { client_id: cid, username, password }); }
-  catch (e) { console.log('login submit error:', e.message); return { ok: false, error: 'Home Assistant did not respond' }; }
-  console.log('login result for', JSON.stringify(username), '->', r && (r.type || JSON.stringify(r).slice(0, 120)));
+  catch (e) { return { ok: false, error: 'Home Assistant did not respond' }; }
 
   if (r && r.type === 'create_entry') return { ok: true, user: username };
   // abandon the flow, translate the outcome
