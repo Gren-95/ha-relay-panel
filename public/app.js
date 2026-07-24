@@ -788,7 +788,8 @@ async function exportHistory() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${r.sensor.replace('.','_')}_24h.csv`;
+    const span = hours >= 720 ? '30d' : hours >= 168 ? '7d' : '24h';
+    a.download = `${r.sensor.replace(/\./g,'_')}_${span}.csv`;
     document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     edMsg('CSV downloaded', 'ok');
   } catch (e) { edMsg(t('export_error') + ': ' + e.message, 'err'); }
