@@ -382,8 +382,7 @@ db.initDb()
       console.log(`relay-panel on :${PORT}, HA ${ha.HA_URL}`);
       if (NOTIFY_SERVICE) {
         console.log(`notify watcher active: ${NOTIFY_SERVICE}`);
-        runNotifyCheck();
-        setInterval(runNotifyCheck, NOTIFY_INTERVAL);
+        (function loop() { runNotifyCheck().finally(() => setTimeout(loop, NOTIFY_INTERVAL)); })();
       }
     });
   })
