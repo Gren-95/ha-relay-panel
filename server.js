@@ -43,6 +43,8 @@ function cookies(req) {
 function currentUser(req) {
   const t = cookies(req).rp_session; if (!t) return null;
   const s = sessions.get(t); if (!s || s.exp < Date.now()) { sessions.delete(t); return null; }
+  // Extend session expiry on activity so active users never get logged out
+  s.exp = Date.now() + SESSION_MS;
   return s.user;
 }
 // gate config-CHANGE routes; viewing + relay toggling stay open
