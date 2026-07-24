@@ -150,6 +150,19 @@ const state = {
 const $ = (s) => document.querySelector(s);
 const canvas = $('#canvas');
 
+// ---- shared Tailwind class strings (pure-utility project: no component CSS) ----
+const BTN = 'border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] shadow-[0_1px_2px_rgba(27,35,54,.04)] active:translate-y-px';
+const TINY = 'self-start min-h-0 -mt-[3px] px-3 py-[7px] text-[.82rem] font-semibold rounded-lg bg-surface-2 text-muted border-[1.5px] border-border inline-flex items-center gap-[5px] cursor-pointer active:translate-y-px';
+const FIELD = 'bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary';
+const MSG = 'text-[.95rem] min-h-[1.3em] font-semibold';
+// message helper: sets full utility class + err/ok colour (JS-owned, replaces .ed-msg)
+function setMsg(el, m, cls) { if (!el) return; el.textContent = m || ''; el.className = MSG + (cls === 'err' ? ' text-danger' : cls === 'ok' ? ' text-ok' : ''); }
+// range button active state: toggle the primary-fill utilities
+function setRangeActive(btn, on) { ['bg-primary', 'border-primary', 'text-white'].forEach((c) => btn.classList.toggle(c, on)); }
+// canvas class strings (JS rebuilds #canvas.className each render)
+const CANVAS_DESKTOP = 'canvas relative m-5 min-h-[calc(100vh_-_130px)] bg-surface-2 border border-border rounded-2xl overflow-hidden [background-image:radial-gradient(var(--dot)_1.4px,transparent_1.4px)] [background-size:26px_26px] mobile:m-2.5 mobile:overflow-auto [.kiosk_&]:m-0 [.kiosk_&]:border-0 [.kiosk_&]:rounded-none [.kiosk_&]:min-h-screen [.kiosk_&]:bg-surface [.kiosk_&]:[background-image:radial-gradient(var(--border)_1.3px,transparent_1.3px)] [.kiosk_&]:[background-size:32px_32px]';
+const CANVAS_MOBILE = 'canvas flex flex-col gap-3.5 bg-transparent border-0 p-0 m-3 min-h-0 overflow-visible';
+
 async function api(path, opts) {
   const res = await fetch(path, opts);
   const data = await res.json().catch(() => ({}));
@@ -328,16 +341,20 @@ function render() {
   normalizeLayout();
   updateSummary();
   if (isMobile()) return renderMobile();
-  canvas.className = 'canvas' + (state.edit ? ' edit' : '');
+  canvas.className = CANVAS_DESKTOP + (state.edit ? ' edit cursor-default' : '');
   canvas.innerHTML = '';
   for (const a of state.layout.areas) canvas.appendChild(renderBox(a, 'area'));
   for (const d of state.layout.devices) canvas.appendChild(renderBox(d, 'device'));
   for (const r of state.layout.relays) canvas.appendChild(card(r));
 }
 
+// shared area master on/off buttons (keeps .area-master hook for live-mode hide + .am-btn hooks)
+const AM_BTN = 'am-btn text-[.72rem] font-bold px-[9px] py-[3px] rounded-lg cursor-pointer border-[1.5px] border-border-strong bg-surface text-fg';
+const areaMaster = () => `<span class="area-master inline-flex gap-1 ml-auto [.live-mode_&]:hidden"><button class="${AM_BTN}" data-act="on">${t('all_on')}</button><button class="${AM_BTN}" data-act="off">${t('all_off')}</button></span>`;
+
 // Mobile: ignore x/y positions, render a nested flex list (area -> device -> outputs).
 function renderMobile() {
-  canvas.className = 'canvas mobile';
+  canvas.className = CANVAS_MOBILE;
   canvas.innerHTML = '';
   const doneDev = new Set(), doneRel = new Set();
 
@@ -345,10 +362,10 @@ function renderMobile() {
     doneDev.add(d.id);
     const hue = areaColor(d.deviceId);
     const box = document.createElement('div');
-    box.className = 'm-device';
+    box.className = 'border-2 border-border rounded-[14px] p-2.5 bg-surface-2 flex flex-col gap-2.5';
     box.style.borderColor = `hsl(${hue},45%,55%)`;
     const head = document.createElement('div');
-    head.className = 'm-device-head';
+    head.className = 'font-bold text-fg text-base cursor-pointer';
     head.style.color = headColor(hue);
     head.innerHTML = `<i class="bi bi-hdd-stack"></i> ${esc(d.name || d.deviceId)}`;
     head.addEventListener('click', () => openDeviceEditor(d));
@@ -361,10 +378,10 @@ function renderMobile() {
   for (const a of state.layout.areas) {
     const hue = areaColor(a.areaId);
     const box = document.createElement('div');
-    box.className = 'm-area';
+    box.className = 'border-[3px] border-dashed border-border-strong rounded-[14px] p-2.5 flex flex-col gap-2.5';
     box.style.borderColor = `hsl(${hue},50%,55%)`;
-    box.innerHTML = `<div class="m-area-head" style="color:${headColor(hue)}"><span><i class="bi bi-grid-3x3-gap"></i> ${esc(a.name || a.areaId)}</span>
-      <span class="area-master"><button class="am-btn" data-act="on">${t('all_on')}</button><button class="am-btn" data-act="off">${t('all_off')}</button></span></div>`;
+    box.innerHTML = `<div class="flex items-center justify-between font-extrabold text-[1.05rem] p-0.5" style="color:${headColor(hue)}"><span><i class="bi bi-grid-3x3-gap"></i> ${esc(a.name || a.areaId)}</span>
+      ${areaMaster()}</div>`;
     box.querySelectorAll('.am-btn').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); setAreaRelays(a.areaId, b.dataset.act === 'on'); }));
     for (const d of state.layout.devices.filter((x) => x.area === a.areaId)) box.appendChild(deviceBlock(d));
     for (const r of state.layout.relays.filter((x) => x.area === a.areaId && !x.device)) { box.appendChild(card(r, true)); doneRel.add(r.id); }
@@ -384,7 +401,8 @@ function renderBox(g, kind) {
   const refId = isDev ? g.deviceId : g.areaId;
   const hue = areaColor(refId);
   const el = document.createElement('div');
-  el.className = 'area' + (isDev ? ' device' : '');
+  // border-color + background come from inline style (dynamic per-area hue)
+  el.className = 'area absolute border-2 rounded-2xl [.kiosk_&]:border-[3px] ' + (isDev ? 'border-solid z-[2]' : 'border-dashed z-[1]');
   el.dataset.gid = g.id;
   el.style.left = (g.x || 20) + 'px';
   el.style.top = (g.y || 20) + 'px';
@@ -392,13 +410,13 @@ function renderBox(g, kind) {
   el.style.height = (g.h || 220) + 'px';
   el.style.borderColor = `hsl(${hue},50%,55%)`;
   el.style.background = boxTint(hue);
-  const pin = isDev && g.area ? ` <span class="area-pin"><i class="bi bi-geo-alt-fill"></i> ${esc(areaName(g.area))}</span>` : '';
+  const pin = isDev && g.area ? ` <span class="area-pin text-[.85rem] opacity-90 font-medium ml-[5px]"><i class="bi bi-geo-alt-fill"></i> ${esc(areaName(g.area))}</span>` : '';
   // area boxes get a master on/off for all their relays (works in Live mode too)
-  const master = !isDev ? `<span class="area-master"><button class="am-btn" data-act="on">${t('all_on')}</button><button class="am-btn" data-act="off">${t('all_off')}</button></span>` : '';
-  el.innerHTML = `<div class="area-head" style="color:${headColor(hue)}">
+  const master = !isDev ? areaMaster() : '';
+  el.innerHTML = `<div class="area-head flex items-center justify-between px-3 py-2 text-base font-bold cursor-grab active:cursor-grabbing select-none touch-none" style="color:${headColor(hue)}">
       <span>${isDev ? '<i class="bi bi-hdd-stack"></i>' : '<i class="bi bi-grid-3x3-gap"></i>'} ${esc(g.name || refId)}${pin}</span>
-      ${master}${state.edit ? '<button class="area-del" title="Remove group">&times;</button>' : ''}
-    </div>${state.edit ? '<div class="area-resize"></div>' : ''}`;
+      ${master}${state.edit ? '<button class="area-del bg-transparent border-0 text-inherit opacity-60 text-[1.4rem] cursor-pointer leading-none" title="Remove group">&times;</button>' : ''}
+    </div>${state.edit ? '<div class="area-resize absolute right-[3px] bottom-[3px] w-5 h-5 cursor-nwse-resize border-r-[3px] border-b-[3px] border-border-strong rounded-br-[12px] touch-none"></div>' : ''}`;
 
   const isMember = memberFilter(g, kind);
   el.querySelectorAll('.am-btn').forEach((b) => {
@@ -524,7 +542,14 @@ function addPhysicalRelay(deviceId) {
 // ---- relay cards ----
 function card(r, mobile) {
   const el = document.createElement('div');
-  el.className = 'relay' + (mobile ? ' m-card' : '');
+  // maintenance = bound automation currently disabled — needed up-front for the card border
+  const maint = r.bound && r.automationId && state.autoStates[r.automationId] === false;
+  el.className = [
+    'relay bg-surface rounded-[14px] px-[14px] shadow-panel select-none flex items-center gap-3 box-border touch-none',
+    maint ? 'border-2 border-heat' : 'border border-border',
+    mobile ? 'static w-full h-auto min-h-[84px]'
+           : 'absolute z-[3] w-[340px] h-[84px]' + (state.edit ? ' cursor-grab' : ''),
+  ].join(' ');
   el.dataset.id = r.id;
   if (!mobile) { el.style.left = (r.x || 20) + 'px'; el.style.top = (r.y || 20) + 'px'; }
   if (r.area) { const hue = areaColor(r.area); el.style.borderLeft = `4px solid hsl(${hue},60%,50%)`; }
@@ -547,33 +572,35 @@ function card(r, mobile) {
   else if (relOffline) { warnMsg = t('warn_relay_offline'); warnLevel = 'error'; }
   else if (senMissing) { warnMsg = t('warn_sensor_missing'); warnLevel = 'error'; }
   else if (senOffline) { warnMsg = t('warn_sensor_offline'); warnLevel = 'warn'; }
-  const warnIcon = warnMsg ? `<button class="warn-icon ${warnLevel}" title="${esc(warnMsg)}" data-msg="${esc(warnMsg)}" aria-label="warning"><i class="bi bi-exclamation-triangle-fill"></i></button>` : '';
-  const dotCls = r.relay ? (on ? 'dot on' : 'dot off') : 'dot';
+  const warnColor = warnLevel === 'error' ? 'text-danger' : 'text-[#d97706]';
+  const warnIcon = warnMsg ? `<button class="warn-icon p-0 border-0 bg-transparent cursor-pointer leading-none text-[1.35rem] flex-none align-[-.12em] ${warnColor}" title="${esc(warnMsg)}" data-msg="${esc(warnMsg)}" aria-label="warning"><i class="bi bi-exclamation-triangle-fill"></i></button>` : '';
+  // the on/off toggle is the coloured dot: emit exactly one bg + border per state
+  const togBase = 'r-toggle p-0 cursor-pointer w-[34px] h-[34px] rounded-full border-2 disabled:cursor-default disabled:opacity-40 [.kiosk_&]:w-14 [.kiosk_&]:h-14';
+  const togState = !r.relay ? 'bg-off border-border-strong'
+    : on ? 'bg-on border-on shadow-[0_0_0_3px_rgba(21,128,61,.2)]'
+    : 'bg-[var(--toggle-off)] border-border-strong';
   // temperature styling: colour the current reading by demand vs satisfied
   const curNum = temp !== '—' ? +temp : null;
-  let curClass = '';
+  let curColor = 'text-fg';
   if (curNum != null && r.temp != null) {
-    if (r.mode === 'above') curClass = curNum > r.temp ? 'demand-cool' : 'satisfied';
-    else curClass = curNum < r.temp ? 'demand-heat' : 'satisfied';
+    if (r.mode === 'above') curColor = curNum > r.temp ? 'text-cool' : 'text-ok';
+    else curColor = curNum < r.temp ? 'text-heat' : 'text-ok';
   }
   const modeIcon = on
-    ? (r.mode === 'above' ? '<i class="bi bi-arrow-down mode-active"></i>' : '<i class="bi bi-arrow-up mode-active"></i>')
+    ? (r.mode === 'above' ? '<i class="bi bi-arrow-down text-cool animate-mode-pulse"></i>' : '<i class="bi bi-arrow-up text-heat animate-mode-pulse"></i>')
     : '';
-  const limitIcon = (r.min_on || r.min_off) ? '<i class="bi bi-shield-lock limit-icon" title="Cycle protection active"></i>' : '';
-  // automation paused for maintenance?
-  const maint = r.bound && r.automationId && state.autoStates[r.automationId] === false;
-  if (maint) el.classList.add('maint');
+  const limitIcon = (r.min_on || r.min_off) ? '<i class="bi bi-shield-lock text-[.8rem] text-muted mx-[2px]" title="Cycle protection active"></i>' : '';
 
   el.innerHTML = `
-    <button class="${dotCls} r-toggle" title="${!r.relay ? t('no_relay') : relayBad ? t('relay_offline_short') : (on ? t('click_turn_off') : t('click_turn_on'))}"${r.relay && !relayBad ? '' : ' disabled'}></button>
-    <div class="r-info">
-      <div class="r-name">${esc(r.name || 'Relay')}${r.bound ? '' : ' <span class="r-unset"><i class="bi bi-circle"></i></span>'}${(r.schedule && r.schedule.blocks && r.schedule.blocks.length) ? ' <i class="bi bi-clock sched-badge" title="scheduled"></i>' : ''}</div>
-      <div class="r-relay">${esc(r.relay || 'no relay')}${r.area ? ' · ' + esc(areaName(r.area)) : ''}</div>
+    <button class="${togBase} ${togState}" title="${!r.relay ? t('no_relay') : relayBad ? t('relay_offline_short') : (on ? t('click_turn_off') : t('click_turn_on'))}"${r.relay && !relayBad ? '' : ' disabled'}></button>
+    <div class="r-info flex-auto min-w-0">
+      <div class="r-name font-bold text-[1.1rem] overflow-hidden text-ellipsis whitespace-nowrap">${esc(r.name || 'Relay')}${r.bound ? '' : ' <span class="text-heat text-[.9rem]"><i class="bi bi-circle"></i></span>'}${(r.schedule && r.schedule.blocks && r.schedule.blocks.length) ? ' <i class="bi bi-clock text-cool text-base ml-1" title="scheduled"></i>' : ''}</div>
+      <div class="r-relay text-[.82rem] text-muted overflow-hidden text-ellipsis whitespace-nowrap">${esc(r.relay || 'no relay')}${r.area ? ' · ' + esc(areaName(r.area)) : ''}</div>
     </div>
-    ${warnIcon}${limitIcon}${maint ? '<span class="maint-badge"><i class="bi bi-pause-fill"></i> ' + t('maint_badge') + '</span>' : ''}
-    <div class="r-metric">
-      <div class="cur ${curClass}">${temp}${temp === '—' ? '' : '<span class="deg">°</span>'}</div>
-      <div class="tgt">${modeIcon}${modeIcon ? '&nbsp;' : ''}${r.temp != null ? r.temp + '°' : '—'}${r.deadband ? `<span class="band">±${r.deadband}</span>` : ''}</div>
+    ${warnIcon}${limitIcon}${maint ? '<span class="text-[.68rem] font-extrabold px-[7px] py-[2px] rounded-md whitespace-nowrap flex-none bg-[var(--maint-bg)] text-[var(--maint-fg)]"><i class="bi bi-pause-fill"></i> ' + t('maint_badge') + '</span>' : ''}
+    <div class="r-metric text-right flex-none flex flex-col items-end gap-1">
+      <div class="${curColor} text-[2rem] [.kiosk_&]:text-[2.4rem] font-extrabold leading-none tabular-nums">${temp}${temp === '—' ? '' : '<span class="text-[1.1rem] font-bold opacity-50 ml-px">°</span>'}</div>
+      <div class="inline-flex items-center text-[.85rem] font-semibold text-fg bg-surface-2 border-[1.5px] border-border rounded-full px-2.5 py-0.5 tabular-nums whitespace-nowrap">${modeIcon}${modeIcon ? '&nbsp;' : ''}${r.temp != null ? r.temp + '°' : '—'}${r.deadband ? `<span class="text-muted ml-1">±${r.deadband}</span>` : ''}</div>
     </div>`;
 
   // manual on/off toggle (works in both edit & live modes)
@@ -633,13 +660,14 @@ const SCHED_DAYS = [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], 
 function schedBlockRow(b) {
   b = b || { days: [1, 2, 3, 4, 5], start: '06:00', end: '18:00', temp: 21 };
   const row = document.createElement('div');
-  row.className = 'sched-row';
+  row.className = 'sched-row border border-border rounded-lg p-2 bg-surface flex flex-col gap-1.5';
+  const fieldSm = 'min-h-0 px-2 py-1.5 text-[.9rem] w-auto bg-input border-2 border-border text-fg rounded-[10px] focus:outline-none focus:border-primary';
   row.innerHTML =
-    `<div class="sched-days">${SCHED_DAYS.map(([n, lbl]) =>
-      `<label class="sched-day"><input type="checkbox" value="${n}"${b.days.includes(n) ? ' checked' : ''}>${lbl}</label>`).join('')}</div>` +
-    `<div class="sched-times"><input type="time" class="s-start" value="${esc(b.start)}"> – <input type="time" class="s-end" value="${esc(b.end)}">` +
-    ` <input type="number" step="0.5" class="s-temp" value="${b.temp}" title="target °C"> °C` +
-    ` <button type="button" class="sched-del btn tiny" title="remove">&times;</button></div>`;
+    `<div class="sched-days flex flex-wrap gap-1">${SCHED_DAYS.map(([n, lbl]) =>
+      `<label class="inline-flex flex-row items-center gap-[3px] text-[.8rem] font-semibold text-muted"><input type="checkbox" class="min-h-0 w-auto" value="${n}"${b.days.includes(n) ? ' checked' : ''}>${lbl}</label>`).join('')}</div>` +
+    `<div class="sched-times flex items-center flex-wrap gap-1.5 text-[.9rem]"><input type="time" class="s-start ${fieldSm}" value="${esc(b.start)}"> – <input type="time" class="s-end ${fieldSm}" value="${esc(b.end)}">` +
+    ` <input type="number" step="0.5" class="s-temp ${fieldSm} !w-[72px]" value="${b.temp}" title="target °C"> °C` +
+    ` <button type="button" class="sched-del ${TINY} ml-auto !px-[9px] !py-[2px]" title="remove">&times;</button></div>`;
   row.querySelector('.sched-del').addEventListener('click', () => { row.remove(); });
   return row;
 }
@@ -757,12 +785,12 @@ function drawChart(svg, rows, target) {
   for (const p of rows) {
     if (p.state === 'on' && bandStart == null) { bandStart = p.t; }
     else if (p.state !== 'on' && bandStart != null) {
-      out += `<rect x="${x(bandStart).toFixed(1)}" y="${padT}" width="${Math.max(0.5, x(p.t) - x(bandStart)).toFixed(1)}" height="${ch.toFixed(1)}" class="spark-band"/>`;
+      out += `<rect x="${x(bandStart).toFixed(1)}" y="${padT}" width="${Math.max(0.5, x(p.t) - x(bandStart)).toFixed(1)}" height="${ch.toFixed(1)}" class="[fill:rgba(34,197,94,.12)]"/>`;
       bandStart = null;
     }
   }
   if (bandStart != null) {
-    out += `<rect x="${x(bandStart).toFixed(1)}" y="${padT}" width="${Math.max(0.5, x(t1) - x(bandStart)).toFixed(1)}" height="${ch.toFixed(1)}" class="spark-band"/>`;
+    out += `<rect x="${x(bandStart).toFixed(1)}" y="${padT}" width="${Math.max(0.5, x(t1) - x(bandStart)).toFixed(1)}" height="${ch.toFixed(1)}" class="[fill:rgba(34,197,94,.12)]"/>`;
   }
 
   // Y-axis ticks
@@ -771,7 +799,7 @@ function drawChart(svg, rows, target) {
     const val = lo + (i / yTicks) * (hi - lo);
     const yy = y(val);
     out += `<line x1="${padL - 4}" y1="${yy.toFixed(1)}" x2="${W - padR}" y2="${yy.toFixed(1)}" stroke="var(--border)" stroke-width="0.5"/>`;
-    out += `<text x="${padL - 6}" y="${(yy + 3).toFixed(1)}" class="spark-axis" text-anchor="end">${val.toFixed(1)}°</text>`;
+    out += `<text x="${padL - 6}" y="${(yy + 3).toFixed(1)}" class="[fill:var(--muted)] [font-size:9px]" text-anchor="end">${val.toFixed(1)}°</text>`;
   }
 
   // X-axis time labels
@@ -782,19 +810,19 @@ function drawChart(svg, rows, target) {
     const d = new Date(mt);
     const label = xTicks > 4 ? d.toLocaleDateString(undefined, { month:'short', day:'numeric' })
       : d.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
-    out += `<text x="${xx.toFixed(1)}" y="${H - 4}" class="spark-axis" text-anchor="middle">${label}</text>`;
+    out += `<text x="${xx.toFixed(1)}" y="${H - 4}" class="[fill:var(--muted)] [font-size:9px]" text-anchor="middle">${label}</text>`;
   }
 
   // Target line
   if (target != null && isFinite(+target)) {
     const ty = y(+target);
-    out += `<line x1="${padL}" y1="${ty.toFixed(1)}" x2="${W - padR}" y2="${ty.toFixed(1)}" class="spark-target"/>`;
-    out += `<text x="${W - padR}" y="${(ty - 3).toFixed(1)}" class="spark-axis" text-anchor="end">${+target}°</text>`;
+    out += `<line x1="${padL}" y1="${ty.toFixed(1)}" x2="${W - padR}" y2="${ty.toFixed(1)}" class="[stroke:var(--ok)] [stroke-width:1.5] [stroke-dasharray:6_4] [vector-effect:non-scaling-stroke]"/>`;
+    out += `<text x="${W - padR}" y="${(ty - 3).toFixed(1)}" class="[fill:var(--muted)] [font-size:9px]" text-anchor="end">${+target}°</text>`;
   }
 
   // Temperature line
   const d = rows.map((p, i) => (i ? 'L' : 'M') + x(p.t).toFixed(1) + ' ' + y(p.temp).toFixed(1)).join(' ');
-  out += `<path d="${d}" class="spark-line"/>`;
+  out += `<path d="${d}" class="fill-none [stroke:#f59e0b] [stroke-width:2] [vector-effect:non-scaling-stroke]"/>`;
 
   svg.innerHTML = out;
 }
@@ -820,7 +848,7 @@ function updateRelayToggleBtn(r) {
   const btn = $('#ed-relay-toggle');
   const on = (state.live[r.relay] || {}).state === 'on';
   btn.innerHTML = '<i class="bi bi-power"></i> ' + (on ? t('turn_relay_off') : t('turn_relay_on'));
-  btn.classList.toggle('relay-on', on);
+  ['bg-on', 'border-on', 'text-white'].forEach((c) => btn.classList.toggle(c, on));
 }
 async function toggleRelayFromEditor() {
   const r = selected(); if (!r || !r.relay) return;
@@ -829,8 +857,8 @@ async function toggleRelayFromEditor() {
 }
 function updateAutomationUI(s) {
   const on = s.exists && s.enabled;
-  $('#ed-automation-status').innerHTML = !s.exists ? `<span class="auto-off">${t('auto_none')}</span>`
-    : (on ? `<span class="auto-on"><i class="bi bi-record-fill"></i> ${t('auto_on')}</span>` : `<span class="auto-off"><i class="bi bi-pause-fill"></i> ${t('auto_paused')}</span>`);
+  $('#ed-automation-status').innerHTML = !s.exists ? `<span class="text-heat text-[.95rem] font-bold">${t('auto_none')}</span>`
+    : (on ? `<span class="text-ok text-[.95rem] font-bold"><i class="bi bi-record-fill"></i> ${t('auto_on')}</span>` : `<span class="text-heat text-[.95rem] font-bold"><i class="bi bi-pause-fill"></i> ${t('auto_paused')}</span>`);
   const btn = $('#ed-automation-toggle');
   btn.innerHTML = on ? `<i class="bi bi-pause-fill"></i> ${t('pause_maint')}` : `<i class="bi bi-play-fill"></i> ${t('resume_auto')}`;
   btn.disabled = !s.exists;
@@ -848,7 +876,7 @@ async function toggleAutomation() {
   } catch (e) { edMsg('error: ' + e.message, 'err'); loadAutomationState(r); }
 }
 function closeEditor() { state.selected = null; $('#editor').classList.add('hidden'); }
-function edMsg(m, cls) { const e = $('#ed-msg'); e.textContent = m || ''; e.className = 'ed-msg ' + (cls || ''); }
+function edMsg(m, cls) { setMsg($('#ed-msg'), m, cls); }
 function selected() { return state.layout.relays.find((x) => x.id === state.selected); }
 
 // ---- device (physical relay) editor ----
@@ -861,12 +889,12 @@ function openDeviceEditor(g) {
   const outs = state.layout.relays.filter((r) => r.device === g.id);
   $('#de-outputs').innerHTML = outs.map((r) => {
     const on = (state.live[r.relay] || {}).state === 'on';
-    return `<div class="de-out" data-id="${esc(r.id)}">
-      <span class="de-out-dot ${r.relay ? (on ? 'on' : 'off') : ''}"></span>
-      <span class="de-out-name">${esc(r.name || r.relay || 'output')}</span>
-      <span class="de-out-tag">${r.bound ? '<i class="bi bi-record-fill"></i> bound' : '<i class="bi bi-circle"></i>'}</span>
+    return `<div class="de-out flex items-center gap-2.5 px-3 py-2.5 bg-surface-2 border-2 border-border rounded-[10px] cursor-pointer text-base" data-id="${esc(r.id)}">
+      <span class="w-3 h-3 rounded-full flex-none ${r.relay ? (on ? 'bg-on' : 'bg-off') : 'bg-off'}"></span>
+      <span class="flex-auto overflow-hidden text-ellipsis whitespace-nowrap">${esc(r.name || r.relay || 'output')}</span>
+      <span class="text-muted text-[.8rem]">${r.bound ? '<i class="bi bi-record-fill"></i> bound' : '<i class="bi bi-circle"></i>'}</span>
     </div>`;
-  }).join('') || '<div class="de-empty">no outputs</div>';
+  }).join('') || '<div class="text-muted text-[.9rem]">no outputs</div>';
   // clicking an output row opens that output's relay editor
   $('#de-outputs').querySelectorAll('.de-out').forEach((row) => {
     row.addEventListener('click', () => { const r = state.layout.relays.find((x) => x.id === row.dataset.id); if (r) openEditor(r); });
@@ -901,7 +929,7 @@ function addOutputToDevice(entityId) {
   openDeviceEditor(g); // refresh the list + dropdown
 }
 function closeDeviceEditor() { state.selectedDev = null; $('#dev-editor').classList.add('hidden'); }
-function deMsg(m, cls) { const e = $('#de-msg'); e.textContent = m || ''; e.className = 'ed-msg ' + (cls || ''); }
+function deMsg(m, cls) { setMsg($('#de-msg'), m, cls); }
 function selectedDev() { return state.layout.devices.find((x) => x.id === state.selectedDev); }
 
 // ---- activity log ----
@@ -979,11 +1007,11 @@ function renderPresets() {
   const presets = state.layout.presets || [];
   const list = $('#pr-list');
   list.innerHTML = presets.length
-    ? presets.map((p, i) => `<div class="bk-row">
-        <span class="bk-row-name">${esc(p.name)}</span>
-        <span class="bk-row-arrow">${Object.keys(p.relays || {}).length} relays</span>
-        <button class="btn tiny pr-apply" data-idx="${i}"><i class="bi bi-play-fill"></i></button>
-        <button class="btn tiny danger pr-del" data-idx="${i}"><i class="bi bi-trash"></i></button>
+    ? presets.map((p, i) => `<div class="flex items-center gap-2 px-2.5 py-2 bg-surface-2 border-[1.5px] border-border rounded-[10px] text-[.85rem]">
+        <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-semibold">${esc(p.name)}</span>
+        <span class="text-muted">${Object.keys(p.relays || {}).length} relays</span>
+        <button class="pr-apply ${TINY}" data-idx="${i}"><i class="bi bi-play-fill"></i></button>
+        <button class="pr-del ${TINY} bg-danger border-danger text-white" data-idx="${i}"><i class="bi bi-trash"></i></button>
       </div>`).join('')
     : '<div style="text-align:center;padding:20px;color:var(--muted)">No presets saved yet</div>';
   list.querySelectorAll('.pr-apply').forEach((b) => b.addEventListener('click', () => applyPreset(parseInt(b.dataset.idx))));
@@ -1058,9 +1086,9 @@ function updateBulkList() {
     const curTemp = r.temp != null ? r.temp : '?';
     const curMode = r.mode === 'above' ? 'cool' : 'heat';
     const newTemp = isFinite(temp) ? temp : curTemp;
-    return `<div class="bk-row">
-      <span class="bk-row-name">${esc(r.name || r.relay)}</span>
-      <span class="bk-row-arrow">${curMode} ${curTemp}° → ${newTemp}° @ ${mode === 'above' ? 'cool' : 'heat'}</span>
+    return `<div class="flex items-center gap-2 px-2.5 py-2 bg-surface-2 border-[1.5px] border-border rounded-[10px] text-[.85rem]">
+      <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-semibold">${esc(r.name || r.relay)}</span>
+      <span class="text-muted">${curMode} ${curTemp}° → ${newTemp}° @ ${mode === 'above' ? 'cool' : 'heat'}</span>
     </div>`;
   }).join('') || `<div style="text-align:center;padding:20px;color:var(--muted)">No bound relays match</div>`;
   $('#bk-count').textContent = matches.length ? `${matches.length} relay${matches.length === 1 ? '' : 's'}` : '';
@@ -1072,11 +1100,11 @@ async function applyBulk() {
   const mode = $('#bk-mode').value;
   const temp = Number($('#bk-temp').value);
   const deadband = Number($('#bk-deadband').value) || 0;
-  if (!isFinite(temp)) { $('#bk-msg').textContent = 'Enter a target temperature'; $('#bk-msg').className = 'ed-msg err'; return; }
+  if (!isFinite(temp)) { setMsg($('#bk-msg'), 'Enter a target temperature', 'err'); return; }
   const matches = state.layout.relays.filter((r) =>
     r.bound && r.relay && r.sensor && (!area || r.area === area)
   );
-  if (!matches.length) { $('#bk-msg').textContent = 'No bound relays match'; $('#bk-msg').className = 'ed-msg err'; return; }
+  if (!matches.length) { setMsg($('#bk-msg'), 'No bound relays match', 'err'); return; }
   $('#bk-apply').disabled = true;
   let ok = 0, fail = 0;
   for (const r of matches) {
@@ -1096,8 +1124,7 @@ async function applyBulk() {
     } catch { fail++; }
   }
   $('#bk-apply').disabled = false;
-  $('#bk-msg').textContent = `Applied to ${ok} relay${ok === 1 ? '' : 's'}` + (fail ? `, ${fail} failed` : '');
-  $('#bk-msg').className = fail ? 'ed-msg err' : 'ed-msg ok';
+  setMsg($('#bk-msg'), `Applied to ${ok} relay${ok === 1 ? '' : 's'}` + (fail ? `, ${fail} failed` : ''), fail ? 'err' : 'ok');
   render(); saveLayout(); refreshLive();
   updateBulkList();
 }
@@ -1116,8 +1143,7 @@ async function loadActivity(page) {
     activity.total = data.total;
     renderActivity(data.entries, data.total, data.page);
   } catch (e) {
-    $('#act-msg').textContent = e.message;
-    $('#act-msg').className = 'ed-msg err';
+    setMsg($('#act-msg'), e.message, 'err');
   }
 }
 
@@ -1138,12 +1164,12 @@ function renderActivity(entries, total, page) {
     const time = fmtTime(e.created_at);
     const actor = e.actor || 'anonymous';
     const row = document.createElement('div');
-    row.className = 'act-entry';
+    row.className = 'flex items-center gap-2.5 px-2.5 py-2 bg-surface-2 border-[1.5px] border-border rounded-[10px] text-[.9rem]';
     row.innerHTML =
-      `<div class="act-icon ${icon.cls}"><i class="bi ${icon.icon}"></i></div>` +
-      `<div class="act-body"><div class="act-desc">${esc(t('act_' + e.action.replace('.','_'))) || esc(e.action)}</div>` +
-      `<div class="act-detail">${esc(actor)}${formatDetail(e.action, e.detail) ? ' · ' + formatDetail(e.action, e.detail) : ''}</div></div>` +
-      `<div class="act-time">${esc(time)}</div>`;
+      `<div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-[.9rem] ${icon.cls}"><i class="bi ${icon.icon}"></i></div>` +
+      `<div class="flex-1 min-w-0"><div class="font-semibold">${esc(t('act_' + e.action.replace('.','_'))) || esc(e.action)}</div>` +
+      `<div class="text-muted text-[.8rem]">${esc(actor)}${formatDetail(e.action, e.detail) ? ' · ' + formatDetail(e.action, e.detail) : ''}</div></div>` +
+      `<div class="text-muted text-[.75rem] shrink-0 text-right whitespace-nowrap">${esc(time)}</div>`;
     list.appendChild(row);
   });
 }
@@ -1168,23 +1194,29 @@ function formatDetail(action, d) {
 }
 
 function actionIcon(action) {
-  const m = {
-    'login':               { icon: 'bi-box-arrow-in-right', cls: 'i-login' },
-    'logout':              { icon: 'bi-box-arrow-right',    cls: 'i-logout' },
-    'relay.bind':          { icon: 'bi-link-45deg',         cls: 'i-bind' },
-    'relay.unbind':        { icon: 'bi-link',               cls: 'i-unbind' },
-    'switch.toggle':       { icon: 'bi-power',              cls: 'i-switch' },
-    'device.rename':       { icon: 'bi-pencil',             cls: 'i-rename' },
-    'layout.save':         { icon: 'bi-floppy',             cls: 'i-save' },
-    'layout.restore':      { icon: 'bi-arrow-counterclockwise', cls: 'i-restore' },
-    'automation.reapply':  { icon: 'bi-arrow-repeat',       cls: 'i-reapply' },
-    'automation.pause':    { icon: 'bi-pause-fill',         cls: 'i-pause' },
-    'automation.resume':   { icon: 'bi-play-fill',          cls: 'i-resume' },
-    'relay.delete':        { icon: 'bi-trash',              cls: 'i-unbind' },
-    'device.delete':       { icon: 'bi-trash',              cls: 'i-unbind' },
-    'area.delete':         { icon: 'bi-trash',              cls: 'i-unbind' },
+  const C = {
+    green: 'bg-[#dcfce7] text-[#16a34a]', gray: 'bg-[#f3f4f6] text-[#6b7280]',
+    red: 'bg-[#fef2f2] text-[#dc2626]', blue: 'bg-[#eff6ff] text-[#2563eb]',
+    sky: 'bg-[#f0f9ff] text-[#0284c7]', yellow: 'bg-[#fefce8] text-[#ca8a04]',
+    amber: 'bg-[#fef3c7] text-[#d97706]', amber2: 'bg-[#fffbeb] text-[#d97706]',
   };
-  return m[action] || { icon: 'bi-circle', cls: 'i-logout' };
+  const m = {
+    'login':               { icon: 'bi-box-arrow-in-right', cls: C.green },
+    'logout':              { icon: 'bi-box-arrow-right',    cls: C.gray },
+    'relay.bind':          { icon: 'bi-link-45deg',         cls: C.green },
+    'relay.unbind':        { icon: 'bi-link',               cls: C.red },
+    'switch.toggle':       { icon: 'bi-power',              cls: C.blue },
+    'device.rename':       { icon: 'bi-pencil',             cls: C.sky },
+    'layout.save':         { icon: 'bi-floppy',             cls: C.yellow },
+    'layout.restore':      { icon: 'bi-arrow-counterclockwise', cls: C.amber },
+    'automation.reapply':  { icon: 'bi-arrow-repeat',       cls: C.gray },
+    'automation.pause':    { icon: 'bi-pause-fill',         cls: C.amber2 },
+    'automation.resume':   { icon: 'bi-play-fill',          cls: C.green },
+    'relay.delete':        { icon: 'bi-trash',              cls: C.red },
+    'device.delete':       { icon: 'bi-trash',              cls: C.red },
+    'area.delete':         { icon: 'bi-trash',              cls: C.red },
+  };
+  return m[action] || { icon: 'bi-circle', cls: C.gray };
 }
 
 function fmtTime(ts) {
@@ -1391,7 +1423,9 @@ function showWarnPop(anchor, msg) {
   const existing = document.getElementById('warn-pop');
   if (existing) { const same = existing._anchor === anchor; existing.remove(); if (same) return; }
   const pop = document.createElement('div');
-  pop.id = 'warn-pop'; pop.className = 'warn-pop'; pop.textContent = msg || ''; pop._anchor = anchor;
+  pop.id = 'warn-pop';
+  pop.className = 'fixed z-[60] max-w-[270px] bg-surface text-fg border-2 border-border rounded-[10px] px-3 py-2.5 text-[.88rem] leading-[1.35] shadow-panel';
+  pop.textContent = msg || ''; pop._anchor = anchor;
   document.body.appendChild(pop);
   const r = anchor.getBoundingClientRect();
   pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - pop.offsetWidth - 8)) + 'px';
@@ -1474,9 +1508,9 @@ $('#btn-lang').addEventListener('click', () => setLang(LANG === 'et' ? 'en' : 'e
 try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => { if (!savedTheme()) applyTheme(e.matches ? 'dark' : 'light'); }); } catch {}
 
 // mobile hamburger: toggle the toolbar dropdown; close on outside tap
-$('#btn-menu').addEventListener('click', (e) => { e.stopPropagation(); $('#toolbar').classList.toggle('open'); });
+$('#btn-menu').addEventListener('click', (e) => { e.stopPropagation(); $('#toolbar').classList.toggle('!flex'); });
 document.addEventListener('click', (e) => {
-  if (!e.target.closest('#toolbar') && !e.target.closest('#btn-menu')) $('#toolbar').classList.remove('open');
+  if (!e.target.closest('#toolbar') && !e.target.closest('#btn-menu')) $('#toolbar').classList.remove('!flex');
 });
 
 // ---- import / export ----
@@ -1646,7 +1680,7 @@ function initResizeHandles() {
   document.querySelectorAll('.editor').forEach((el) => {
     if (el.querySelector('.editor-resize')) return;
     const h = document.createElement('div');
-    h.className = 'editor-resize';
+    h.className = 'editor-resize fixed w-[6px] cursor-ew-resize z-[5] pointer-events-auto active:bg-[rgba(59,110,245,.15)]';
     h.dataset.target = el.id;
     el.appendChild(h);
   });
@@ -1697,7 +1731,7 @@ function openChartModal(r) {
   if (!r) { r = selected(); } if (!r || !r.sensor) return;
   // sync range to sidebar
   document.querySelectorAll('#chart-modal-range .range-btn').forEach((b) => {
-    b.classList.toggle('active', parseInt(b.dataset.range) === historyRange);
+    setRangeActive(b, parseInt(b.dataset.range) === historyRange);
   });
   modalRange = historyRange;
   loadChartModal(r);
@@ -1724,8 +1758,8 @@ $('#ed-spark').addEventListener('click', () => openChartModal());
 // Modal range buttons
 document.querySelectorAll('#chart-modal-range .range-btn').forEach((b) => b.addEventListener('click', () => {
   modalRange = parseInt(b.dataset.range);
-  document.querySelectorAll('#chart-modal-range .range-btn').forEach((x) => x.classList.remove('active'));
-  b.classList.add('active');
+  document.querySelectorAll('#chart-modal-range .range-btn').forEach((x) => setRangeActive(x, false));
+  setRangeActive(b, true);
   loadChartModal(selected());
 }));
 
@@ -1788,8 +1822,8 @@ function addChartTooltip(svg, data, tipSel) {
 $('#ed-csv').addEventListener('click', exportHistory);
 document.querySelectorAll('.range-btn').forEach((b) => b.addEventListener('click', () => {
   historyRange = parseInt(b.dataset.range);
-  document.querySelectorAll('.range-btn').forEach((x) => x.classList.remove('active'));
-  b.classList.add('active');
+  document.querySelectorAll('.range-btn').forEach((x) => setRangeActive(x, false));
+  setRangeActive(b, true);
   const r = selected(); if (r) loadHistory(r);
 }));
 $('#de-close').addEventListener('click', closeDeviceEditor);

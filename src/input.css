@@ -1,0 +1,75 @@
+/*
+ * Tailwind source — build: `npm run build:css` -> public/style.css (generated).
+ *
+ * Pure-utility project (issue #29): all styling is Tailwind utility classes in the
+ * markup (index.html) and in app.js template strings / classList toggles. There are
+ * NO component CSS classes and NO @apply. What remains below is the irreducible set:
+ *   1. Tailwind directives.
+ *   2. Design-token CSS variables — there is no utility form for `--surface: #hex`,
+ *      and flipping them under [data-theme=dark] is what powers dark mode (the same
+ *      pattern shadcn / Tailwind v4 use). Utility colours (bg-surface, text-fg, …)
+ *      resolve to these, so the whole UI is theme-aware with zero dark: variants.
+ *   3. A tiny @layer base: the reset Tailwind's border utilities need with preflight
+ *      off, vendor bootstrap-icon vertical alignment, and the one kiosk exit-hint
+ *      pseudo-element (::after has no utility form).
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- 2. Design tokens ---- */
+:root {
+  --bg: #c7ccd7;
+  --surface: #e8ebf1;
+  --surface-2: #dde1e9;
+  --text: #1e2431;
+  --muted: #525c6c;
+  --border: #c1c8d5;
+  --border-strong: #a2abbb;
+  --primary: #3b6ef5;
+  --primary-d: #2b56d4;
+  --danger: #d8443a;
+  --on: #1e9d57;
+  --off: #b9c1cf;
+  --heat: #d86528;
+  --cool: #2b8ad0;
+  --ok: #1e9d57;
+  --input-bg: #f4f6f9;
+  --shadow: 0 1px 2px rgba(20,26,40,.06), 0 6px 18px rgba(20,26,40,.09);
+  /* accent tokens that flip in dark mode */
+  --dot: #aeb6c4;
+  --caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath fill='%23626b7a' d='M0 0l6 7 6-7z'/%3E%3C/svg%3E");
+  --stale-bg: #fee2e2; --stale-fg: #7f1d1d; --stale-border: #fca5a5;
+}
+html[data-theme="dark"] {
+  --bg: #0f1115;
+  --surface: #1b1f27;
+  --surface-2: #262a33;
+  --text: #e7e5e4;
+  --muted: #9aa0a6;
+  --border: #3a4150;
+  --border-strong: #565f6e;
+  --primary: #2f6bf0;
+  --primary-d: #2456c8;
+  --danger: #dc2626;
+  --on: #22c55e;
+  --off: #545c68;
+  --heat: #f59e0b;
+  --cool: #38bdf8;
+  --ok: #22c55e;
+  --input-bg: #11141a;
+  --shadow: 0 4px 16px rgba(0,0,0,.45);
+  --dot: #333b49;
+  --caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath fill='%239aa0a6' d='M0 0l6 7 6-7z'/%3E%3C/svg%3E");
+  --stale-bg: #3f1414; --stale-fg: #fca5a5; --stale-border: #7f1d1d;
+}
+
+/* ---- 3. Minimal base ---- */
+@layer base {
+  /* preflight is off; restore the border defaults Tailwind's border-* utilities need */
+  *, ::before, ::after { box-sizing: border-box; border-width: 0; border-style: solid; border-color: var(--border); }
+  /* vendor bootstrap-icons vertical alignment */
+  .bi { vertical-align: -.08em; line-height: 1; }
+  /* kiosk exit-hint bar (pseudo-element has no utility form) */
+  body.kiosk .canvas::after { content: ''; position: fixed; bottom: 0; left: 0; right: 0; height: 4px; z-index: 1; background: rgba(59,110,245,.4); }
+}

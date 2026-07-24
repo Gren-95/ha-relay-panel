@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="text-[19px] mobile:text-[20px]">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,40 +9,40 @@
   <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
-  <div id="ha-banner" class="ha-banner hidden"><i class="bi bi-exclamation-triangle-fill"></i> <span data-i18n="ha_unreachable">Home Assistant unreachable — readings may be stale</span></div>
-  <header>
-    <h1><i class="bi bi-lightning-charge-fill"></i> <span data-i18n="app_title">Relay Panel</span> <span id="summary" class="summary"></span></h1>
-    <button id="btn-menu" class="btn menu-btn" aria-label="Menu"><i class="bi bi-list"></i></button>
-    <div id="toolbar" class="toolbar">
-      <span id="status" class="status"></span>
-      <div class="tb-group edit-only">
-        <select id="device-picker" class="btn select"><option value="" data-i18n="physical_relay_ph">+ Physical relay…</option></select>
-        <select id="area-picker" class="btn select"><option value="" data-i18n="area_ph">+ Area…</option></select>
+<body class="m-0 bg-bg text-fg font-sans">
+  <div id="ha-banner" class="hidden bg-[#b45309] text-white text-center font-bold py-2 px-3 text-[.95rem]"><i class="bi bi-exclamation-triangle-fill"></i> <span data-i18n="ha_unreachable">Home Assistant unreachable — readings may be stale</span></div>
+  <header class="flex items-center justify-between gap-4 px-5 py-3 bg-surface border-b border-border shadow-[0_1px_3px_rgba(27,35,54,.05)] sticky top-0 z-[21] mobile:gap-2 mobile:px-[14px]">
+    <h1 class="m-0 text-[1.35rem] font-extrabold tracking-[.2px] whitespace-nowrap mobile:text-[1.25rem]"><i class="bi bi-lightning-charge-fill text-[#eab308]"></i> <span data-i18n="app_title" class="mobile:hidden">Relay Panel</span> <span id="summary" class="text-[.8rem] font-semibold text-muted ml-2.5 whitespace-nowrap"></span></h1>
+    <button id="btn-menu" class="hidden mobile:inline-flex mobile:items-center mobile:justify-center mobile:min-w-[52px] mobile:min-h-[48px] mobile:text-[1.4rem] border border-border-strong bg-surface text-fg rounded-[11px] cursor-pointer active:translate-y-px" aria-label="Menu"><i class="bi bi-list"></i></button>
+    <div id="toolbar" class="toolbar flex items-center gap-2.5 flex-wrap mobile:hidden mobile:absolute mobile:top-full mobile:left-0 mobile:right-0 mobile:flex-col mobile:items-stretch mobile:gap-2.5 mobile:bg-surface mobile:border-b-2 mobile:border-border mobile:p-[14px] mobile:m-0 mobile:shadow-panel mobile:z-[15]">
+      <span id="status" class="text-base text-ok font-bold min-w-0 transition-opacity duration-200 empty:opacity-0 mobile:w-full mobile:m-0 mobile:text-center"></span>
+      <div class="flex items-center gap-2 mobile:grid mobile:grid-cols-2 mobile:gap-2.5 [.live-mode_&]:hidden">
+        <select id="device-picker" class="border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] appearance-none pr-[30px] bg-no-repeat [background-image:var(--caret)] [background-position:right_11px_center] mobile:basis-[calc(50%_-_5px)] mobile:grow mobile:min-h-[54px]"><option value="" data-i18n="physical_relay_ph">+ Physical relay…</option></select>
+        <select id="area-picker" class="border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] appearance-none pr-[30px] bg-no-repeat [background-image:var(--caret)] [background-position:right_11px_center] mobile:basis-[calc(50%_-_5px)] mobile:grow mobile:min-h-[54px]"><option value="" data-i18n="area_ph">+ Area…</option></select>
       </div>
-      <span class="tb-divider edit-only"></span>
-      <div class="tb-group">
-        <button id="btn-save" class="btn edit-only"><i class="bi bi-floppy"></i> <span data-i18n="save">Save</span></button>
-        <button id="btn-alloff" class="btn" data-i18n-title="all_off_title" title="Turn all relays off"><i class="bi bi-power"></i></button>
-        <button id="btn-mode" class="btn"><i class="bi bi-pencil-square"></i> <span id="mode-label">Edit</span></button>
-        <button id="btn-logout" class="btn hidden" data-i18n-title="sign_out" title="Sign out"><i class="bi bi-box-arrow-right"></i></button>
-        <button id="btn-lang" class="btn" title="Keel / Language">ET</button>
-        <button id="btn-theme" class="btn" data-i18n-title="toggle_dark" title="Toggle dark mode"><i class="bi bi-moon-stars"></i></button>
+      <span class="w-0.5 h-[30px] bg-border mobile:hidden [.live-mode_&]:hidden"></span>
+      <div class="flex items-center gap-2 mobile:grid mobile:grid-cols-2 mobile:gap-2.5">
+        <button id="btn-save" class="border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px mobile:basis-[calc(50%_-_5px)] mobile:grow mobile:min-h-[54px] [.live-mode_&]:hidden"><i class="bi bi-floppy"></i> <span data-i18n="save">Save</span></button>
+        <button id="btn-alloff" class="border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px mobile:basis-[calc(50%_-_5px)] mobile:grow mobile:min-h-[54px]" data-i18n-title="all_off_title" title="Turn all relays off"><i class="bi bi-power"></i></button>
+        <button id="btn-mode" class="border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px mobile:basis-[calc(50%_-_5px)] mobile:grow mobile:min-h-[54px]"><i class="bi bi-pencil-square"></i> <span id="mode-label">Edit</span></button>
+        <button id="btn-logout" class="hidden border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px mobile:basis-[calc(50%_-_5px)] mobile:grow mobile:min-h-[54px]" data-i18n-title="sign_out" title="Sign out"><i class="bi bi-box-arrow-right"></i></button>
+        <button id="btn-lang" class="border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px mobile:basis-[calc(50%_-_5px)] mobile:grow mobile:min-h-[54px]" title="Keel / Language">ET</button>
+        <button id="btn-theme" class="border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px mobile:basis-[calc(50%_-_5px)] mobile:grow mobile:min-h-[54px]" data-i18n-title="toggle_dark" title="Toggle dark mode"><i class="bi bi-moon-stars"></i></button>
       </div>
-      <span class="tb-divider"></span>
-      <div class="tb-group tb-advanced">
-        <button id="btn-advanced" class="btn"><i class="bi bi-gear"></i> <span data-i18n="advanced">Advanced</span> <i class="bi bi-caret-down-fill"></i></button>
-        <div id="advanced-menu" class="tb-menu hidden">
-          <button id="btn-add" class="btn menu-item edit-only"><i class="bi bi-plus-lg"></i> <span data-i18n="add_single_relay">Add single relay</span></button>
-          <span class="tb-menu-sep edit-only"></span>
-          <button id="btn-export" class="btn menu-item"><i class="bi bi-download"></i> <span data-i18n="export_layout">Export layout</span></button>
-          <button id="btn-import" class="btn menu-item"><i class="bi bi-upload"></i> <span data-i18n="import_layout">Import layout</span></button>
-          <span class="tb-menu-sep"></span>
-          <button id="btn-activity" class="btn menu-item"><i class="bi bi-clock-history"></i> <span data-i18n="activity_log">Activity log</span></button>
-          <span class="tb-menu-sep"></span>
-          <button id="btn-bulk" class="btn menu-item"><i class="bi bi-collection"></i> <span data-i18n="bulk_edit">Bulk edit</span></button>
-          <span class="tb-menu-sep"></span>
-          <button id="btn-presets" class="btn menu-item"><i class="bi bi-bookmark"></i> <span data-i18n="presets">Presets</span></button>
+      <span class="w-0.5 h-[30px] bg-border mobile:hidden"></span>
+      <div class="flex items-center gap-2 mobile:block mobile:w-full tb-advanced relative">
+        <button id="btn-advanced" class="border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px mobile:hidden"><i class="bi bi-gear"></i> <span data-i18n="advanced">Advanced</span> <i class="bi bi-caret-down-fill"></i></button>
+        <div id="advanced-menu" class="hidden flex flex-col gap-1.5 absolute top-full right-0 mt-2 min-w-[200px] bg-surface border-2 border-border rounded-xl p-2 shadow-panel z-20 mobile:static mobile:grid mobile:grid-cols-2 mobile:w-full mobile:bg-transparent mobile:border-0 mobile:shadow-none mobile:p-0 mobile:m-0 mobile:min-w-0 mobile:gap-2.5">
+          <button id="btn-add" class="w-full text-left border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px mobile:text-center mobile:border-2 mobile:min-h-[54px] mobile:basis-[calc(50%_-_5px)] mobile:grow [.live-mode_&]:hidden"><i class="bi bi-plus-lg"></i> <span data-i18n="add_single_relay">Add single relay</span></button>
+          <span class="h-0.5 bg-border my-[3px] rounded-[2px] mobile:hidden [.live-mode_&]:hidden"></span>
+          <button id="btn-export" class="w-full text-left border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px mobile:text-center mobile:border-2 mobile:min-h-[54px] mobile:basis-[calc(50%_-_5px)] mobile:grow"><i class="bi bi-download"></i> <span data-i18n="export_layout">Export layout</span></button>
+          <button id="btn-import" class="w-full text-left border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px mobile:text-center mobile:border-2 mobile:min-h-[54px] mobile:basis-[calc(50%_-_5px)] mobile:grow"><i class="bi bi-upload"></i> <span data-i18n="import_layout">Import layout</span></button>
+          <span class="h-0.5 bg-border my-[3px] rounded-[2px] mobile:hidden"></span>
+          <button id="btn-activity" class="w-full text-left border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px mobile:text-center mobile:border-2 mobile:min-h-[54px] mobile:basis-[calc(50%_-_5px)] mobile:grow"><i class="bi bi-clock-history"></i> <span data-i18n="activity_log">Activity log</span></button>
+          <span class="h-0.5 bg-border my-[3px] rounded-[2px] mobile:hidden"></span>
+          <button id="btn-bulk" class="w-full text-left border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px mobile:text-center mobile:border-2 mobile:min-h-[54px] mobile:basis-[calc(50%_-_5px)] mobile:grow"><i class="bi bi-collection"></i> <span data-i18n="bulk_edit">Bulk edit</span></button>
+          <span class="h-0.5 bg-border my-[3px] rounded-[2px] mobile:hidden"></span>
+          <button id="btn-presets" class="w-full text-left border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px mobile:text-center mobile:border-2 mobile:min-h-[54px] mobile:basis-[calc(50%_-_5px)] mobile:grow"><i class="bi bi-bookmark"></i> <span data-i18n="presets">Presets</span></button>
         </div>
         <input id="import-file" type="file" accept="application/json,.json" hidden />
       </div>
@@ -52,211 +52,213 @@
   <main id="canvas" class="canvas edit"></main>
 
   <!-- Editor panel -->
-  <aside id="editor" class="editor hidden">
-    <div class="editor-head">
-      <h2 data-i18n="edit_relay">Edit relay</h2>
-      <button id="ed-close" class="x">&times;</button>
+  <aside id="editor" class="editor hidden fixed top-0 right-0 w-[400px] h-full bg-surface border-l-2 border-border pt-[90px] px-[22px] pb-[22px] flex flex-col gap-3 z-20 overflow-y-auto shadow-[-4px_0_16px_rgba(20,18,15,.1)] mobile:w-full mobile:left-0 mobile:right-0 mobile:top-auto mobile:bottom-0 mobile:h-auto mobile:max-h-[85vh] mobile:border-l-0 mobile:border-t-2 mobile:rounded-t-2xl mobile:p-4">
+    <div class="flex items-center justify-between">
+      <h2 class="m-0 text-[1.25rem] font-extrabold" data-i18n="edit_relay">Edit relay</h2>
+      <button id="ed-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none">&times;</button>
     </div>
-    <label><span data-i18n="name">Name</span>
-      <input id="ed-name" type="text" data-i18n-ph="name_ph" placeholder="e.g. Masterwood heater" />
+    <label class="flex flex-col gap-[5px] text-[.95rem] font-semibold text-muted"><span data-i18n="name">Name</span>
+      <input id="ed-name" type="text" data-i18n-ph="name_ph" placeholder="e.g. Masterwood heater" class="bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary placeholder:text-muted placeholder:opacity-80 mobile:text-[1.1rem] mobile:min-h-[54px]" />
     </label>
-    <label><span data-i18n="relay_to_switch">Relay to switch</span>
-      <select id="ed-relay"></select>
+    <label class="flex flex-col gap-[5px] text-[.95rem] font-semibold text-muted"><span data-i18n="relay_to_switch">Relay to switch</span>
+      <select id="ed-relay" class="bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary mobile:text-[1.1rem] mobile:min-h-[54px]"></select>
     </label>
-    <button id="ed-rename-relay" class="btn tiny" type="button"><i class="bi bi-pencil"></i> <span data-i18n="rename_this_relay">Rename this relay</span></button>
-    <label><span data-i18n="temp_sensor">Temperature sensor</span>
-      <select id="ed-sensor"></select>
+    <button id="ed-rename-relay" class="self-start min-h-0 -mt-[3px] px-3 py-[7px] text-[.82rem] font-semibold rounded-lg bg-surface-2 text-muted border-[1.5px] border-border inline-flex items-center gap-[5px] cursor-pointer active:translate-y-px" type="button"><i class="bi bi-pencil"></i> <span data-i18n="rename_this_relay">Rename this relay</span></button>
+    <label class="flex flex-col gap-[5px] text-[.95rem] font-semibold text-muted"><span data-i18n="temp_sensor">Temperature sensor</span>
+      <select id="ed-sensor" class="bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary mobile:text-[1.1rem] mobile:min-h-[54px]"></select>
     </label>
-    <button id="ed-rename-sensor" class="btn tiny" type="button"><i class="bi bi-pencil"></i> <span data-i18n="rename_this_sensor">Rename this sensor</span></button>
-    <label><span data-i18n="area">Area</span>
-      <select id="ed-area"><option value="" data-i18n="none_opt">— none —</option></select>
+    <button id="ed-rename-sensor" class="self-start min-h-0 -mt-[3px] px-3 py-[7px] text-[.82rem] font-semibold rounded-lg bg-surface-2 text-muted border-[1.5px] border-border inline-flex items-center gap-[5px] cursor-pointer active:translate-y-px" type="button"><i class="bi bi-pencil"></i> <span data-i18n="rename_this_sensor">Rename this sensor</span></button>
+    <label class="flex flex-col gap-[5px] text-[.95rem] font-semibold text-muted"><span data-i18n="area">Area</span>
+      <select id="ed-area" class="bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary mobile:text-[1.1rem] mobile:min-h-[54px]"><option value="" data-i18n="none_opt">— none —</option></select>
     </label>
-    <label><span data-i18n="heat_or_cool">Heat or cool?</span>
-      <select id="ed-mode">
+    <label class="flex flex-col gap-[5px] text-[.95rem] font-semibold text-muted"><span data-i18n="heat_or_cool">Heat or cool?</span>
+      <select id="ed-mode" class="bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary mobile:text-[1.1rem] mobile:min-h-[54px]">
         <option value="below" data-i18n="heating_opt">Heating — switch ON when too cold</option>
         <option value="above" data-i18n="cooling_opt">Cooling — switch ON when too hot</option>
       </select>
     </label>
-    <label><span data-i18n="target_temp">Target temperature (°C)</span>
-      <input id="ed-temp" type="number" step="0.5" value="20" />
+    <label class="flex flex-col gap-[5px] text-[.95rem] font-semibold text-muted"><span data-i18n="target_temp">Target temperature (°C)</span>
+      <input id="ed-temp" type="number" step="0.5" value="20" class="bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary mobile:text-[1.1rem] mobile:min-h-[54px]" />
     </label>
-    <label><span data-i18n="switchback_gap">Switch-back gap (°C) — optional, 0 = switch exactly at target</span>
-      <input id="ed-deadband" type="number" step="0.5" min="0" value="0" />
+    <label class="flex flex-col gap-[5px] text-[.95rem] font-semibold text-muted"><span data-i18n="switchback_gap">Switch-back gap (°C) — optional, 0 = switch exactly at target</span>
+      <input id="ed-deadband" type="number" step="0.5" min="0" value="0" class="bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary mobile:text-[1.1rem] mobile:min-h-[54px]" />
     </label>
-    <div class="ed-limits">
-      <label><span data-i18n="min_on">Minimum on-time (min)</span>
-        <input id="ed-minon" type="number" step="1" min="0" value="0" />
-        <span class="ed-hint" data-i18n="min_on_hint">Prevent short cycling: relay won't turn off before this time</span>
+    <div>
+      <label class="flex flex-col gap-[5px] text-[.95rem] font-semibold text-muted"><span data-i18n="min_on">Minimum on-time (min)</span>
+        <input id="ed-minon" type="number" step="1" min="0" value="0" class="bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary mobile:text-[1.1rem] mobile:min-h-[54px]" />
+        <span class="text-[.75rem] text-muted leading-[1.2]" data-i18n="min_on_hint">Prevent short cycling: relay won't turn off before this time</span>
       </label>
-      <label><span data-i18n="min_off">Minimum off-time (min)</span>
-        <input id="ed-minoff" type="number" step="1" min="0" value="0" />
-        <span class="ed-hint" data-i18n="min_off_hint">Prevent short cycling: relay won't turn on before this time</span>
+      <label class="flex flex-col gap-[5px] text-[.95rem] font-semibold text-muted mt-3"><span data-i18n="min_off">Minimum off-time (min)</span>
+        <input id="ed-minoff" type="number" step="1" min="0" value="0" class="bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary mobile:text-[1.1rem] mobile:min-h-[54px]" />
+        <span class="text-[.75rem] text-muted leading-[1.2]" data-i18n="min_off_hint">Prevent short cycling: relay won't turn on before this time</span>
       </label>
     </div>
-    <div class="ed-notify">
-      <label class="ed-sched-toggle"><input id="ed-notify" type="checkbox" /> <span data-i18n="notify_on_issues">Notify on issues</span></label>
-      <label id="ed-notify-deviation-label" class="hidden" style="margin-top:6px"><span data-i18n="notify_deviation">Alert if temp deviates by (°C)</span>
-        <input id="ed-notify-deviation" type="number" step="0.5" min="1" value="5" />
+    <div>
+      <label class="flex flex-row items-center gap-2 font-semibold text-muted"><input id="ed-notify" type="checkbox" class="min-h-0 w-auto" /> <span data-i18n="notify_on_issues">Notify on issues</span></label>
+      <label id="ed-notify-deviation-label" class="hidden flex flex-col gap-[5px] text-[.95rem] font-semibold text-muted mt-1.5"><span data-i18n="notify_deviation">Alert if temp deviates by (°C)</span>
+        <input id="ed-notify-deviation" type="number" step="0.5" min="1" value="5" class="bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary mobile:text-[1.1rem] mobile:min-h-[54px]" />
       </label>
     </div>
-    <div class="ed-sched">
-      <label class="ed-sched-toggle"><input id="ed-sched-on" type="checkbox" /> <span data-i18n="use_schedule">Use a schedule (different target by time)</span></label>
+    <div class="border border-border rounded-[10px] p-2.5 bg-surface-2 flex flex-col gap-2">
+      <label class="flex flex-row items-center gap-2 font-semibold text-muted"><input id="ed-sched-on" type="checkbox" class="min-h-0 w-auto" /> <span data-i18n="use_schedule">Use a schedule (different target by time)</span></label>
       <div id="ed-sched-body" class="hidden">
-        <div id="ed-sched-blocks" class="ed-sched-blocks"></div>
-        <button id="ed-sched-add" class="btn tiny" type="button"><i class="bi bi-plus-lg"></i> <span data-i18n="add_time_block">Add time block</span></button>
-        <label class="ed-sched-fb"><span data-i18n="fallback_temp">Other times, target (°C)</span>
-          <input id="ed-sched-fallback" type="number" step="0.5" />
+        <div id="ed-sched-blocks" class="flex flex-col gap-2"></div>
+        <button id="ed-sched-add" class="self-start min-h-0 -mt-[3px] px-3 py-[7px] text-[.82rem] font-semibold rounded-lg bg-surface-2 text-muted border-[1.5px] border-border inline-flex items-center gap-[5px] cursor-pointer active:translate-y-px" type="button"><i class="bi bi-plus-lg"></i> <span data-i18n="add_time_block">Add time block</span></button>
+        <label class="flex flex-col gap-[5px] text-[.95rem] font-semibold text-muted"><span data-i18n="fallback_temp">Other times, target (°C)</span>
+          <input id="ed-sched-fallback" type="number" step="0.5" class="bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary mobile:text-[1.1rem] mobile:min-h-[54px]" />
         </label>
-        <div class="ed-sched-hint" data-i18n="sched_hint">The main target above is used when no block matches (if no fallback set).</div>
+        <div class="text-[.75rem] text-muted" data-i18n="sched_hint">The main target above is used when no block matches (if no fallback set).</div>
       </div>
     </div>
-    <div id="ed-stale" class="ed-stale hidden"></div>
-    <div id="ed-history" class="ed-history hidden">
-      <div class="ed-history-head">
+    <div id="ed-stale" class="hidden bg-[var(--stale-bg)] text-[var(--stale-fg)] border-[1.5px] border-[var(--stale-border)] rounded-lg px-2.5 py-2 text-[.85rem] font-semibold"></div>
+    <div id="ed-history" class="hidden flex flex-col gap-1">
+      <div class="flex items-center justify-between text-[.85rem] font-bold text-muted gap-1.5">
         <span data-i18n="last_24h">History</span>
-        <div class="ed-history-range">
-          <button class="btn tiny range-btn active" data-range="24">24h</button>
-          <button class="btn tiny range-btn" data-range="168">7d</button>
-          <button class="btn tiny range-btn" data-range="720">30d</button>
+        <div class="flex gap-1">
+          <button class="range-btn min-h-[30px] px-2.5 py-1 text-[.78rem] rounded-[7px] font-semibold border-[1.5px] border-border bg-surface-2 text-muted cursor-pointer bg-primary border-primary text-white" data-range="24">24h</button>
+          <button class="range-btn min-h-[30px] px-2.5 py-1 text-[.78rem] rounded-[7px] font-semibold border-[1.5px] border-border bg-surface-2 text-muted cursor-pointer" data-range="168">7d</button>
+          <button class="range-btn min-h-[30px] px-2.5 py-1 text-[.78rem] rounded-[7px] font-semibold border-[1.5px] border-border bg-surface-2 text-muted cursor-pointer" data-range="720">30d</button>
         </div>
-        <button id="ed-csv" class="btn tiny" data-i18n-title="download_csv" title="Download CSV"><i class="bi bi-download"></i> CSV</button>
+        <button id="ed-csv" class="self-start min-h-0 -mt-[3px] px-3 py-[7px] text-[.82rem] font-semibold rounded-lg bg-surface-2 text-muted border-[1.5px] border-border inline-flex items-center gap-[5px] cursor-pointer active:translate-y-px" data-i18n-title="download_csv" title="Download CSV"><i class="bi bi-download"></i> CSV</button>
       </div>
-      <div style="position:relative">
-        <svg id="ed-spark" class="spark" viewBox="0 0 440 220" preserveAspectRatio="xMidYMid meet"></svg>
-        <div id="ed-tooltip" class="chart-tooltip hidden"></div>
+      <div class="relative">
+        <svg id="ed-spark" class="w-full h-auto aspect-[2/1] bg-surface-2 border-[1.5px] border-border rounded-lg" viewBox="0 0 440 220" preserveAspectRatio="xMidYMid meet"></svg>
+        <div id="ed-tooltip" class="hidden absolute pointer-events-none bg-surface text-fg border-[1.5px] border-border-strong rounded-lg px-2.5 py-1.5 text-[.8rem] leading-[1.4] whitespace-nowrap shadow-[0_2px_8px_rgba(0,0,0,.12)] -translate-x-1/2 -translate-y-[110%]"></div>
       </div>
-      <div id="ed-history-info" class="ed-history-info"></div>
+      <div id="ed-history-info" class="text-[.8rem] text-muted tabular-nums"></div>
     </div>
-    <div class="editor-actions">
-      <button id="ed-bind" class="btn primary" data-i18n="save_turn_on_auto">Save &amp; turn on automatic control</button>
-      <button id="ed-duplicate" class="btn" data-i18n="duplicate_relay">Duplicate</button>
-      <button id="ed-unbind" class="btn" data-i18n="remove_automation">Remove automation</button>
-      <button id="ed-delete" class="btn danger" data-i18n="delete_this_relay">Delete this relay</button>
+    <div class="flex flex-col gap-2.5 mt-2.5">
+      <button id="ed-bind" class="border border-primary bg-primary text-white px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px mobile:min-h-[54px]" data-i18n="save_turn_on_auto">Save &amp; turn on automatic control</button>
+      <button id="ed-duplicate" class="border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px mobile:min-h-[54px]" data-i18n="duplicate_relay">Duplicate</button>
+      <button id="ed-unbind" class="border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px mobile:min-h-[54px]" data-i18n="remove_automation">Remove automation</button>
+      <button id="ed-delete" class="border border-danger bg-danger text-white px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px mobile:min-h-[54px]" data-i18n="delete_this_relay">Delete this relay</button>
     </div>
-    <div id="ed-automation" class="ed-automation hidden">
-      <div id="ed-automation-row" class="ed-automation-row hidden">
+    <div id="ed-automation" class="hidden flex flex-col gap-2 mt-2 p-3 border-2 border-border rounded-[10px] bg-surface-2">
+      <div id="ed-automation-row" class="hidden flex flex-col gap-2">
         <span id="ed-automation-status"></span>
-        <button id="ed-automation-toggle" class="btn" type="button"></button>
+        <button id="ed-automation-toggle" class="border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px" type="button"></button>
       </div>
-      <button id="ed-relay-toggle" class="btn" type="button"></button>
+      <button id="ed-relay-toggle" class="border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px" type="button"></button>
     </div>
-    <p id="ed-msg" class="ed-msg"></p>
+    <p id="ed-msg" class="text-[.95rem] min-h-[1.3em] font-semibold"></p>
   </aside>
 
   <!-- Device (physical relay) editor panel -->
-  <aside id="dev-editor" class="editor hidden">
-    <div class="editor-head">
-      <h2 data-i18n="physical_relay_h">Physical relay</h2>
-      <button id="de-close" class="x">&times;</button>
+  <aside id="dev-editor" class="editor hidden fixed top-0 right-0 w-[400px] h-full bg-surface border-l-2 border-border pt-[90px] px-[22px] pb-[22px] flex flex-col gap-3 z-20 overflow-y-auto shadow-[-4px_0_16px_rgba(20,18,15,.1)] mobile:w-full mobile:left-0 mobile:right-0 mobile:top-auto mobile:bottom-0 mobile:h-auto mobile:max-h-[85vh] mobile:border-l-0 mobile:border-t-2 mobile:rounded-t-2xl mobile:p-4">
+    <div class="flex items-center justify-between">
+      <h2 class="m-0 text-[1.25rem] font-extrabold" data-i18n="physical_relay_h">Physical relay</h2>
+      <button id="de-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none">&times;</button>
     </div>
-    <label><span data-i18n="label_shown">Label (shown on the box)</span>
-      <input id="de-name" type="text" />
+    <label class="flex flex-col gap-[5px] text-[.95rem] font-semibold text-muted"><span data-i18n="label_shown">Label (shown on the box)</span>
+      <input id="de-name" type="text" class="bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary mobile:text-[1.1rem] mobile:min-h-[54px]" />
     </label>
-    <button id="de-rename-ha" class="btn tiny" type="button"><i class="bi bi-pencil"></i> <span data-i18n="rename_device_ha">Rename device in Home Assistant</span></button>
-    <label><span data-i18n="group_area">Group / area</span>
-      <select id="de-area"><option value="" data-i18n="none_opt">— none —</option></select>
+    <button id="de-rename-ha" class="self-start min-h-0 -mt-[3px] px-3 py-[7px] text-[.82rem] font-semibold rounded-lg bg-surface-2 text-muted border-[1.5px] border-border inline-flex items-center gap-[5px] cursor-pointer active:translate-y-px" type="button"><i class="bi bi-pencil"></i> <span data-i18n="rename_device_ha">Rename device in Home Assistant</span></button>
+    <label class="flex flex-col gap-[5px] text-[.95rem] font-semibold text-muted"><span data-i18n="group_area">Group / area</span>
+      <select id="de-area" class="bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary mobile:text-[1.1rem] mobile:min-h-[54px]"><option value="" data-i18n="none_opt">— none —</option></select>
     </label>
-    <div class="de-outputs-head" data-i18n="outputs">Outputs</div>
-    <div id="de-outputs" class="de-outputs"></div>
-    <select id="de-add-output" class="btn"><option value="" data-i18n="add_output_ph">+ Add output…</option></select>
-    <div class="editor-actions">
-      <button id="de-save" class="btn primary" data-i18n="save">Save</button>
-      <button id="de-delete" class="btn danger" data-i18n="remove_from_board">Remove from board</button>
+    <div class="text-[.95rem] font-bold text-muted mt-1.5" data-i18n="outputs">Outputs</div>
+    <div id="de-outputs" class="flex flex-col gap-1.5"></div>
+    <select id="de-add-output" class="border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1]"><option value="" data-i18n="add_output_ph">+ Add output…</option></select>
+    <div class="flex flex-col gap-2.5 mt-2.5">
+      <button id="de-save" class="border border-primary bg-primary text-white px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px mobile:min-h-[54px]" data-i18n="save">Save</button>
+      <button id="de-delete" class="border border-danger bg-danger text-white px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px mobile:min-h-[54px]" data-i18n="remove_from_board">Remove from board</button>
     </div>
-    <p id="de-msg" class="ed-msg"></p>
+    <p id="de-msg" class="text-[.95rem] min-h-[1.3em] font-semibold"></p>
   </aside>
 
   <!-- Activity log panel -->
-  <aside id="activity-editor" class="editor hidden">
-    <div class="editor-head">
-      <h2><i class="bi bi-clock-history"></i> <span data-i18n="activity_log">Activity log</span></h2>
-      <button id="act-close" class="x">&times;</button>
+  <aside id="activity-editor" class="editor hidden fixed top-0 right-0 w-[400px] h-full bg-surface border-l-2 border-border pt-[90px] px-[22px] pb-[22px] flex flex-col gap-3 z-20 overflow-y-auto shadow-[-4px_0_16px_rgba(20,18,15,.1)] mobile:w-full mobile:left-0 mobile:right-0 mobile:top-auto mobile:bottom-0 mobile:h-auto mobile:max-h-[85vh] mobile:border-l-0 mobile:border-t-2 mobile:rounded-t-2xl mobile:p-4">
+    <div class="flex items-center justify-between">
+      <h2 class="m-0 text-[1.25rem] font-extrabold"><i class="bi bi-clock-history"></i> <span data-i18n="activity_log">Activity log</span></h2>
+      <button id="act-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none">&times;</button>
     </div>
-    <div id="act-list" class="act-list"></div>
-    <div id="act-pager" class="act-pager">
-      <button id="act-prev" class="btn tiny hidden"><i class="bi bi-chevron-left"></i> <span data-i18n="newer">Newer</span></button>
+    <div id="act-list" class="flex flex-col gap-1 flex-1 overflow-y-auto"></div>
+    <div id="act-pager" class="flex items-center justify-center gap-2 mt-2">
+      <button id="act-prev" class="hidden self-start min-h-[36px] px-3 py-[7px] text-[.82rem] font-semibold rounded-lg bg-surface-2 text-muted border-[1.5px] border-border inline-flex items-center gap-[5px] cursor-pointer active:translate-y-px"><i class="bi bi-chevron-left"></i> <span data-i18n="newer">Newer</span></button>
       <span id="act-page-info"></span>
-      <button id="act-next" class="btn tiny hidden"><i class="bi bi-chevron-right"></i> <span data-i18n="older">Older</span></button>
-      <button id="act-csv" class="btn tiny" data-i18n-title="download_csv" title="Download CSV"><i class="bi bi-download"></i></button>
+      <button id="act-next" class="hidden self-start min-h-[36px] px-3 py-[7px] text-[.82rem] font-semibold rounded-lg bg-surface-2 text-muted border-[1.5px] border-border inline-flex items-center gap-[5px] cursor-pointer active:translate-y-px"><i class="bi bi-chevron-right"></i> <span data-i18n="older">Older</span></button>
+      <button id="act-csv" class="self-start min-h-[36px] px-3 py-[7px] text-[.82rem] font-semibold rounded-lg bg-surface-2 text-muted border-[1.5px] border-border inline-flex items-center gap-[5px] cursor-pointer active:translate-y-px" data-i18n-title="download_csv" title="Download CSV"><i class="bi bi-download"></i></button>
     </div>
-    <p id="act-msg" class="ed-msg"></p>
+    <p id="act-msg" class="text-[.95rem] min-h-[1.3em] font-semibold"></p>
   </aside>
 
   <!-- Bulk edit panel -->
-  <aside id="bulk-editor" class="editor hidden">
-    <div class="editor-head">
-      <h2><i class="bi bi-collection"></i> <span data-i18n="bulk_edit">Bulk edit</span></h2>
-      <button id="bk-close" class="x">&times;</button>
+  <aside id="bulk-editor" class="editor hidden fixed top-0 right-0 w-[400px] h-full bg-surface border-l-2 border-border pt-[90px] px-[22px] pb-[22px] flex flex-col gap-3 z-20 overflow-y-auto shadow-[-4px_0_16px_rgba(20,18,15,.1)] mobile:w-full mobile:left-0 mobile:right-0 mobile:top-auto mobile:bottom-0 mobile:h-auto mobile:max-h-[85vh] mobile:border-l-0 mobile:border-t-2 mobile:rounded-t-2xl mobile:p-4">
+    <div class="flex items-center justify-between">
+      <h2 class="m-0 text-[1.25rem] font-extrabold"><i class="bi bi-collection"></i> <span data-i18n="bulk_edit">Bulk edit</span></h2>
+      <button id="bk-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none">&times;</button>
     </div>
-    <label><span data-i18n="area">Area</span>
-      <select id="bk-area"><option value="" data-i18n="all_relays">All relays</option></select>
+    <label class="flex flex-col gap-[5px] text-[.95rem] font-semibold text-muted"><span data-i18n="area">Area</span>
+      <select id="bk-area" class="bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary mobile:text-[1.1rem] mobile:min-h-[54px]"><option value="" data-i18n="all_relays">All relays</option></select>
     </label>
-    <label><span data-i18n="heat_or_cool">Heat or cool?</span>
-      <select id="bk-mode">
+    <label class="flex flex-col gap-[5px] text-[.95rem] font-semibold text-muted"><span data-i18n="heat_or_cool">Heat or cool?</span>
+      <select id="bk-mode" class="bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary mobile:text-[1.1rem] mobile:min-h-[54px]">
         <option value="below" data-i18n="heating_opt">Heating</option>
         <option value="above" data-i18n="cooling_opt">Cooling</option>
       </select>
     </label>
-    <label><span data-i18n="target_temp">Target temperature (°C)</span>
-      <input id="bk-temp" type="number" step="0.5" value="20" />
+    <label class="flex flex-col gap-[5px] text-[.95rem] font-semibold text-muted"><span data-i18n="target_temp">Target temperature (°C)</span>
+      <input id="bk-temp" type="number" step="0.5" value="20" class="bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary mobile:text-[1.1rem] mobile:min-h-[54px]" />
     </label>
-    <label><span data-i18n="switchback_gap">Deadband (°C)</span>
-      <input id="bk-deadband" type="number" step="0.5" min="0" value="0" />
+    <label class="flex flex-col gap-[5px] text-[.95rem] font-semibold text-muted"><span data-i18n="switchback_gap">Deadband (°C)</span>
+      <input id="bk-deadband" type="number" step="0.5" min="0" value="0" class="bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary mobile:text-[1.1rem] mobile:min-h-[54px]" />
     </label>
-    <div id="bk-list" class="bk-list"></div>
-    <p id="bk-count" class="bk-count"></p>
-    <div class="editor-actions">
-      <button id="bk-apply" class="btn primary" data-i18n="apply_to_n">Apply to N relays</button>
+    <div id="bk-list" class="flex flex-col gap-1"></div>
+    <p id="bk-count" class="text-[.85rem] font-semibold text-muted mt-1"></p>
+    <div class="flex flex-col gap-2.5 mt-2.5">
+      <button id="bk-apply" class="border border-primary bg-primary text-white px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px mobile:min-h-[54px]" data-i18n="apply_to_n">Apply to N relays</button>
     </div>
-    <p id="bk-msg" class="ed-msg"></p>
+    <p id="bk-msg" class="text-[.95rem] min-h-[1.3em] font-semibold"></p>
   </aside>
 
   <!-- Expanded chart modal -->
-  <div id="chart-modal" class="chart-modal hidden">
-    <div class="chart-modal-card">
-      <div class="chart-modal-head">
+  <div id="chart-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+    <div class="bg-surface rounded-[14px] p-5 w-[min(95vw,1000px)] shadow-panel flex flex-col gap-2.5">
+      <div class="flex items-center justify-between font-bold">
         <span id="chart-modal-title"></span>
-        <div class="ed-history-range" id="chart-modal-range">
-          <button class="btn tiny range-btn active" data-range="24">24h</button>
-          <button class="btn tiny range-btn" data-range="168">7d</button>
-          <button class="btn tiny range-btn" data-range="720">30d</button>
+        <div class="flex gap-1" id="chart-modal-range">
+          <button class="range-btn min-h-[30px] px-2.5 py-1 text-[.78rem] rounded-[7px] font-semibold border-[1.5px] border-border bg-surface-2 text-muted cursor-pointer bg-primary border-primary text-white" data-range="24">24h</button>
+          <button class="range-btn min-h-[30px] px-2.5 py-1 text-[.78rem] rounded-[7px] font-semibold border-[1.5px] border-border bg-surface-2 text-muted cursor-pointer" data-range="168">7d</button>
+          <button class="range-btn min-h-[30px] px-2.5 py-1 text-[.78rem] rounded-[7px] font-semibold border-[1.5px] border-border bg-surface-2 text-muted cursor-pointer" data-range="720">30d</button>
         </div>
-        <button id="chart-modal-csv" class="btn tiny" data-i18n-title="download_csv" title="Download CSV"><i class="bi bi-download"></i> CSV</button>
-        <button id="chart-modal-close" class="x">&times;</button>
+        <button id="chart-modal-csv" class="self-start min-h-0 px-3 py-[7px] text-[.82rem] font-semibold rounded-lg bg-surface-2 text-muted border-[1.5px] border-border inline-flex items-center gap-[5px] cursor-pointer active:translate-y-px" data-i18n-title="download_csv" title="Download CSV"><i class="bi bi-download"></i> CSV</button>
+        <button id="chart-modal-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none">&times;</button>
       </div>
-      <div style="position:relative">
+      <div class="relative">
         <svg id="chart-modal-svg" viewBox="0 0 900 400" preserveAspectRatio="xMidYMid meet"></svg>
-        <div id="chart-tooltip" class="chart-tooltip hidden"></div>
+        <div id="chart-tooltip" class="hidden absolute pointer-events-none bg-surface text-fg border-[1.5px] border-border-strong rounded-lg px-2.5 py-1.5 text-[.8rem] leading-[1.4] whitespace-nowrap shadow-[0_2px_8px_rgba(0,0,0,.12)] -translate-x-1/2 -translate-y-[110%]"></div>
       </div>
     </div>
   </div>
 
   <!-- Presets panel -->
-  <aside id="preset-editor" class="editor hidden">
-    <div class="editor-head">
-      <h2><i class="bi bi-bookmark"></i> <span data-i18n="presets">Presets</span></h2>
-      <button id="pr-close" class="x">&times;</button>
+  <aside id="preset-editor" class="editor hidden fixed top-0 right-0 w-[400px] h-full bg-surface border-l-2 border-border pt-[90px] px-[22px] pb-[22px] flex flex-col gap-3 z-20 overflow-y-auto shadow-[-4px_0_16px_rgba(20,18,15,.1)] mobile:w-full mobile:left-0 mobile:right-0 mobile:top-auto mobile:bottom-0 mobile:h-auto mobile:max-h-[85vh] mobile:border-l-0 mobile:border-t-2 mobile:rounded-t-2xl mobile:p-4">
+    <div class="flex items-center justify-between">
+      <h2 class="m-0 text-[1.25rem] font-extrabold"><i class="bi bi-bookmark"></i> <span data-i18n="presets">Presets</span></h2>
+      <button id="pr-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none">&times;</button>
     </div>
-    <div style="display:flex;gap:8px">
-      <input id="pr-name" type="text" data-i18n-ph="preset_name_ph" placeholder="Preset name" style="flex:1" />
-      <button id="pr-save" class="btn primary"><i class="bi bi-save"></i> Save</button>
+    <div class="flex gap-2">
+      <input id="pr-name" type="text" data-i18n-ph="preset_name_ph" placeholder="Preset name" class="flex-1 bg-input border-2 border-border text-fg rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary placeholder:text-muted placeholder:opacity-80 mobile:text-[1.1rem] mobile:min-h-[54px]" />
+      <button id="pr-save" class="border border-primary bg-primary text-white px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px"><i class="bi bi-save"></i> Save</button>
     </div>
-    <div id="pr-list" class="bk-list"></div>
-    <p id="pr-msg" class="ed-msg"></p>
+    <div id="pr-list" class="flex flex-col gap-1"></div>
+    <p id="pr-msg" class="text-[.95rem] min-h-[1.3em] font-semibold"></p>
   </aside>
 
   <!-- Login (validates against your Home Assistant account) -->
-  <div id="login-modal" class="login-modal hidden">
-    <div class="login-card">
-      <h2><i class="bi bi-shield-lock"></i> <span data-i18n="sign_in_to_edit">Sign in to edit</span></h2>
-      <p class="login-sub"><span data-i18n="use_ha_1">Use your </span><b>Home Assistant</b><span data-i18n="use_ha_2"> account.</span></p>
-      <input id="login-user" type="text" data-i18n-ph="username" placeholder="Username" autocomplete="username" />
-      <input id="login-pass" type="password" data-i18n-ph="password" placeholder="Password" autocomplete="current-password" />
-      <div class="login-actions">
-        <button id="login-submit" class="btn primary" data-i18n="sign_in">Sign in</button>
-        <button id="login-cancel" class="btn" data-i18n="cancel">Cancel</button>
+  <div id="login-modal" class="hidden fixed inset-0 z-[50] flex items-center justify-center bg-black/45 p-4">
+    <div class="w-full max-w-[360px] flex flex-col gap-3 bg-surface text-fg border-2 border-solid border-border rounded-[14px] p-[22px] shadow-panel">
+      <h2 class="m-0 text-[1.25rem] font-extrabold"><i class="bi bi-shield-lock"></i> <span data-i18n="sign_in_to_edit">Sign in to edit</span></h2>
+      <p class="m-0 text-muted text-[.95rem]"><span data-i18n="use_ha_1">Use your </span><b>Home Assistant</b><span data-i18n="use_ha_2"> account.</span></p>
+      <input id="login-user" type="text" data-i18n-ph="username" placeholder="Username" autocomplete="username"
+        class="bg-input text-fg border-2 border-solid border-border rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary" />
+      <input id="login-pass" type="password" data-i18n-ph="password" placeholder="Password" autocomplete="current-password"
+        class="bg-input text-fg border-2 border-solid border-border rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary" />
+      <div class="flex gap-2.5">
+        <button id="login-submit" class="flex-1 border border-primary bg-primary text-white px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px" data-i18n="sign_in">Sign in</button>
+        <button id="login-cancel" class="flex-1 border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px" data-i18n="cancel">Cancel</button>
       </div>
-      <p id="login-msg" class="ed-msg"></p>
+      <p id="login-msg" class="text-[.95rem] min-h-[1.3em] font-semibold"></p>
     </div>
   </div>
 
