@@ -12,7 +12,7 @@ async function saveLayout() {
     await api('/api/layout', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(state.layout) });
     pushHistory();
     setStatus(t('saved')); setTimeout(() => setStatus(''), 1000);
-  } catch { setStatus(t('save_error')); }
+  } catch (e) { setStatus(t('save_error') + (e.message ? ': ' + e.message : '')); }
 }
 
 // --- undo / redo history (snapshots of the layout) ---
