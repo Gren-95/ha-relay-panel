@@ -120,8 +120,10 @@ function renderBox(g, kind) {
       if (!confirm(isDev
         ? t('confirm_remove_device').replace('{name}', g.name || 'physical relay')
         : t('confirm_remove_area').replace('{name}', g.name || 'group'))) return;
-      if (isDev) state.layout.devices = state.layout.devices.filter((x) => x.id !== g.id);
-      else state.layout.areas = state.layout.areas.filter((x) => x.id !== g.id);
+      if (isDev) {
+        state.layout.relays = state.layout.relays.filter((r) => r.device !== g.id);
+        state.layout.devices = state.layout.devices.filter((x) => x.id !== g.id);
+      } else state.layout.areas = state.layout.areas.filter((x) => x.id !== g.id);
       api('/api/audit', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: isDev ? 'device.delete' : 'area.delete', detail: { name: g.name, id: g.id } })
       }).catch(() => {});
