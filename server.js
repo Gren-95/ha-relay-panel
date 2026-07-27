@@ -149,6 +149,10 @@ app.post('/api/relays/:rid/unbind', requireAuth, wrap(async (req, res) => {
   const automationId = (r && r.automationId) || `relaypanel_${slug(rid)}`;
   await ha.deleteAutomation(automationId);
   if (r) { r.bound = false; delete r.automationId; await db.saveLayout(layout); }
+  // Clean up any stale notify alert keys for this relay
+  for (const suffix of ['relay_offline','sensor_offline','temp_above','temp_below']) {
+    notifyAlerts.delete(notifyKey(rid, suffix));
+  }
   await db.addAuditLog(await currentUser(req), 'relay.unbind',
     { rid, relay: r ? r.relay : '', name: r ? r.name : '' });
   res.json({ ok: true });
