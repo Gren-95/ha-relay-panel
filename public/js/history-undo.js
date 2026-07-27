@@ -1,0 +1,49 @@
+import { state, setStatus, api } from './core.js';
+import { t } from './i18n.js';
+import { closeEditor } from './editor.js';
+import { closeDeviceEditor } from './device-editor.js';
+import { fillSelects } from './layout.js';
+import { render } from './board.js';
+
+async function saveLayout() {
+  if (!state.authed) return; // viewers don't persist layout (and shouldn't be prompted to log in)
+  if (!state.loaded) return; // never overwrite the DB before the real layout has loaded
+  try {
+    await api('/api/layout', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(state.layout) });
+    pushHistory();
+    setStatus(t('saved')); setTimeout(() => setStatus(''), 1000);
+  } catch { setStatus(t('save_error')); }
+}
+
+// --- undo / redo history (snapshots of the layout) ---
+const history = { stack: [], idx: -1, restoring: false };
+const snapshot = () => JSON.stringify(state.layout);
+function initHistory() { history.stack = [snapshot()]; history.idx = 0; }
+function pushHistory() {
+  if (history.restoring) return;
+  const snap = snapshot();
+  if (history.stack[history.idx] === snap) return;      // unchanged
+  history.stack = history.stack.slice(0, history.idx + 1); // drop redo tail
+  history.stack.push(snap);
+  if (history.stack.length > 60) history.stack.shift();
+  history.idx = history.stack.length - 1;
+}
+async function applyHistory() {
+  state.layout = JSON.parse(history.stack[history.idx]);
+  closeEditor(); closeDeviceEditor();
+  history.restoring = true;
+  try { await saveLayout(); } finally { history.restoring = false; }
+  fillSelects(); render();
+}
+async function undo() {
+  if (!state.edit || !state.authed) return;
+  if (history.idx <= 0) { setStatus(t('nothing_undo')); setTimeout(() => setStatus(''), 1000); return; }
+  history.idx--; await applyHistory(); setStatus(t('undo')); setTimeout(() => setStatus(''), 800);
+}
+async function redo() {
+  if (!state.edit || !state.authed) return;
+  if (history.idx >= history.stack.length - 1) { setStatus(t('nothing_redo')); setTimeout(() => setStatus(''), 1000); return; }
+  history.idx++; await applyHistory(); setStatus(t('redo')); setTimeout(() => setStatus(''), 800);
+}
+
+export { saveLayout, initHistory, pushHistory, applyHistory, undo, redo };

@@ -24,6 +24,11 @@
     "start": "node server.js",
     "build:css": "tailwindcss -i ./src/input.css -o ./public/style.css --minify",
     "watch:css": "tailwindcss -i ./src/input.css -o ./public/style.css --watch",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{js,mjs,json}\"",
+    "format:check": "prettier --check \"**/*.{js,mjs,json}\"",
+    "test:unit": "node --test tests/unit",
     "test:e2e": "playwright test",
     "screenshots": "node scripts/screenshots.mjs"
   },
@@ -35,6 +40,9 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.62.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-import": "^2.31.0",
+    "prettier": "^3.3.3",
     "tailwindcss": "^3.4.19"
   }
 }

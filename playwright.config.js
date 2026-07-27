@@ -5,7 +5,7 @@ module.exports = defineConfig({
   timeout: 30000,
   retries: 0,
   use: {
-    baseURL: 'http://localhost:8090',
+    baseURL: process.env.BASE_URL || 'http://localhost:8090',
     viewport: { width: 1280, height: 720 },
     ignoreHTTPSErrors: true,
   },
