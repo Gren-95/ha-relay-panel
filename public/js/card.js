@@ -57,8 +57,13 @@ function card(r, mobile) {
       el.classList.add('border-danger', 'animate-mode-pulse');
     }
   }
+  // Determine effective direction when relay is ON
+  const effDir = r.mode === 'auto' && curNum != null && r.temp != null
+    ? (curNum > r.temp ? 'cool' : 'heat')
+    : (r.mode === 'above' ? 'cool' : 'heat');
+  const isHeat = effDir === 'heat';
   const modeIcon = on
-    ? (r.mode === 'above' ? '<i class="bi bi-arrow-down text-cool animate-mode-pulse"></i>' : '<i class="bi bi-arrow-up text-heat animate-mode-pulse"></i>')
+    ? `<i class="bi bi-arrow-${isHeat ? 'up text-heat' : 'down text-cool'} animate-mode-pulse"></i>`
     : '';
   const limitIcon = (r.min_on || r.min_off) ? '<i class="bi bi-shield-lock text-[.8rem] text-muted mx-[2px]" title="Cycle protection active"></i>' : '';
 
@@ -71,7 +76,7 @@ function card(r, mobile) {
     ${warnIcon}${limitIcon}${maint ? '<span class="text-[.68rem] font-extrabold px-[7px] py-[2px] rounded-md whitespace-nowrap flex-none bg-[var(--maint-bg)] text-[var(--maint-fg)]"><i class="bi bi-pause-fill"></i> ' + t('maint_badge') + '</span>' : ''}
     <div class="r-metric text-right flex-none flex flex-col items-end gap-1">
       <div class="${curColor} text-[2rem] [.kiosk_&]:text-[2.4rem] font-extrabold leading-none tabular-nums">${temp}${temp === '—' ? '' : '<span class="text-[1.1rem] font-bold opacity-50 ml-px">°</span>'}</div>
-      <div class="inline-flex items-center text-[.85rem] font-semibold text-fg bg-surface-2 border-[1.5px] border-border rounded-full px-2.5 py-0.5 tabular-nums whitespace-nowrap">${r.bound ? `<button class="adj-btn" data-rid="${r.id}" data-dir="-1" title="-0.5°"><i class="bi bi-dash"></i></button>` : ''}${modeIcon}${modeIcon ? '&nbsp;' : ''}${r.temp != null ? r.temp + '°' : '—'}${r.bound ? `<button class="adj-btn" data-rid="${r.id}" data-dir="1" title="+0.5°"><i class="bi bi-plus"></i></button>` : ''}${r.deadband ? `<span class="text-muted ml-1">±${r.deadband}</span>` : ''}</div>
+      <div class="inline-flex items-center text-[.85rem] font-semibold text-fg border-[1.5px] border-border rounded-full px-2.5 py-0.5 tabular-nums whitespace-nowrap">${modeIcon}${modeIcon ? '&nbsp;' : ''}${r.temp != null ? r.temp + '°' : '—'}${r.deadband ? `<span class="text-muted ml-1">±${r.deadband}</span>` : ''}</div>
     </div>`;
 
   // manual on/off toggle (works in both edit & live modes)
