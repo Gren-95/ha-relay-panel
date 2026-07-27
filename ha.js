@@ -330,15 +330,14 @@ function scheduleTargetSetup(schedule, fixedTarget) {
 }
 
 function buildAutomation({ id, alias, sensor, relay, mode, temp, deadband = 0, schedule = null, min_on = 0, min_off = 0 }) {
-  const heat = mode !== 'above';
+  const isAuto = mode === 'auto';
+  const heat = !isAuto && mode !== 'above'; // below = heat, above = cool, auto = both
   const target = Number(temp);
   const band = Math.max(0, Number(deadband) || 0);
   const mo = Math.max(0, Number(min_on) || 0), mf = Math.max(0, Number(min_off) || 0);
   // effective target: from a runtime-evaluated schedule, or the fixed number
   const setup = scheduleTargetSetup(schedule, target);
   const tgt = setup ? 'ns.t' : String(target);
-  const onCond = heat ? `<= ${tgt} - ${band}` : `>= ${tgt} + ${band}`;
-  const offCond = heat ? `>= ${tgt}` : `<= ${tgt}`;
   // SAFETY: only act on a valid numeric reading. If the sensor is unavailable/
   // unknown (device offline), fail to OFF — never leave a heater running because
   // states()|float(-999) looked "below target".
@@ -349,12 +348,50 @@ function buildAutomation({ id, alias, sensor, relay, mode, temp, deadband = 0, s
   // long enough before turning off
   const lastChanged = `states.${relay}.last_changed`;
   const sinceChanged = `now()|as_timestamp - as_timestamp(${lastChanged})`;
-  const onConditions = [];
-  if (mf > 0) onConditions.push({ condition: 'template', value_template: `{{ ${sinceChanged} >= ${mf * 60} }}` });
-  onConditions.push({ condition: 'template', value_template: cond(onCond) });
-  const offConditions = [];
-  if (mo > 0) offConditions.push({ condition: 'template', value_template: `{{ ${sinceChanged} >= ${mo * 60} }}` });
-  offConditions.push({ condition: 'template', value_template: cond(offCond) });
+
+  function makeOnCond(cmp) {
+    const c = [];
+    if (mf > 0) c.push({ condition: 'template', value_template: `{{ ${sinceChanged} >= ${mf * 60} }}` });
+    c.push({ condition: 'template', value_template: cond(cmp) });
+    return c;
+  }
+  function makeOffCond(cmp) {
+    const c = [];
+    if (mo > 0) c.push({ condition: 'template', value_template: `{{ ${sinceChanged} >= ${mo * 60} }}` });
+    c.push({ condition: 'template', value_template: cond(cmp) });
+    return c;
+  }
+
+  let offCond;
+  if (isAuto) offCond = `<= ${tgt} + ${band}`;
+  else if (heat) offCond = `>= ${tgt}`;
+  else offCond = `<= ${tgt}`;
+
+  const chooseBranches = [
+    {
+      // failsafe: sensor not a valid number -> force OFF
+      conditions: [{ condition: 'template', value_template: `{{ not ${valid} }}` }],
+      sequence: [{ action: 'switch.turn_off', target: { entity_id: relay } }],
+    },
+  ];
+
+  if (isAuto) {
+    // Auto mode: turn ON if too cold OR too hot
+    chooseBranches.push({
+      conditions: makeOnCond(`< ${tgt} - ${band} or states('${sensor}')|float > ${tgt} + ${band}`),
+      sequence: [{ action: 'switch.turn_on', target: { entity_id: relay } }],
+    });
+  } else {
+    const onCond = heat ? `<= ${tgt} - ${band}` : `>= ${tgt} + ${band}`;
+    chooseBranches.push({
+      conditions: makeOnCond(onCond),
+      sequence: [{ action: 'switch.turn_on', target: { entity_id: relay } }],
+    });
+  }
+  chooseBranches.push({
+    conditions: makeOffCond(offCond),
+    sequence: [{ action: 'switch.turn_off', target: { entity_id: relay } }],
+  });
 
   return {
     id,
@@ -366,25 +403,7 @@ function buildAutomation({ id, alias, sensor, relay, mode, temp, deadband = 0, s
       { trigger: 'time_pattern', minutes: '/5' },
     ],
     conditions: [],
-    actions: [
-      {
-        choose: [
-          {
-            // failsafe: sensor not a valid number -> force OFF
-            conditions: [{ condition: 'template', value_template: `{{ not ${valid} }}` }],
-            sequence: [{ action: 'switch.turn_off', target: { entity_id: relay } }],
-          },
-          {
-            conditions: onConditions,
-            sequence: [{ action: 'switch.turn_on', target: { entity_id: relay } }],
-          },
-          {
-            conditions: offConditions,
-            sequence: [{ action: 'switch.turn_off', target: { entity_id: relay } }],
-          },
-        ],
-      },
-    ],
+    actions: [ { choose: chooseBranches } ],
   };
 }
 

@@ -18,7 +18,7 @@ router.post('/api/relays/:rid/bind', requireAuth, wrap(async (req, res) => {
   const t = Number(temp);
   if (!isFinite(t)) return res.status(400).json({ ok: false, error: 'target temperature must be a number' });
   const band = isFinite(Number(deadband)) ? Math.max(0, Number(deadband)) : 0;
-  const md = mode === 'above' ? 'above' : 'below';
+  const md = mode === 'above' || mode === 'auto' ? mode : 'below';
   const sched = sanitizeSchedule(schedule);
 
   const automationId = `relaypanel_${slug(rid)}`;
@@ -95,7 +95,7 @@ router.post('/api/reapply', requireAuth, wrap(async (req, res) => {
     const automationId = `relaypanel_${slug(r.id)}`;
     const config = ha.buildAutomation({
       id: automationId, alias: `RelayPanel: ${r.name || r.relay}`,
-      sensor: r.sensor, relay: r.relay, mode: r.mode === 'above' ? 'above' : 'below',
+      sensor: r.sensor, relay: r.relay, mode: r.mode === 'above' || r.mode === 'auto' ? r.mode : 'below',
       temp: Number(r.temp), deadband: Number(r.deadband) || 0, schedule: sanitizeSchedule(r.schedule),
       min_on: Number(r.min_on) || 0, min_off: Number(r.min_off) || 0,
     });
