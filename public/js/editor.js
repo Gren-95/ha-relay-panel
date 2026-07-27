@@ -18,7 +18,16 @@ function openEditor(r) {
   $('#ed-relay').value = r.relay || '';
   $('#ed-sensor').value = r.sensor || '';
   $('#ed-area').value = r.area || '';
-  $('#ed-mode').value = r.mode || 'below';
+  // Auto-detect mode from current temp vs target if not already set
+  let defaultMode = r.mode;
+  if (!defaultMode) {
+    const live = state.live[r.sensor] || {};
+    const cur = parseFloat(live.state);
+    const tgt = r.temp != null ? r.temp : 20;
+    if (!isNaN(cur)) defaultMode = cur > tgt ? 'above' : 'below';
+    else defaultMode = 'below';
+  }
+  $('#ed-mode').value = defaultMode || 'below';
   $('#ed-temp').value = r.temp != null ? r.temp : 20;
   $('#ed-deadband').value = r.deadband != null ? r.deadband : 0;
   $('#ed-minon').value = r.min_on != null ? r.min_on : 0;
