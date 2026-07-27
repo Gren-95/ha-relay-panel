@@ -1,0 +1,5 @@
+public/style.css
+public/vendor
+public/app.js.orig
+node_modules
+package-lock.json
