@@ -51,6 +51,11 @@ function card(r, mobile) {
   if (curNum != null && r.temp != null) {
     if (r.mode === 'above') curColor = curNum > r.temp ? 'text-cool' : 'text-ok';
     else curColor = curNum < r.temp ? 'text-heat' : 'text-ok';
+    // Visual alert: pulse border when temp deviates beyond notify threshold
+    const threshold = Number(r.notify_deviation) || 5;
+    if (r.notify && Math.abs(curNum - r.temp) >= threshold) {
+      el.classList.add('border-danger', 'animate-mode-pulse');
+    }
   }
   const modeIcon = on
     ? (r.mode === 'above' ? '<i class="bi bi-arrow-down text-cool animate-mode-pulse"></i>' : '<i class="bi bi-arrow-up text-heat animate-mode-pulse"></i>')
