@@ -323,14 +323,20 @@ app.get('/api/activity-log', wrap(async (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 // --- notification watcher: alerts on offline sensors/relays or temp deviations ---
-const NOTIFY_SERVICE = (process.env.NOTIFY_SERVICE || '').trim();
+const NOTIFY_SERVICES = (process.env.NOTIFY_SERVICE || '').split(',').map((s) => s.trim()).filter(Boolean);
 const NOTIFY_INTERVAL = 60 * 1000; // check every 60s
 const notifyAlerts = new Map(); // key -> timestamp of last alert
 
 function notifyKey(rid, type) { return `${rid}:${type}`; }
 
+async function sendNotifyAll(message, title) {
+  for (const svc of NOTIFY_SERVICES) {
+    ha.sendNotification(svc, message, title).catch(() => {});
+  }
+}
+
 async function runNotifyCheck() {
-  if (!NOTIFY_SERVICE) return;
+  if (!NOTIFY_SERVICES.length) return;
   let layout;
   try { layout = await db.getLayout(); } catch { return; }
   const relays = (layout.relays || []).filter((r) => r.relay && r.sensor && r.bound);
@@ -354,7 +360,7 @@ async function runNotifyCheck() {
       const key = notifyKey(r.id, 'relay_offline');
       if (!notifyAlerts.has(key)) {
         notifyAlerts.set(key, Date.now());
-        ha.sendNotification(NOTIFY_SERVICE,
+        sendNotifyAll(
           `Relay "${name}" (${r.relay}) is offline/unreachable.`, 'Relay Panel').catch(() => {});
       }
     } else {
@@ -362,7 +368,7 @@ async function runNotifyCheck() {
       const key = notifyKey(r.id, 'relay_offline');
       if (notifyAlerts.has(key)) {
         notifyAlerts.delete(key);
-        ha.sendNotification(NOTIFY_SERVICE,
+        sendNotifyAll(
           `Relay "${name}" (${r.relay}) is back online.`, 'Relay Panel').catch(() => {});
       }
     }
@@ -372,14 +378,14 @@ async function runNotifyCheck() {
       const key = notifyKey(r.id, 'sensor_offline');
       if (!notifyAlerts.has(key)) {
         notifyAlerts.set(key, Date.now());
-        ha.sendNotification(NOTIFY_SERVICE,
+        sendNotifyAll(
           `Sensor "${name}" (${r.sensor}) is offline. Automatic control is paused.`, 'Relay Panel').catch(() => {});
       }
     } else {
       const key = notifyKey(r.id, 'sensor_offline');
       if (notifyAlerts.has(key)) {
         notifyAlerts.delete(key);
-        ha.sendNotification(NOTIFY_SERVICE,
+        sendNotifyAll(
           `Sensor "${name}" (${r.sensor}) is back online.`, 'Relay Panel').catch(() => {});
       }
     }
@@ -398,7 +404,7 @@ async function runNotifyCheck() {
           // Clear opposite direction so a swing from above→below triggers a new alert
           notifyAlerts.delete(notifyKey(r.id, 'temp_' + (dir === 'above' ? 'below' : 'above')));
           notifyAlerts.set(key, Date.now());
-          ha.sendNotification(NOTIFY_SERVICE,
+          sendNotifyAll(
             `"${name}" is ${current.toFixed(1)}°C (target ${target}°C, off by ${diff.toFixed(1)}°C).`,
             'Relay Panel').catch(() => {});
         }
@@ -415,7 +421,7 @@ db.initDb()
     app.listen(PORT, () => {
       console.log(`relay-panel on :${PORT}, HA ${ha.HA_URL}`);
       if (NOTIFY_SERVICE) {
-        console.log(`notify watcher active: ${NOTIFY_SERVICE}`);
+        console.log(`notify watcher active: ${NOTIFY_SERVICES.join(', ')}`);
         (function loop() { runNotifyCheck().finally(() => setTimeout(loop, NOTIFY_INTERVAL)); })();
       }
     });
