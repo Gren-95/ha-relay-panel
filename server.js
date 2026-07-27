@@ -420,7 +420,7 @@ db.initDb()
   .then(() => {
     app.listen(PORT, () => {
       console.log(`relay-panel on :${PORT}, HA ${ha.HA_URL}`);
-      if (NOTIFY_SERVICE) {
+      if (NOTIFY_SERVICES.length) {
         console.log(`notify watcher active: ${NOTIFY_SERVICES.join(', ')}`);
         (function loop() { runNotifyCheck().finally(() => setTimeout(loop, NOTIFY_INTERVAL)); })();
       }
