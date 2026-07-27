@@ -24,6 +24,15 @@ function card(r, mobile) {
   const relLive = state.live[r.relay] || {};
   const temp = live.state != null && live.state !== '' && !isNaN(+live.state) ? (+live.state).toFixed(1) : '—';
   const sensLive = state.live[r.sensor] || {};
+  // Last-seen timestamp
+  let ago = '';
+  if (r.sensor && live.last_changed) {
+    const ms = Date.now() - Date.parse(live.last_changed);
+    if (ms < 60000) ago = 'just now';
+    else if (ms < 3600000) ago = Math.round(ms / 60000) + 'm ago';
+    else if (ms < 86400000) ago = Math.round(ms / 3600000) + 'h ago';
+    else ago = Math.round(ms / 86400000) + 'd ago';
+  }
   const on = relLive.state === 'on';
   // offline / stale-binding detection — distinguish the RELAY from its SENSOR.
   // A relay stays usable when only its sensor is down (just no auto-control).
@@ -76,6 +85,7 @@ function card(r, mobile) {
     ${warnIcon}${limitIcon}${maint ? '<span class="text-[.68rem] font-extrabold px-[7px] py-[2px] rounded-md whitespace-nowrap flex-none bg-[var(--maint-bg)] text-[var(--maint-fg)]"><i class="bi bi-pause-fill"></i> ' + t('maint_badge') + '</span>' : ''}
     <div class="r-metric text-right flex-none flex flex-col items-end gap-1">
       <div class="${curColor} text-[2rem] [.kiosk_&]:text-[2.4rem] font-extrabold leading-none tabular-nums">${temp}${temp === '—' ? '' : '<span class="text-[1.1rem] font-bold opacity-50 ml-px">°</span>'}</div>
+      ${ago ? `<div class="text-[.68rem] text-muted leading-none -mt-[3px]">${ago}</div>` : ''}
       <div class="inline-flex items-center text-[.85rem] font-semibold text-fg border-[1.5px] border-border rounded-full px-2.5 py-0.5 tabular-nums whitespace-nowrap">${modeIcon}${modeIcon ? '&nbsp;' : ''}${r.temp != null ? r.temp + '°' : '—'}${r.deadband ? `<span class="text-muted ml-1">±${r.deadband}</span>` : ''}</div>
     </div>`;
 
