@@ -91,6 +91,18 @@ Tags: `latest`, the branch name, `sha-<commit>`, and `vX.Y.Z` on releases.
   (`switch.turn_on/off` on a template condition), so it keeps working even if the panel
   is offline, and is visible/editable inside Home Assistant.
 
+## Testing
+
+E2E smoke tests use [Playwright](https://playwright.dev) with mocked HA endpoints
+(no live Home Assistant required):
+
+```bash
+npm install --include=dev     # first time only
+npx playwright install chromium
+npm run test:e2e              # smoke suite against http://localhost:8090
+npm run screenshots           # regenerate docs/*.png from seeded demo data
+```
+
 ## Security note
 
 The panel is designed for a trusted LAN. It holds a Home Assistant token server-side and
