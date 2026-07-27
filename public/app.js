@@ -1554,6 +1554,7 @@ $('#btn-theme').addEventListener('click', () => {
   const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
   try { localStorage.setItem('relaypanel-theme', next); } catch {}
   applyTheme(next);
+  render();
 });
 applyTheme(savedTheme() || systemTheme());
 
