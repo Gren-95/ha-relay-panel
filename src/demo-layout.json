@@ -1,0 +1,14 @@
+{
+  "relays": [
+    { "id":"r1","name":"Living room heater","relay":"switch.living_heater","sensor":"sensor.living_temp","area":"area_living","mode":"below","temp":21,"deadband":0.5,"bound":true,"x":60,"y":60 },
+    { "id":"r2","name":"Bedroom heater","relay":"switch.bedroom_heater","sensor":"sensor.bedroom_temp","area":"area_bedroom","mode":"below","temp":20,"deadband":0.5,"bound":true,"x":420,"y":60 },
+    { "id":"r3","name":"Kitchen heater","relay":"switch.kitchen_heater","sensor":"sensor.kitchen_temp","area":"","mode":"below","temp":19,"deadband":1,"bound":true,"x":60,"y":200 },
+    { "id":"r4","name":"Bathroom heater","relay":"switch.bathroom_heater","sensor":"sensor.bathroom_temp","area":"area_bedroom","mode":"below","temp":22,"deadband":0,"bound":true,"x":420,"y":200 }
+  ],
+  "areas": [
+    { "areaId":"area_living","name":"Living room","x":40,"y":40,"w":360,"h":150 },
+    { "areaId":"area_bedroom","name":"Bedrooms","x":400,"y":40,"w":360,"h":280 }
+  ],
+  "devices": [],
+  "presets": []
+}
