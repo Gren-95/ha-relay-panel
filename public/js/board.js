@@ -102,7 +102,7 @@ function renderBox(g, kind) {
   el.innerHTML = `<div class="area-head flex items-center justify-between px-3 py-2 text-base font-bold cursor-grab active:cursor-grabbing select-none touch-none" style="color:${headColor(hue)}">
       <span>${isDev ? '<i class="bi bi-hdd-stack"></i>' : '<i class="bi bi-grid-3x3-gap"></i>'} ${esc(g.name || refId)}${pin}</span>
       ${master}${state.edit ? '<button class="area-del bg-transparent border-0 text-inherit opacity-60 text-[1.4rem] cursor-pointer leading-none" title="Remove group">&times;</button>' : ''}
-    </div>${state.edit ? '<div class="area-resize absolute right-[3px] bottom-[3px] w-5 h-5 cursor-nwse-resize border-r-[3px] border-b-[3px] border-border-strong rounded-br-[12px] touch-none"></div>' : ''}`;
+    </div>${state.edit ? '<div class="area-resize absolute right-[3px] bottom-[3px] w-7 h-7 cursor-nwse-resize border-r-[3px] border-b-[3px] border-border-strong rounded-br-[12px] touch-none"></div>' : ''}`;
 
   const isMember = memberFilter(g, kind);
   el.querySelectorAll('.am-btn').forEach((b) => {
