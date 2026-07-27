@@ -230,7 +230,7 @@ async function boot() {
   } catch (e) {
     // DATA-SAFETY: layout failed to load — do NOT mark loaded, so no save can
     // overwrite the real DB layout with this empty fallback. Retry shortly.
-    setStatus('load error — retrying…'); setTimeout(boot, 4000);
+    setStatus('load error — retrying…'); setTimeout(boot, 4000); return;
   }
   state.layout.relays = state.layout.relays || [];
   state.layout.areas = state.layout.areas || [];
@@ -1389,8 +1389,8 @@ function duplicateRelay() {
   const dup = {
     id,
     name: (src.name || 'Relay') + ' (copy)',
-    x: (src.x || 40) + 24,
-    y: (src.y || 40) + 24,
+    x: (src.x != null ? src.x : 40) + 24,
+    y: (src.y != null ? src.y : 40) + 24,
     relay: '',
     sensor: src.sensor || '',
     area: src.area || '',

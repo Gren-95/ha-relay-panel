@@ -123,7 +123,7 @@ async function getHistory(entity, hours = 24) {
   const series = (data && data[0]) || [];
   return series
     .map((p) => ({ t: Date.parse(p.last_changed || p.last_updated), v: parseFloat(p.state) }))
-    .filter((p) => isFinite(p.v));
+    .filter((p) => isFinite(p.t) && isFinite(p.v));
 }
 
 // Merged sensor + relay history for CSV export. Returns [{t, temp, state}].
@@ -137,7 +137,7 @@ async function getHistoryExport(sensor, relay, hours = 24) {
   ]);
   const sPoints = ((sData && sData[0]) || []).map((p) => ({
     t: Date.parse(p.last_changed || p.last_updated), temp: parseFloat(p.state),
-  })).filter((p) => isFinite(p.temp));
+  })).filter((p) => isFinite(p.t) && isFinite(p.temp));
 
   if (!rData) return sPoints.map((p) => ({ ...p, state: '?' }));
 
