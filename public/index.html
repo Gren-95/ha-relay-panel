@@ -16,13 +16,15 @@
     <button id="btn-menu" class="hidden mobile:inline-flex mobile:items-center mobile:justify-center mobile:min-w-[52px] mobile:min-h-[48px] mobile:text-[1.4rem] border border-border-strong bg-surface text-fg rounded-[11px] cursor-pointer active:translate-y-px" aria-label="Menu" aria-expanded="false"><i class="bi bi-list"></i></button>
     <div id="toolbar" class="toolbar flex items-center gap-2.5 flex-wrap mobile:hidden mobile:absolute mobile:top-full mobile:left-0 mobile:right-0 mobile:flex-col mobile:items-stretch mobile:gap-2.5 mobile:bg-surface mobile:border-b-2 mobile:border-border mobile:p-[14px] mobile:m-0 mobile:shadow-panel mobile:z-[15]">
       <span id="status" class="text-base text-ok font-bold min-w-0 transition-opacity duration-200 empty:opacity-0 mobile:w-full mobile:m-0 mobile:text-center"></span>
-      <div class="flex items-center gap-2 mobile:grid mobile:grid-cols-2 mobile:gap-2.5 [.live-mode_&]:hidden">
-        <select id="device-picker" class="border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] appearance-none pr-[30px] bg-no-repeat [background-image:var(--caret)] [background-position:right_11px_center] mobile:basis-[calc(50%_-_5px)] mobile:grow mobile:min-h-[54px]"><option value="" data-i18n="physical_relay_ph">+ Physical relay…</option></select>
-        <select id="area-picker" class="border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] appearance-none pr-[30px] bg-no-repeat [background-image:var(--caret)] [background-position:right_11px_center] mobile:basis-[calc(50%_-_5px)] mobile:grow mobile:min-h-[54px]"><option value="" data-i18n="area_ph">+ Area…</option></select>
+      <div class="flex items-center gap-2 mobile:w-full [.live-mode_&]:hidden tb-add relative">
+        <button id="btn-add-menu" data-ui="btn btnTb"><i class="bi bi-plus-lg"></i> <span data-i18n="add">Add</span> <i class="bi bi-caret-down-fill"></i></button>
+        <div id="add-menu" class="hidden flex flex-col gap-1.5 absolute top-full left-0 mt-2 min-w-[220px] bg-surface border-2 border-border rounded-xl p-2 shadow-panel z-20 mobile:static mobile:grid mobile:grid-cols-2 mobile:w-full mobile:bg-transparent mobile:border-0 mobile:shadow-none mobile:p-0 mobile:m-0 mobile:min-w-0 mobile:gap-2.5">
+          <button id="btn-add-single" data-ui="btn btnMenu"><i class="bi bi-plus-lg"></i> <span data-i18n="add_single_relay">Add single relay</span></button>
+          <select id="device-picker" data-ui="btn btnMenu mobile:min-h-[54px]"><option value="" data-i18n="physical_relay_ph">+ Physical relay…</option></select>
+          <select id="area-picker" data-ui="btn btnMenu mobile:min-h-[54px]"><option value="" data-i18n="area_ph">+ Area…</option></select>
+        </div>
       </div>
-      <span class="w-0.5 h-[30px] bg-border mobile:hidden [.live-mode_&]:hidden"></span>
       <div class="flex items-center gap-2 mobile:grid mobile:grid-cols-2 mobile:gap-2.5">
-        <button id="btn-save" data-ui="btn btnTb" class="[.live-mode_&]:hidden"><i class="bi bi-floppy"></i> <span data-i18n="save">Save</span></button>
         <button id="btn-alloff" data-ui="btn btnTb" data-i18n-title="all_off_title" title="Turn all relays off"><i class="bi bi-power"></i></button>
         <button id="btn-mode" data-ui="btn btnTb"><i class="bi bi-pencil-square"></i> <span id="mode-label">Edit</span></button>
         <button id="btn-logout" data-ui="btn btnTb" class="hidden" data-i18n-title="sign_out" title="Sign out"><i class="bi bi-box-arrow-right"></i></button>
@@ -31,10 +33,8 @@
       </div>
       <span class="w-0.5 h-[30px] bg-border mobile:hidden"></span>
       <div class="flex items-center gap-2 mobile:block mobile:w-full tb-advanced relative">
-        <button id="btn-advanced" data-ui="btn" class="mobile:hidden"><i class="bi bi-gear"></i> <span data-i18n="advanced">Advanced</span> <i class="bi bi-caret-down-fill"></i></button>
+        <button id="btn-advanced" data-ui="btn" class="mobile:hidden"><i class="bi bi-gear"></i> <span data-i18n="advanced">More</span> <i class="bi bi-caret-down-fill"></i></button>
         <div id="advanced-menu" class="hidden flex flex-col gap-1.5 absolute top-full right-0 mt-2 min-w-[200px] bg-surface border-2 border-border rounded-xl p-2 shadow-panel z-20 mobile:static mobile:grid mobile:grid-cols-2 mobile:w-full mobile:bg-transparent mobile:border-0 mobile:shadow-none mobile:p-0 mobile:m-0 mobile:min-w-0 mobile:gap-2.5">
-          <button id="btn-add" data-ui="btn btnMenu" class="[.live-mode_&]:hidden"><i class="bi bi-plus-lg"></i> <span data-i18n="add_single_relay">Add single relay</span></button>
-          <span class="h-0.5 bg-border my-[3px] rounded-[2px] mobile:hidden [.live-mode_&]:hidden"></span>
           <button id="btn-export" data-ui="btn btnMenu"><i class="bi bi-download"></i> <span data-i18n="export_layout">Export layout</span></button>
           <button id="btn-import" data-ui="btn btnMenu"><i class="bi bi-upload"></i> <span data-i18n="import_layout">Import layout</span></button>
           <span class="h-0.5 bg-border my-[3px] rounded-[2px] mobile:hidden"></span>

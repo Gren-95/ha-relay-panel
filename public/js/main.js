@@ -58,7 +58,12 @@ async function boot() {
 // ---- top-level wiring (runs after all modules have evaluated) ----
 // wiring
 const closeAdvanced = () => $('#advanced-menu').classList.add('hidden');
-$('#btn-add').addEventListener('click', () => { closeAdvanced(); addRelay(); });
+const closeAdd = () => $('#add-menu').classList.add('hidden');
+// +Add menu
+$('#btn-add-menu').addEventListener('click', (e) => { e.stopPropagation(); $('#add-menu').classList.toggle('hidden'); });
+document.addEventListener('click', (e) => { if (!e.target.closest('.tb-add')) $('#add-menu').classList.add('hidden'); });
+$('#btn-add-single').addEventListener('click', () => { closeAdd(); addRelay(); });
+// Advanced/More menu
 $('#btn-advanced').addEventListener('click', (e) => { e.stopPropagation(); $('#advanced-menu').classList.toggle('hidden'); });
 document.addEventListener('click', (e) => { if (!e.target.closest('.tb-advanced')) $('#advanced-menu').classList.add('hidden'); });
 $('#btn-export').addEventListener('click', exportLayout);
@@ -68,9 +73,8 @@ $('#btn-bulk').addEventListener('click', () => { closeAdvanced(); openBulkEdit()
 $('#btn-presets').addEventListener('click', () => { closeAdvanced(); openPresets(); });
 $('#btn-alloff').addEventListener('click', allOff);
 $('#import-file').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) importLayout(f); e.target.value = ''; });
-$('#area-picker').addEventListener('change', (e) => { closeAdvanced(); addArea(e.target.value); e.target.value = ''; });
-$('#device-picker').addEventListener('change', (e) => { closeAdvanced(); addPhysicalRelay(e.target.value); e.target.value = ''; });
-$('#btn-save').addEventListener('click', saveLayout);
+$('#area-picker').addEventListener('change', (e) => { closeAdd(); addArea(e.target.value); e.target.value = ''; });
+$('#device-picker').addEventListener('change', (e) => { closeAdd(); addPhysicalRelay(e.target.value); e.target.value = ''; });
 
 // keyboard shortcuts
 document.addEventListener('keydown', (e) => {
