@@ -34,40 +34,39 @@ function boxTint(hue) {
 }
 
 // --- area containment: a relay assigned to an area is clamped inside its box ---
-const CARD_W = 340, CARD_H = 84, GAP = 10, HDR = 44, PAD = 10;
+const CARD_BOX_W = 370, CARD_BOX_H = 106, GAP = 10, HDR_AREA = 54, HDR_DEV = 84, PAD = 16;
+const hdr = (box) => box.deviceId ? HDR_DEV : HDR_AREA;
 function boxFor(r) {
   if (r.device) { const d = state.layout.devices.find((x) => x.id === r.device); if (d) return d; }
   return r.area ? state.layout.areas.find((a) => a.areaId === r.area) : null;
 }
-function clampToBox(r, box, w, h) {
-  w = w || CARD_W; h = h || CARD_H;
-  const minX = box.x + PAD, maxX = Math.max(minX, box.x + box.w - w - PAD);
-  const minY = box.y + HDR, maxY = Math.max(minY, box.y + box.h - h - PAD);
+function clampToBox(r, box) {
+  const minX = box.x + PAD, maxX = Math.max(minX, box.x + box.w - CARD_BOX_W - PAD);
+  const minY = box.y + hdr(box), maxY = Math.max(minY, box.y + box.h - CARD_BOX_H - PAD);
   r.x = Math.min(Math.max(r.x, minX), maxX);
   r.y = Math.min(Math.max(r.y, minY), maxY);
 }
-function centerInBox(r, box, w, h) {
-  w = w || CARD_W; h = h || CARD_H;
-  r.x = Math.round(box.x + (box.w - w) / 2);
-  r.y = Math.round(box.y + HDR + (box.h - HDR - h) / 2);
+function centerInBox(r, box) {
+  r.x = Math.round(box.x + (box.w - CARD_BOX_W) / 2);
+  r.y = Math.round(box.y + hdr(box) + (box.h - hdr(box) - CARD_BOX_H) / 2);
 }
 
 // Stack a device's output cards vertically inside its box and size the box to fit.
 function reflowDeviceOutputs(dev) {
   const outs = state.layout.relays.filter((r) => r.device === dev.id);
-  dev.w = CARD_W + 2 * PAD;
-  dev.h = HDR + PAD + Math.max(1, outs.length) * CARD_H + Math.max(0, outs.length - 1) * GAP + PAD;
-  outs.forEach((r, i) => { r.x = dev.x + PAD; r.y = dev.y + HDR + i * (CARD_H + GAP); });
+  dev.w = CARD_BOX_W + 2 * PAD;
+  dev.h = HDR_DEV + PAD + Math.max(1, outs.length) * CARD_BOX_H + Math.max(0, outs.length - 1) * GAP + PAD;
+  outs.forEach((r, i) => { r.x = dev.x + PAD; r.y = dev.y + HDR_DEV + i * (CARD_BOX_H + GAP); });
 }
 
 // Grow an area box so it contains all its pinned device boxes + loose member cards.
 function fitAreaToContents(area) {
-  let right = area.x + 200, bottom = area.y + HDR + 100;
+  let right = area.x + 200, bottom = area.y + HDR_AREA + 100;
   for (const d of state.layout.devices.filter((x) => x.area === area.areaId)) {
     right = Math.max(right, d.x + (d.w || 320)); bottom = Math.max(bottom, d.y + (d.h || 220));
   }
   for (const r of state.layout.relays.filter((x) => x.area === area.areaId && !x.device)) {
-    right = Math.max(right, (r.x || 20) + CARD_W); bottom = Math.max(bottom, (r.y || 20) + CARD_H);
+    right = Math.max(right, (r.x || 20) + CARD_BOX_W); bottom = Math.max(bottom, (r.y || 20) + CARD_BOX_H);
   }
   // only GROW — never shrink below the current (possibly manually-set) size,
   // so an area always contains its devices/cards but manual resizing survives.
@@ -97,7 +96,7 @@ function assignDeviceArea(g, areaId) {
   outs.forEach((r) => { r.area = areaId || ''; });
   const box = areaId && state.layout.areas.find((a) => a.areaId === areaId);
   if (box) {
-    g.x = box.x + PAD; g.y = box.y + HDR;   // slot just inside the area
+    g.x = box.x + PAD; g.y = box.y + HDR_AREA;   // slot just inside the area
     reflowDeviceOutputs(g);
     fitAreaToContents(box);                 // grow the area to fit the relay
   } else {
@@ -119,5 +118,5 @@ function pinDeviceToArea(g) {
 }
 
 export { fillSelects, refreshAreaPicker, areaColor, areaName, headColor, boxTint,
-  CARD_W, CARD_H, GAP, HDR, PAD, boxFor, clampToBox, centerInBox, reflowDeviceOutputs,
+  CARD_BOX_W, CARD_BOX_H, GAP, HDR_AREA, HDR_DEV, PAD, boxFor, clampToBox, centerInBox, reflowDeviceOutputs,
   fitAreaToContents, normalizeLayout, areaAt, assignDeviceArea, pinDeviceToArea };

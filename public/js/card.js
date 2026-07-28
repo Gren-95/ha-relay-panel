@@ -14,7 +14,7 @@ function card(r, mobile) {
     'relay bg-surface rounded-[14px] px-[14px] shadow-panel select-none flex items-center gap-3 box-border touch-none',
     maint ? 'border-2 border-heat' : 'border border-border',
     mobile ? 'static w-full h-auto min-h-[84px]'
-           : 'absolute z-[3] w-[340px] h-[84px]' + (state.edit ? ' cursor-grab' : ''),
+           : 'absolute z-[3] w-[340px] h-[100px]' + (state.edit && !r.device ? ' cursor-grab' : ''),
   ].join(' ');
   el.dataset.id = r.id;
   if (!mobile) { el.style.left = (r.x || 20) + 'px'; el.style.top = (r.y || 20) + 'px'; }
@@ -103,10 +103,10 @@ function card(r, mobile) {
   if (mobile) {
     // list mode: tap the card (not the toggle) to edit; no dragging
     el.addEventListener('click', (e) => { if (!e.target.closest('.r-toggle')) openEditor(r); });
-  } else if (state.edit) dragMove(el, el, (dx, dy, ox, oy) => {
+  } else if (state.edit && !r.device) dragMove(el, el, (dx, dy, ox, oy) => {
     const moved = Math.abs(dx) > 3 || Math.abs(dy) > 3; el._moved = el._moved || moved;
     r.x = Math.max(0, ox + dx); r.y = Math.max(0, oy + dy);
-    const box = boxFor(r); if (box) clampToBox(r, box, el.offsetWidth, el.offsetHeight); // hard-linked: stay inside its area
+    const box = boxFor(r); if (box) clampToBox(r, box);
     el.style.left = r.x + 'px'; el.style.top = r.y + 'px';
   }, () => (r.x || 20), () => (r.y || 20), () => { if (el._moved) { el._moved = false; saveLayout(); } else openEditor(r); });
   return el;

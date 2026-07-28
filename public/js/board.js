@@ -1,7 +1,7 @@
 import { state, canvas, CANVAS_DESKTOP, CANVAS_MOBILE, esc, setStatus, api } from './core.js';
 import { t } from './i18n.js';
 import { refreshAreaPicker, normalizeLayout, areaColor, headColor, boxTint, areaName,
-  pinDeviceToArea, clampToBox, fitAreaToContents, reflowDeviceOutputs, CARD_W, PAD, HDR } from './layout.js';
+  pinDeviceToArea, clampToBox, fitAreaToContents, reflowDeviceOutputs, CARD_BOX_W, PAD, HDR_AREA } from './layout.js';
 import { updateSummary, setAreaRelays } from './relay-actions.js';
 import { card } from './card.js';
 import { openDeviceEditor } from './device-editor.js';
@@ -36,7 +36,7 @@ function render() {
 
 // shared area master on/off buttons (keeps .area-master hook for live-mode hide + .am-btn hooks)
 const AM_BTN = 'am-btn text-[.72rem] font-bold px-[9px] py-[3px] rounded-lg cursor-pointer border-[1.5px] border-border-strong bg-surface text-fg';
-const areaMaster = () => `<span class="area-master inline-flex gap-1 ml-auto [.live-mode_&]:hidden"><button class="${AM_BTN}" data-act="on">${t('all_on')}</button><button class="${AM_BTN}" data-act="off">${t('all_off')}</button></span>`;
+const areaMaster = () => `<span class="area-master inline-flex gap-1 [.live-mode_&]:hidden"><button class="${AM_BTN}" data-act="on">${t('all_on')}</button><button class="${AM_BTN}" data-act="off">${t('all_off')}</button></span>`;
 
 // Mobile: ignore x/y positions, render a nested flex list (area -> device -> outputs).
 function renderMobile() {
@@ -99,10 +99,11 @@ function renderBox(g, kind) {
   const pin = isDev && g.area ? ` <span class="area-pin text-[.85rem] opacity-90 font-medium ml-[5px]"><i class="bi bi-geo-alt-fill"></i> ${esc(areaName(g.area))}</span>` : '';
   // area boxes get a master on/off for all their relays (works in Live mode too)
   const master = !isDev ? areaMaster() : '';
-  el.innerHTML = `<div class="area-head flex items-center justify-between px-3 py-2 text-base font-bold cursor-grab active:cursor-grabbing select-none touch-none" style="color:${headColor(hue)}">
-      <span>${isDev ? '<i class="bi bi-hdd-stack"></i>' : '<i class="bi bi-grid-3x3-gap"></i>'} ${esc(g.name || refId)}${pin}</span>
-      ${master}${state.edit ? '<button class="area-del bg-transparent border-0 text-inherit opacity-60 text-[1.4rem] cursor-pointer leading-none" title="Remove group">&times;</button>' : ''}
-    </div>${state.edit ? '<div class="area-resize absolute right-[3px] bottom-[3px] w-7 h-7 cursor-nwse-resize border-r-[3px] border-b-[3px] border-border-strong rounded-br-[12px] touch-none"></div>' : ''}`;
+  const delBtn = `<button class="area-del bg-transparent border-0 text-inherit text-[1.4rem] cursor-pointer leading-none${state.edit ? ' opacity-60' : ' hidden'}" title="Remove group">&times;</button>`;
+  el.innerHTML = `<div class="area-head px-3 py-1.5 text-base font-bold cursor-grab active:cursor-grabbing select-none touch-none" style="color:${headColor(hue)}">
+      <div class="flex items-center">${isDev ? '<i class="bi bi-hdd-stack"></i>' : '<i class="bi bi-grid-3x3-gap"></i>'} <span class="ml-1 mr-auto">${esc(g.name || refId)}</span> ${master}${delBtn}</div>
+      ${pin ? `<div class="text-[.8rem] font-medium opacity-70 mt-0.5">${pin}</div>` : ''}
+    </div><div class="mx-3 border-b-2 border-dashed border-border-strong opacity-60"></div>${state.edit ? '<div class="area-resize absolute right-[3px] bottom-[3px] w-7 h-7 cursor-nwse-resize border-r-[3px] border-b-[3px] border-border-strong rounded-br-[12px] touch-none"></div>' : ''}`;
 
   const isMember = memberFilter(g, kind);
   el.querySelectorAll('.am-btn').forEach((b) => {
@@ -170,7 +171,7 @@ function groupHeaderDrag(head, el, g, isMember, isDev) {
       let nx = Math.max(0, gx + dx), ny = Math.max(0, gy + dy);
       if (lockBox) {
         const minX = lockBox.x + PAD, maxX = Math.max(minX, lockBox.x + lockBox.w - (g.w || 320) - PAD);
-        const minY = lockBox.y + HDR, maxY = Math.max(minY, lockBox.y + lockBox.h - (g.h || 220) - PAD);
+        const minY = lockBox.y + HDR_AREA, maxY = Math.max(minY, lockBox.y + lockBox.h - (g.h || 220) - PAD);
         nx = Math.min(Math.max(nx, minX), maxX); ny = Math.min(Math.max(ny, minY), maxY);
       }
       const adx = nx - gx, ady = ny - gy; // effective (clamped) delta
@@ -215,7 +216,7 @@ function addPhysicalRelay(deviceId) {
   const dev = state.relayDevices.find((d) => d.device_id === deviceId);
   if (!dev) return;
   const id = 'd' + Date.now().toString(36);
-  const box = { id, deviceId, name: dev.name, x: 40, y: 40, w: CARD_W + 2 * PAD, h: 200 };
+  const box = { id, deviceId, name: dev.name, x: 40, y: 40, w: CARD_BOX_W + 2 * PAD, h: 200 };
   state.layout.devices.push(box);
   dev.outputs.forEach((o, i) => {
     state.layout.relays.push({

@@ -152,8 +152,12 @@ function selected() { return state.layout.relays.find((x) => x.id === state.sele
 function addRelay() {
   const id = 'r' + Date.now().toString(36);
   const n = state.layout.relays.length;
-  state.layout.relays.push({ id, name: 'Relay ' + (n + 1), x: 40 + (n % 5) * 24, y: 40 + (n % 5) * 24, relay: '', sensor: '', area: '', mode: 'below', temp: 20, deadband: 0, bound: false });
-  render(); saveLayout(); openEditor(state.layout.relays[state.layout.relays.length - 1]);
+  const r = { id, name: 'Relay ' + (n + 1), x: 40, y: 40, relay: '', sensor: '', area: '', mode: 'below', temp: 20, deadband: 0, bound: false };
+  state.layout.relays.push(r);
+  // If there's a selected area, center the new relay inside it
+  const box = state.layout.areas.length ? state.layout.areas[state.layout.areas.length - 1] : null;
+  if (box) { r.area = box.areaId; centerInBox(r, box); }
+  render(); saveLayout(); openEditor(r);
 }
 
 function duplicateRelay() {

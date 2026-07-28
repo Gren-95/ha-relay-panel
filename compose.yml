@@ -18,9 +18,12 @@ services:
       retries: 10
 
   relay-panel-web:
-    # Use the prebuilt image (docker compose pull) — or build locally (docker compose up --build).
+    # ALWAYS build from this checkout. pull_policy: build stops a bare
+    # `docker compose up -d` (or a stray `pull`) from replacing the running app
+    # with a prebuilt registry image and silently reverting local work.
     image: ghcr.io/gren-95/ha-relay-panel:latest
     build: .
+    pull_policy: build
     container_name: relay-panel-web
     restart: always
     ports:
