@@ -78,7 +78,7 @@ router.post('/api/rename', requireAuth, wrap(async (req, res) => {
 }));
 
 // --- manual relay control (on/off/toggle) ---
-router.post('/api/switch', wrap(async (req, res) => {
+router.post('/api/switch', requireAuth, wrap(async (req, res) => {
   const { entity_id, action } = req.body || {};
   if (!/^switch\./.test(entity_id || '')) return res.status(400).json({ ok: false, error: 'switch entity required' });
   const state = await ha.setSwitch(entity_id, action);
