@@ -4,7 +4,7 @@ const db = require('../db');
 const ha = require('../ha');
 const z2m = require('../z2m');
 const { wrap, requireAuth, currentUser } = require('../lib/middleware');
-const { slug, sanitizeSchedule } = require('../lib/util');
+const { slug, sanitizeSchedule, validEntity } = require('../lib/util');
 const { notifyAlerts, notifyKey } = require('../lib/notify');
 
 const router = express.Router();
@@ -13,8 +13,8 @@ const router = express.Router();
 router.post('/api/relays/:rid/bind', requireAuth, wrap(async (req, res) => {
   const { rid } = req.params;
   const { name, relay, sensor, mode, temp, deadband, area, schedule, min_on, min_off } = req.body || {};
-  if (!/^switch\./.test(relay || '')) return res.status(400).json({ ok: false, error: 'pick a relay (switch.*)' });
-  if (!/^sensor\./.test(sensor || '')) return res.status(400).json({ ok: false, error: 'pick a temperature sensor' });
+  if (!validEntity(relay)) return res.status(400).json({ ok: false, error: 'invalid relay entity' });
+  if (!validEntity(sensor)) return res.status(400).json({ ok: false, error: 'invalid sensor entity' });
   const t = Number(temp);
   if (!isFinite(t)) return res.status(400).json({ ok: false, error: 'target temperature must be a number' });
   const band = isFinite(Number(deadband)) ? Math.max(0, Number(deadband)) : 0;
