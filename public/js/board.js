@@ -1,7 +1,8 @@
 import { state, canvas, CANVAS_DESKTOP, CANVAS_MOBILE, esc, setStatus, api } from './core.js';
 import { t } from './i18n.js';
-import { refreshAreaPicker, normalizeLayout, areaColor, headColor, boxTint, areaName,
-  pinDeviceToArea, clampToBox, fitAreaToContents, reflowDeviceOutputs, CARD_BOX_W, PAD, HDR_AREA } from './layout.js';
+import { refreshAreaPicker, normalizeLayout, areaColor, headColor, boxTint, headTint, opaque, bodyFill, dashedSides, areaName,
+  pinDeviceToArea, containArea, fitAreaToContents, minAreaSize, reflowDeviceOutputs,
+  num, CARD_W, CARD_H, PAD, HDR, DEV_W, MIN_AREA_W, MIN_AREA_H } from './layout.js';
 import { updateSummary, setAreaRelays } from './relay-actions.js';
 import { card } from './card.js';
 import { openDeviceEditor } from './device-editor.js';
@@ -23,12 +24,12 @@ function render() {
   // Auto-size canvas to fit all content with padding
   let maxX = 600, maxY = 400;
   for (const r of state.layout.relays) {
-    maxX = Math.max(maxX, (r.x || 0) + 400);
-    maxY = Math.max(maxY, (r.y || 0) + 150);
+    maxX = Math.max(maxX, num(r.x) + CARD_W + 2 * PAD);
+    maxY = Math.max(maxY, num(r.y) + CARD_H + 2 * PAD);
   }
   for (const g of [...state.layout.areas, ...state.layout.devices]) {
-    maxX = Math.max(maxX, (g.x || 0) + (g.w || 320) + 40);
-    maxY = Math.max(maxY, (g.y || 0) + (g.h || 220) + 40);
+    maxX = Math.max(maxX, num(g.x) + num(g.w, MIN_AREA_W) + 2 * PAD);
+    maxY = Math.max(maxY, num(g.y) + num(g.h, MIN_AREA_H) + 2 * PAD);
   }
   canvas.style.minWidth = Math.max(maxX, window.innerWidth - 40) + 'px';
   canvas.style.minHeight = Math.max(maxY, window.innerHeight - 130) + 'px';
@@ -64,7 +65,7 @@ function renderMobile() {
   for (const a of state.layout.areas) {
     const hue = areaColor(a.areaId);
     const box = document.createElement('div');
-    box.className = 'border-[3px] border-dashed border-border-strong rounded-[14px] p-2.5 flex flex-col gap-2.5';
+    box.className = 'border-[3px] border-solid border-border-strong rounded-[14px] p-2.5 flex flex-col gap-2.5';
     box.style.borderColor = `hsl(${hue},50%,55%)`;
     box.innerHTML = `<div class="flex items-center justify-between font-extrabold text-[1.05rem] p-0.5" style="color:${headColor(hue)}"><span><i class="bi bi-grid-3x3-gap"></i> ${esc(a.name || a.areaId)}</span>
       ${areaMaster()}</div>`;
@@ -82,28 +83,64 @@ function renderMobile() {
 // ---- group boxes: HA areas ('area') and physical relay devices ('device') ----
 function memberFilter(g, kind) { return kind === 'device' ? (r) => r.device === g.id : (r) => r.area === g.areaId; }
 
+// Push an area's (re-clamped) member coordinates straight into the DOM. Used mid-drag,
+// where a full render() would destroy the element currently holding pointer capture.
+function syncMemberEls(a) {
+  for (const d of state.layout.devices) {
+    if (d.area !== a.areaId) continue;
+    const de = canvas.querySelector('.area[data-gid="' + d.id + '"]');
+    if (de) { de.style.left = d.x + 'px'; de.style.top = d.y + 'px'; }
+  }
+  for (const r of state.layout.relays) {
+    if (r.area !== a.areaId) continue;
+    const re = canvas.querySelector('.relay[data-id="' + r.id + '"]');
+    if (re) { re.style.left = r.x + 'px'; re.style.top = r.y + 'px'; }
+  }
+}
+
 function renderBox(g, kind) {
   const isDev = kind === 'device';
   const refId = isDev ? g.deviceId : g.areaId;
   const hue = areaColor(refId);
   const el = document.createElement('div');
   // border-color + background come from inline style (dynamic per-area hue)
-  el.className = 'area absolute border-2 rounded-2xl [.kiosk_&]:border-[3px] ' + (isDev ? 'border-solid z-[2]' : 'border-dashed z-[1]');
+  // The box carries no border of its own: the titlebar and the body each draw their
+  // own, so the bar can be fully boxed in solid while the canvas below it is dotted.
+  el.className = 'area absolute ' + (isDev ? 'z-[2]' : 'z-[1]');
   el.dataset.gid = g.id;
-  el.style.left = (g.x || 20) + 'px';
-  el.style.top = (g.y || 20) + 'px';
-  el.style.width = (g.w || 320) + 'px';
-  el.style.height = (g.h || 220) + 'px';
-  el.style.borderColor = `hsl(${hue},50%,55%)`;
-  el.style.background = boxTint(hue);
-  const pin = isDev && g.area ? ` <span class="area-pin text-[.85rem] opacity-90 font-medium ml-[5px]"><i class="bi bi-geo-alt-fill"></i> ${esc(areaName(g.area))}</span>` : '';
+  el.style.left = num(g.x) + 'px';
+  el.style.top = num(g.y) + 'px';
+  el.style.width = num(g.w, isDev ? DEV_W : MIN_AREA_W) + 'px';
+  el.style.height = num(g.h, MIN_AREA_H) + 'px';
+  const line = `hsl(${hue},50%,55%)`;
+  // a pinned device names its area inline — the titlebar stays one fixed-height row
+  // so HDR in layout.js keeps matching what is actually rendered.
+  const pin = isDev && g.area ? `<span class="area-pin text-[.8rem] font-medium opacity-80 whitespace-nowrap flex-none"><i class="bi bi-geo-alt-fill"></i> ${esc(areaName(g.area))}</span>` : '';
   // area boxes get a master on/off for all their relays (works in Live mode too)
   const master = !isDev ? areaMaster() : '';
-  const delBtn = `<button class="area-del bg-transparent border-0 text-inherit text-[1.4rem] cursor-pointer leading-none${state.edit ? ' opacity-60' : ' hidden'}" title="Remove group">&times;</button>`;
-  el.innerHTML = `<div class="area-head px-3 py-1.5 text-base font-bold cursor-grab active:cursor-grabbing select-none touch-none" style="color:${headColor(hue)}">
-      <div class="flex items-center">${isDev ? '<i class="bi bi-hdd-stack"></i>' : '<i class="bi bi-grid-3x3-gap"></i>'} <span class="ml-1 mr-auto">${esc(g.name || refId)}</span> ${master}${delBtn}</div>
-      ${pin ? `<div class="text-[.8rem] font-medium opacity-70 mt-0.5">${pin}</div>` : ''}
-    </div><div class="mx-3 border-b-2 border-dashed border-border-strong opacity-60"></div>${state.edit ? '<div class="area-resize absolute right-[3px] bottom-[3px] w-7 h-7 cursor-nwse-resize border-r-[3px] border-b-[3px] border-border-strong rounded-br-[12px] touch-none"></div>' : ''}`;
+  const delBtn = `<button class="area-del bg-transparent border-0 text-inherit text-[1.15rem] cursor-pointer leading-none${state.edit ? ' opacity-60' : ' hidden'}" title="Remove group">&times;</button>`;
+  // only areas are resizable — a device box is always sized to its outputs
+  const resize = state.edit && !isDev
+    ? '<div class="area-resize absolute right-[3px] bottom-[3px] w-[26px] h-[26px] cursor-nwse-resize border-r-[3px] border-b-[3px] border-border-strong rounded-br-[12px] touch-none"></div>' : '';
+  // Two wrapped parts. The titlebar is a solid-bordered bar on all four sides; the
+  // body below it is the box's own dotted canvas, boxed in on left/bottom/right
+  // (no top border — the bar's bottom edge already draws that line).
+  // h-[44px] = 2px border + 40px row + 2px border, i.e. exactly HDR, so the body
+  // starts where layout.js says content begins.
+  const head = `<div class="area-head h-[44px] px-2.5 flex items-center gap-1.5 font-bold select-none touch-none border-2 border-solid rounded-t-2xl${state.edit ? ' cursor-grab active:cursor-grabbing' : ''}" style="color:${headColor(hue)};border-color:${line};background:${opaque(headTint(hue))}">
+      <i class="bi ${isDev ? 'bi-hdd-stack' : 'bi-grid-3x3-gap'} text-[.95rem] flex-none"></i>
+      <span class="text-[.95rem] min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">${esc(g.name || refId)}</span>
+      ${pin}
+      <span class="ml-auto flex items-center gap-1.5 flex-none">${master}${delBtn}</span>
+    </div>`;
+  // A device box keeps a plain solid CSS border; an area's body is outlined with the
+  // wide-gap dashed SVG stroke, which has to be re-emitted whenever the box resizes.
+  // `top` comes from HDR via inline style, not a Tailwind class: an interpolated
+  // `top-[${HDR}px]` is invisible to Tailwind's source scan and would never compile.
+  const bodyBg = () => (isDev ? bodyFill(boxTint(hue))
+    : `${dashedSides(num(g.w, MIN_AREA_W), num(g.h, MIN_AREA_H) - HDR, line)} 0 0 / 100% 100% no-repeat, ${bodyFill(boxTint(hue))}`);
+  const body = `<div class="area-body absolute inset-x-0 bottom-0 rounded-b-2xl pointer-events-none ${isDev ? 'border-2 border-t-0 border-solid' : ''}" style="top:${HDR}px;border-color:${line};background:${bodyBg()}"></div>`;
+  el.innerHTML = head + body + resize;
 
   const isMember = memberFilter(g, kind);
   el.querySelectorAll('.am-btn').forEach((b) => {
@@ -113,9 +150,17 @@ function renderBox(g, kind) {
   if (state.edit) {
     groupHeaderDrag(el.querySelector('.area-head'), el, g, isMember, isDev);
     const rz = el.querySelector('.area-resize');
-    dragMove(rz, el, (dx, dy, ow, oh) => { g.w = Math.max(160, ow + dx); g.h = Math.max(120, oh + dy); el.style.width = g.w + 'px'; el.style.height = g.h + 'px'; },
-      () => (g.w || 320), () => (g.h || 220),
-      () => { if (isDev) pinDeviceToArea(g); for (const r of state.layout.relays.filter(isMember)) clampToBox(r, g); render(); saveLayout(); });
+    // an area can never be dragged smaller than the members it has to hold, and
+    // its members are pulled in as it shrinks — not only once the drag ends
+    if (rz) dragMove(rz, el, (dx, dy, ow, oh) => {
+      const min = minAreaSize(g);
+      g.w = Math.max(min.w, ow + dx); g.h = Math.max(min.h, oh + dy);
+      el.style.width = g.w + 'px'; el.style.height = g.h + 'px';
+      const bodyEl = el.querySelector('.area-body');
+      if (bodyEl) bodyEl.style.background = bodyBg();   // redraw the dashes at the new size
+      containArea(g); syncMemberEls(g);
+    }, () => num(g.w, MIN_AREA_W), () => num(g.h, MIN_AREA_H),
+      () => { containArea(g); render(); saveLayout(); });
     el.querySelector('.area-del').addEventListener('click', (e) => {
       e.stopPropagation();
       if (!confirm(isDev
@@ -149,18 +194,18 @@ function groupHeaderDrag(head, el, g, isMember, isDev) {
     const relEl = (id) => canvas.querySelector('.relay[data-id="' + id + '"]');
     const boxEl = (id) => canvas.querySelector('.area[data-gid="' + id + '"]');
     if (isDev) {
-      for (const r of state.layout.relays.filter((x) => x.device === g.id)) movers.push({ obj: r, x0: r.x || 20, y0: r.y || 20, el: relEl(r.id) });
+      for (const r of state.layout.relays.filter((x) => x.device === g.id)) movers.push({ obj: r, x0: num(r.x), y0: num(r.y), el: relEl(r.id) });
     } else {
       // pinned device boxes + their outputs
       for (const d of state.layout.devices.filter((x) => x.area === g.areaId)) {
-        movers.push({ obj: d, x0: d.x || 20, y0: d.y || 20, el: boxEl(d.id) });
-        for (const r of state.layout.relays.filter((x) => x.device === d.id)) movers.push({ obj: r, x0: r.x || 20, y0: r.y || 20, el: relEl(r.id) });
+        movers.push({ obj: d, x0: num(d.x), y0: num(d.y), el: boxEl(d.id) });
+        for (const r of state.layout.relays.filter((x) => x.device === d.id)) movers.push({ obj: r, x0: num(r.x), y0: num(r.y), el: relEl(r.id) });
       }
       // loose cards assigned to this area (not inside a device box)
-      for (const r of state.layout.relays.filter((x) => x.area === g.areaId && !x.device)) movers.push({ obj: r, x0: r.x || 20, y0: r.y || 20, el: relEl(r.id) });
+      for (const r of state.layout.relays.filter((x) => x.area === g.areaId && !x.device)) movers.push({ obj: r, x0: num(r.x), y0: num(r.y), el: relEl(r.id) });
     }
 
-    const gx = g.x || 20, gy = g.y || 20;
+    const gx = num(g.x), gy = num(g.y);
     let moved = false;
     head.setPointerCapture(e.pointerId);
     // a device box locked to an area stays inside that area box
@@ -170,8 +215,9 @@ function groupHeaderDrag(head, el, g, isMember, isDev) {
       if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
       let nx = Math.max(0, gx + dx), ny = Math.max(0, gy + dy);
       if (lockBox) {
-        const minX = lockBox.x + PAD, maxX = Math.max(minX, lockBox.x + lockBox.w - (g.w || 320) - PAD);
-        const minY = lockBox.y + HDR_AREA, maxY = Math.max(minY, lockBox.y + lockBox.h - (g.h || 220) - PAD);
+        // stays inside its area: below the titlebar, inside the padding on the other three sides
+        const minX = num(lockBox.x) + PAD, maxX = Math.max(minX, num(lockBox.x) + num(lockBox.w) - num(g.w, DEV_W) - PAD);
+        const minY = num(lockBox.y) + HDR + PAD, maxY = Math.max(minY, num(lockBox.y) + num(lockBox.h) - num(g.h, MIN_AREA_H) - PAD);
         nx = Math.min(Math.max(nx, minX), maxX); ny = Math.min(Math.max(ny, minY), maxY);
       }
       const adx = nx - gx, ady = ny - gy; // effective (clamped) delta
@@ -206,7 +252,9 @@ function addArea(areaId) {
   if (!areaId) return;
   if (state.layout.areas.some((a) => a.areaId === areaId)) { setStatus('“' + areaName(areaId) + '”' + t('already_on_board')); setTimeout(() => setStatus(''), 1800); return; }
   const id = 'a' + Date.now().toString(36);
-  state.layout.areas.push({ id, areaId, name: areaName(areaId), x: 24, y: 24, w: 340, h: 240 });
+  // starts at its minimum (one device box wide) and grows as things are put in it;
+  // `packed` marks it as already tidy so the one-time migration skips it
+  state.layout.areas.push({ id, areaId, name: areaName(areaId), x: 24, y: 24, w: MIN_AREA_W, h: MIN_AREA_H, packed: 1 });
   render(); saveLayout();
 }
 
@@ -216,7 +264,7 @@ function addPhysicalRelay(deviceId) {
   const dev = state.relayDevices.find((d) => d.device_id === deviceId);
   if (!dev) return;
   const id = 'd' + Date.now().toString(36);
-  const box = { id, deviceId, name: dev.name, x: 40, y: 40, w: CARD_BOX_W + 2 * PAD, h: 200 };
+  const box = { id, deviceId, name: dev.name, x: 40, y: 40, w: DEV_W, h: MIN_AREA_H };
   state.layout.devices.push(box);
   dev.outputs.forEach((o, i) => {
     state.layout.relays.push({

@@ -1,6 +1,6 @@
 import { state, $, esc, setMsg, api } from './core.js';
 import { t } from './i18n.js';
-import { reflowDeviceOutputs, fitAreaToContents, assignDeviceArea } from './layout.js';
+import { reflowDeviceOutputs, fitAreaToContents, growToInclude, assignDeviceArea } from './layout.js';
 import { render } from './board.js';
 import { openEditor, closeEditor } from './editor.js';
 import { closeActivityLog } from './activity.js';
@@ -54,7 +54,10 @@ function addOutputToDevice(entityId) {
     sensor: '', area: g.area || '', device: g.id, mode: 'below', temp: 20, deadband: 0, bound: false, x: 0, y: 0,
   });
   reflowDeviceOutputs(g);
-  const a = g.area && state.layout.areas.find((x) => x.areaId === g.area); if (a) fitAreaToContents(a);
+  // the box just got a card taller — make room for it in its area rather than
+  // letting the containment clamp shove the whole box back up
+  const a = g.area && state.layout.areas.find((x) => x.areaId === g.area);
+  if (a) { growToInclude(a, g.x, g.y, g.w, g.h); fitAreaToContents(a); }
   render(); saveLayout();
   openDeviceEditor(g); // refresh the list + dropdown
 }

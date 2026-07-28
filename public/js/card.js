@@ -1,6 +1,6 @@
 import { state, esc } from './core.js';
 import { t } from './i18n.js';
-import { areaColor, areaName, boxFor, clampToBox } from './layout.js';
+import { areaColor, areaName, boxFor, clampToBox, num } from './layout.js';
 import { toggleRelay, showWarnPop } from './relay-actions.js';
 import { openEditor } from './editor.js';
 import { dragMove } from './board.js';
@@ -17,7 +17,7 @@ function card(r, mobile) {
            : 'absolute z-[3] w-[340px] h-[100px]' + (state.edit && !r.device ? ' cursor-grab' : ''),
   ].join(' ');
   el.dataset.id = r.id;
-  if (!mobile) { el.style.left = (r.x || 20) + 'px'; el.style.top = (r.y || 20) + 'px'; }
+  if (!mobile) { el.style.left = num(r.x) + 'px'; el.style.top = num(r.y) + 'px'; }
   if (r.area) { const hue = areaColor(r.area); el.style.borderLeft = `4px solid hsl(${hue},60%,50%)`; }
 
   const live = state.live[r.sensor] || {};
@@ -108,7 +108,7 @@ function card(r, mobile) {
     r.x = Math.max(0, ox + dx); r.y = Math.max(0, oy + dy);
     const box = boxFor(r); if (box) clampToBox(r, box);
     el.style.left = r.x + 'px'; el.style.top = r.y + 'px';
-  }, () => (r.x || 20), () => (r.y || 20), () => { if (el._moved) { el._moved = false; saveLayout(); } else openEditor(r); });
+  }, () => num(r.x), () => num(r.y), () => { if (el._moved) { el._moved = false; saveLayout(); } else openEditor(r); });
   return el;
 }
 

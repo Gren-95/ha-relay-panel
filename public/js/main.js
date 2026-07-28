@@ -1,6 +1,6 @@
 import { $, state, api, setStatus } from './core.js';
 import { t, setLang, LANG } from './i18n.js';
-import { fillSelects, reflowDeviceOutputs, fitAreaToContents } from './layout.js';
+import { fillSelects, reflowDeviceOutputs, fitAreaToContents, packArea } from './layout.js';
 import { render, isMobile, addArea, addPhysicalRelay } from './board.js';
 import { addRelay, initEditor } from './editor.js';
 import { openActivityLog, initActivity } from './activity.js';
@@ -36,7 +36,10 @@ async function boot() {
   state.layout.devices = state.layout.devices || [];
   // migrate existing layouts to the slim vertical card design
   for (const d of state.layout.devices) reflowDeviceOutputs(d);
-  for (const a of state.layout.areas) fitAreaToContents(a);
+  // one-time tidy for areas saved with the old (oversized) box geometry: stack their
+  // members from the inner corner and shrink the box onto them. `packed` is stored
+  // per area, so a hand-made arrangement is only ever re-packed once.
+  for (const a of state.layout.areas) (a.packed ? fitAreaToContents : packArea)(a);
   fillSelects();
   render();
   initHistory();

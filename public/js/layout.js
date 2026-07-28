@@ -32,52 +32,165 @@ function boxTint(hue) {
   const dark = document.documentElement.getAttribute('data-theme') === 'dark';
   return `hsla(${hue},55%,45%,${dark ? 0.07 : 0.10})`;
 }
+// the titlebar sits on top of boxTint, so it needs a stronger wash to read as a bar
+function headTint(hue) {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  return `hsla(${hue},55%,45%,${dark ? 0.16 : 0.18})`;
+}
+// A box paints its own dot grid in its body, so it must be opaque — otherwise the
+// canvas grid bleeds through and the two misaligned grids moiré against each other.
+// Flattens a translucent tint onto the surface colour.
+const opaque = (tint) => `linear-gradient(0deg, ${tint}, ${tint}), var(--surface-2)`;
+// the body of a group box is its own little canvas: dot grid over the opaque tint
+const bodyFill = (tint) => `radial-gradient(var(--dot) 1.4px, transparent 1.4px) 0 0 / 26px 26px, ${opaque(tint)}`;
 
-// --- area containment: a relay assigned to an area is clamped inside its box ---
-const CARD_BOX_W = 370, CARD_BOX_H = 106, GAP = 10, HDR_AREA = 54, HDR_DEV = 84, PAD = 16;
-const hdr = (box) => box.deviceId ? HDR_DEV : HDR_AREA;
+// Dashed outline down the left, along the bottom and up the right of a w×h box.
+// CSS `border-dashed` derives both dash and gap from the border width, so widening
+// the gap means drawing the line ourselves: an SVG stroke with a real dash-array,
+// emitted at the box's exact pixel size so the pattern is never stretched.
+const DASH_LEN = 10, DASH_GAP = 10, DASH_W = 2, DASH_R = 18;  // radius = rounded-b-2xl (19) - half stroke
+function dashedSides(w, h, color) {
+  const o = DASH_W / 2, r = DASH_R;
+  const d = `M${o},0 V${h - o - r} A${r},${r} 0 0 0 ${o + r},${h - o}`
+    + ` H${w - o - r} A${r},${r} 0 0 0 ${w - o},${h - o - r} V0`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">`
+    + `<path d="${d}" fill="none" stroke="${color}" stroke-width="${DASH_W}"`
+    + ` stroke-dasharray="${DASH_LEN} ${DASH_GAP}"/></svg>`;
+  // single quotes: this lands inside an HTML style="..." attribute, and a double
+  // quote here would terminate the attribute and drop the whole declaration.
+  // encodeURIComponent escapes the SVG's own double quotes, so none survive.
+  return `url('data:image/svg+xml,${encodeURIComponent(svg)}')`;
+}
+
+// --- box geometry ------------------------------------------------------------
+// Single source of truth for the board's pixel math. Two of these mirror the DOM
+// and must be kept in sync with it:
+//   CARD_W/CARD_H — the .relay size in card.js (`w-[340px] h-[100px]`)
+//   HDR           — the height of the .area-head titlebar (board.js): a 40px row
+//                   plus its own 2px solid border top and bottom. The .area-body
+//                   canvas starts exactly there, so HDR is where content begins.
+// Everything a box contains lives below HDR and inside PAD on the other three
+// sides, so no child can ever overlap the titlebar or bleed past an edge.
+const CARD_W = 340, CARD_H = 100;
+const GAP = 10;                      // vertical gap between stacked cards / boxes
+const PAD = 10;                      // inner padding of a group box
+const HDR = 44;                      // titlebar strip height
+const DEV_W = CARD_W + 2 * PAD;      // a device box is exactly one card column wide
+const MIN_AREA_W = DEV_W + 2 * PAD;  // an area must be able to hold a device box
+const MIN_AREA_H = HDR + CARD_H + 2 * PAD;
+// Coordinates must never fall back through `||`: x = 0 is a legal position, and
+// `x || 20` silently renders such a box 20px away from where the containment math
+// believes it is — which is exactly how members end up sticking out of an area.
+const num = (v, d = 0) => (typeof v === 'number' && isFinite(v) ? v : d);
+// top-left corner of a box's usable inner area (below the titlebar)
+const innerX = (b) => num(b.x) + PAD;
+const innerY = (b) => num(b.y) + HDR + PAD;
+
 function boxFor(r) {
   if (r.device) { const d = state.layout.devices.find((x) => x.id === r.device); if (d) return d; }
   return r.area ? state.layout.areas.find((a) => a.areaId === r.area) : null;
 }
-function clampToBox(r, box) {
-  const minX = box.x + PAD, maxX = Math.max(minX, box.x + box.w - CARD_BOX_W - PAD);
-  const minY = box.y + hdr(box), maxY = Math.max(minY, box.y + box.h - CARD_BOX_H - PAD);
-  r.x = Math.min(Math.max(r.x, minX), maxX);
-  r.y = Math.min(Math.max(r.y, minY), maxY);
+
+// Clamp a w×h child so it stays fully inside `box` (all four edges).
+function clampInto(pos, w, h, box) {
+  const minX = innerX(box), maxX = Math.max(minX, num(box.x) + num(box.w) - w - PAD);
+  const minY = innerY(box), maxY = Math.max(minY, num(box.y) + num(box.h) - h - PAD);
+  pos.x = Math.min(Math.max(num(pos.x), minX), maxX);
+  pos.y = Math.min(Math.max(num(pos.y), minY), maxY);
 }
+const clampToBox = (r, box) => clampInto(r, CARD_W, CARD_H, box);
+const clampBoxToArea = (d, a) => clampInto(d, num(d.w, DEV_W), num(d.h, MIN_AREA_H), a);
+
 function centerInBox(r, box) {
-  r.x = Math.round(box.x + (box.w - CARD_BOX_W) / 2);
-  r.y = Math.round(box.y + hdr(box) + (box.h - hdr(box) - CARD_BOX_H) / 2);
+  r.x = Math.round(num(box.x) + (num(box.w) - CARD_W) / 2);
+  r.y = Math.round(innerY(box) + (num(box.h) - HDR - PAD - CARD_H) / 2);
+  clampToBox(r, box);
 }
 
 // Stack a device's output cards vertically inside its box and size the box to fit.
 function reflowDeviceOutputs(dev) {
   const outs = state.layout.relays.filter((r) => r.device === dev.id);
-  dev.w = CARD_BOX_W + 2 * PAD;
-  dev.h = HDR_DEV + PAD + Math.max(1, outs.length) * CARD_BOX_H + Math.max(0, outs.length - 1) * GAP + PAD;
-  outs.forEach((r, i) => { r.x = dev.x + PAD; r.y = dev.y + HDR_DEV + i * (CARD_BOX_H + GAP); });
+  const n = Math.max(1, outs.length);
+  dev.w = DEV_W;
+  dev.h = HDR + PAD + n * CARD_H + (n - 1) * GAP + PAD;
+  outs.forEach((r, i) => { r.x = innerX(dev); r.y = innerY(dev) + i * (CARD_H + GAP); });
 }
 
-// Grow an area box so it contains all its pinned device boxes + loose member cards.
+// The smallest an area may be: big enough to hold its largest member outright.
+// (Deliberately NOT the members' bounding box — members are clamped inside the
+// box, so sizing to their bounds would let one drag inflate the area for good.)
+function minAreaSize(area) {
+  let w = MIN_AREA_W, h = MIN_AREA_H;
+  for (const d of state.layout.devices) {
+    if (d.area !== area.areaId) continue;
+    w = Math.max(w, num(d.w, DEV_W) + 2 * PAD);
+    h = Math.max(h, HDR + num(d.h) + 2 * PAD);
+  }
+  return { w, h };
+}
+
+// Next free slot below whatever is already parked in this area.
+function slotInArea(area, skip) {
+  let y = innerY(area);
+  for (const d of state.layout.devices) if (d.area === area.areaId && d !== skip) y = Math.max(y, num(d.y) + num(d.h) + GAP);
+  for (const r of state.layout.relays) if (r.area === area.areaId && !r.device) y = Math.max(y, num(r.y) + CARD_H + GAP);
+  return { x: innerX(area), y };
+}
+
+// Grow an area so `x,y,w,h` fits inside it (used right after parking something new).
+function growToInclude(area, x, y, w, h) {
+  area.w = Math.max(num(area.w), x + w + PAD - num(area.x));
+  area.h = Math.max(num(area.h), y + h + PAD - num(area.y));
+}
+
+// Pull every member of an area back inside its box.
+function containArea(area) {
+  for (const d of state.layout.devices) {
+    if (d.area !== area.areaId) continue;
+    clampBoxToArea(d, area);
+    reflowDeviceOutputs(d);        // outputs follow the box they live in
+  }
+  for (const r of state.layout.relays) if (r.area === area.areaId && !r.device) clampToBox(r, area);
+}
+
+// Size an area to at least its minimum, then clamp its members inside it.
 function fitAreaToContents(area) {
-  let right = area.x + 200, bottom = area.y + HDR_AREA + 100;
-  for (const d of state.layout.devices.filter((x) => x.area === area.areaId)) {
-    right = Math.max(right, d.x + (d.w || 320)); bottom = Math.max(bottom, d.y + (d.h || 220));
+  const min = minAreaSize(area);
+  area.w = Math.max(num(area.w), min.w);
+  area.h = Math.max(num(area.h), min.h);
+  containArea(area);
+}
+
+// One-time tidy for layouts saved before the box geometry was fixed: stack an
+// area's members from its inner corner and shrink the box to fit them. Marked
+// per-area with `packed` so a later manual arrangement is never re-packed.
+function packArea(area) {
+  let y = innerY(area), w = 0;
+  for (const d of state.layout.devices) {
+    if (d.area !== area.areaId) continue;
+    d.x = innerX(area); d.y = y;
+    reflowDeviceOutputs(d);
+    y += d.h + GAP; w = Math.max(w, d.w);
   }
-  for (const r of state.layout.relays.filter((x) => x.area === area.areaId && !x.device)) {
-    right = Math.max(right, (r.x || 20) + CARD_BOX_W); bottom = Math.max(bottom, (r.y || 20) + CARD_BOX_H);
+  for (const r of state.layout.relays) {
+    if (r.area !== area.areaId || r.device) continue;
+    r.x = innerX(area); r.y = y;
+    y += CARD_H + GAP; w = Math.max(w, CARD_W);
   }
-  // only GROW — never shrink below the current (possibly manually-set) size,
-  // so an area always contains its devices/cards but manual resizing survives.
-  area.w = Math.max(area.w || 240, right - area.x + PAD);
-  area.h = Math.max(area.h || 140, bottom - area.y + PAD);
+  area.w = Math.max(MIN_AREA_W, w + 2 * PAD);
+  area.h = Math.max(MIN_AREA_H, y - GAP - num(area.y) + PAD);
+  area.packed = 1;
 }
 
 // Keep every device box sized to its outputs and every area big enough to contain
 // its contents — called on each render so sizes can never drift out of sync
 // (e.g. after renames, adds, or a card-size change).
 function normalizeLayout() {
+  // every position is a real number from here on, so nothing downstream has to
+  // guess a default (and accidentally treat a legitimate 0 as "unset")
+  for (const o of [...state.layout.areas, ...state.layout.devices, ...state.layout.relays]) {
+    o.x = num(o.x, 20); o.y = num(o.y, 20);
+  }
   for (const d of state.layout.devices) reflowDeviceOutputs(d);
   for (const a of state.layout.areas) fitAreaToContents(a);
 }
@@ -94,13 +207,13 @@ function assignDeviceArea(g, areaId) {
   g.area = areaId || '';
   const outs = state.layout.relays.filter((r) => r.device === g.id);
   outs.forEach((r) => { r.area = areaId || ''; });
+  reflowDeviceOutputs(g);
   const box = areaId && state.layout.areas.find((a) => a.areaId === areaId);
   if (box) {
-    g.x = box.x + PAD; g.y = box.y + HDR_AREA;   // slot just inside the area
-    reflowDeviceOutputs(g);
-    fitAreaToContents(box);                 // grow the area to fit the relay
-  } else {
-    reflowDeviceOutputs(g);
+    const slot = slotInArea(box, g);        // park it under whatever is already there
+    g.x = slot.x; g.y = slot.y;
+    growToInclude(box, g.x, g.y, g.w, g.h); // make room for it, then re-clamp
+    fitAreaToContents(box);
   }
 }
 
@@ -108,7 +221,7 @@ function assignDeviceArea(g, areaId) {
 // area to all the device's output relays (so binding/grouping follows the area).
 // Returns true if the pinned area changed.
 function pinDeviceToArea(g) {
-  const cx = (g.x || 20) + (g.w || 320) / 2, cy = (g.y || 20) + (g.h || 220) / 2;
+  const cx = num(g.x) + num(g.w, DEV_W) / 2, cy = num(g.y) + num(g.h, MIN_AREA_H) / 2;
   const area = areaAt(cx, cy);
   const newArea = area ? area.areaId : '';
   if ((g.area || '') === newArea) return false;
@@ -117,6 +230,8 @@ function pinDeviceToArea(g) {
   return true;
 }
 
-export { fillSelects, refreshAreaPicker, areaColor, areaName, headColor, boxTint,
-  CARD_BOX_W, CARD_BOX_H, GAP, HDR_AREA, HDR_DEV, PAD, boxFor, clampToBox, centerInBox, reflowDeviceOutputs,
-  fitAreaToContents, normalizeLayout, areaAt, assignDeviceArea, pinDeviceToArea };
+export { fillSelects, refreshAreaPicker, areaColor, areaName, headColor, boxTint, headTint, opaque, bodyFill, dashedSides,
+  num, CARD_W, CARD_H, GAP, PAD, HDR, DEV_W, MIN_AREA_W, MIN_AREA_H, innerX, innerY,
+  boxFor, clampToBox, clampBoxToArea, centerInBox, reflowDeviceOutputs, minAreaSize,
+  slotInArea, growToInclude, containArea, fitAreaToContents, packArea, normalizeLayout,
+  areaAt, assignDeviceArea, pinDeviceToArea };

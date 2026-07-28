@@ -1,6 +1,6 @@
 import { state, $, setStatus } from './core.js';
 import { t } from './i18n.js';
-import { reflowDeviceOutputs, fitAreaToContents, fillSelects } from './layout.js';
+import { reflowDeviceOutputs, fitAreaToContents, packArea, fillSelects } from './layout.js';
 import { closeEditor } from './editor.js';
 import { closeDeviceEditor } from './device-editor.js';
 import { saveLayout } from './history-undo.js';
@@ -29,7 +29,7 @@ async function importLayout(file) {
   if (!confirm(t('confirm_import_layout') + '\n' + counts + '\n\n' + t('confirm_continue'))) return;
   state.layout = { relays: l.relays || [], areas: l.areas || [], devices: l.devices || [] };
   for (const d of state.layout.devices) reflowDeviceOutputs(d);
-  for (const a of state.layout.areas) fitAreaToContents(a);
+  for (const a of state.layout.areas) (a.packed ? fitAreaToContents : packArea)(a);
   closeEditor(); closeDeviceEditor();
   await saveLayout();
   fillSelects(); render(); refreshLive();
