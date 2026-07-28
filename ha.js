@@ -243,8 +243,10 @@ async function setSwitch(entity, action) {
     await haFetch(`/api/services/switch/${svc}`, { method: 'POST', body: JSON.stringify({ entity_id: entity }) });
   } catch (e) { /* ignore — verify via state read below */ }
   await new Promise((r) => setTimeout(r, 400)); // let the device settle
-  const s = await haFetch(`/api/states/${encodeURIComponent(entity)}`);
-  return s.state;
+  try {
+    const s = await haFetch(`/api/states/${encodeURIComponent(entity)}`);
+    return s.state;
+  } catch { return 'unavailable'; } // entity was removed/renamed
 }
 
 // Create/replace an automation, then reload so it takes effect.
