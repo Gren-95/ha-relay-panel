@@ -79,11 +79,19 @@ async function refreshLive() {
   const ids = new Set();
   for (const r of state.layout.relays) { if (r.sensor) ids.add(r.sensor); if (r.relay) ids.add(r.relay); }
   try {
-    const [live, autos, haStatus] = await Promise.all([
+    const promises = [
       ids.size ? api('/api/live?ids=' + encodeURIComponent([...ids].join(','))) : Promise.resolve(state.live),
       api('/api/automations').catch(() => state.autoStates || {}),
       api('/api/ha-status').catch(() => ({ reachable: true })),
-    ]);
+    ];
+    // In kiosk mode, wait for layout refresh before rendering
+    if (state.kiosk) {
+      try {
+        const layout = await api('/api/layout');
+        state.layout = layout;
+      } catch {}
+    }
+    const [live, autos, haStatus] = await Promise.all(promises.slice(0, 3));
     state.live = live; state.autoStates = autos || {};
     $('#ha-banner').classList.toggle('hidden', haStatus.reachable !== false);
     render();

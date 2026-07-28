@@ -11,4 +11,4 @@
 .btn:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,.x:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
 select:focus-visible,input:focus-visible{outline-offset:-1px}
 /* a11y: dialog roles */
-.editor[role="dialog"]{outline:0}
+.editor[role="dialog"]{outline:0}.kiosk .\[\.kiosk_\&\]\:hidden{display:none}
