@@ -104,9 +104,12 @@ function card(r, mobile) {
   // Click target temp to edit inline
   const tgtPill = el.querySelector('.tgt-text');
   const tgtInput = el.querySelector('.tgt-input');
-  if (tgtPill && tgtInput && r.bound) {
-    tgtPill.addEventListener('click', (e) => {
+  if (tgtPill && tgtInput) {
+    const tgtWrap = tgtPill.parentNode;
+    tgtWrap.addEventListener('pointerdown', (e) => e.stopPropagation());
+    tgtWrap.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (!state.authed) { openLogin(); return; }
       tgtPill.classList.add('hidden');
       tgtInput.classList.remove('hidden');
       tgtInput.focus();
@@ -131,13 +134,14 @@ function card(r, mobile) {
   if (!mobile && (!state.edit || r.device)) {
     el.addEventListener('click', (e) => {
       if (e.target.closest('.r-toggle') || e.target.closest('.warn-icon') || e.target.closest('.tgt-text') || e.target.closest('.tgt-input')) return;
+      if (!state.authed) { openLogin(); return; }
       openEditor(r);
     });
   }
 
   if (mobile) {
     // list mode: tap the card (not the toggle) to edit; no dragging
-    el.addEventListener('click', (e) => { if (!e.target.closest('.r-toggle')) openEditor(r); });
+    el.addEventListener('click', (e) => { if (!e.target.closest('.r-toggle')) { if (!state.authed) { openLogin(); return; } openEditor(r); } });
   } else if (state.edit && !r.device) dragMove(el, el, (dx, dy, ox, oy) => {
     const moved = Math.abs(dx) > 3 || Math.abs(dy) > 3; el._moved = el._moved || moved;
     r.x = Math.max(0, ox + dx); r.y = Math.max(0, oy + dy);
