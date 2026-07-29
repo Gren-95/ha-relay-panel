@@ -12,6 +12,7 @@ import { closeBulkEdit } from './bulk.js';
 import { closePresets } from './presets.js';
 
 function openEditor(r) {
+  if (!state.authed) return;
   closeDeviceEditor(); closeActivityLog(); closeBulkEdit(); closePresets();
   state.selected = r.id;
   $('#ed-name').value = r.name || '';
