@@ -1,7 +1,7 @@
 import { state, esc } from './core.js';
 import { t } from './i18n.js';
 import { areaColor, areaName, boxFor, clampToBox, num } from './layout.js';
-import { toggleRelay, showWarnPop } from './relay-actions.js';
+import { toggleRelay, showWarnPop, adjustTemp } from './relay-actions.js';
 import { openEditor } from './editor.js';
 import { dragMove } from './board.js';
 import { saveLayout } from './history-undo.js';
@@ -86,7 +86,7 @@ function card(r, mobile) {
     <div class="r-metric text-right flex-none flex flex-col items-end gap-1">
       <div class="${curColor} text-[2rem] [.kiosk_&]:text-[2.4rem] font-extrabold leading-none tabular-nums">${temp}${temp === '—' ? '' : '<span class="text-[1.1rem] font-bold opacity-50 ml-px">°</span>'}</div>
       ${ago ? `<div class="text-[.68rem] text-muted leading-none -mt-[3px]">${ago}</div>` : ''}
-      <div class="inline-flex items-center text-[.85rem] font-semibold text-fg border-[1.5px] border-border rounded-full px-2.5 py-0.5 tabular-nums whitespace-nowrap">${modeIcon}${modeIcon ? '&nbsp;' : ''}${r.temp != null ? r.temp + '°' : '—'}${r.deadband ? `<span class="text-muted ml-1">±${r.deadband}</span>` : ''}</div>
+      <div class="inline-flex items-center text-[.85rem] font-semibold text-fg border-[1.5px] border-border rounded-full px-2.5 py-0.5 tabular-nums whitespace-nowrap cursor-pointer hover:border-primary">${modeIcon}${modeIcon ? '&nbsp;' : ''}<span class="tgt-text">${r.temp != null ? r.temp + '°' : '—'}</span><input class="tgt-input hidden min-h-0 w-[52px] bg-transparent text-center text-inherit font-semibold text-[.85rem] border-0 outline-none p-0" type="number" step="0.5" value="${r.temp || 20}" />${r.deadband ? `<span class="text-muted ml-1">±${r.deadband}</span>` : ''}</div>
     </div>`;
 
   // manual on/off toggle (works in both edit & live modes)
@@ -98,6 +98,31 @@ function card(r, mobile) {
   if (wi) {
     wi.addEventListener('pointerdown', (e) => e.stopPropagation());
     wi.addEventListener('click', (e) => { e.stopPropagation(); showWarnPop(wi, wi.dataset.msg); });
+  }
+
+  // Click target temp to edit inline
+  const tgtPill = el.querySelector('.tgt-text');
+  const tgtInput = el.querySelector('.tgt-input');
+  if (tgtPill && tgtInput && r.bound) {
+    tgtPill.addEventListener('click', (e) => {
+      e.stopPropagation();
+      tgtPill.classList.add('hidden');
+      tgtInput.classList.remove('hidden');
+      tgtInput.focus();
+    });
+    const commit = () => {
+      const v = parseFloat(tgtInput.value);
+      tgtInput.classList.add('hidden');
+      tgtPill.classList.remove('hidden');
+      if (isFinite(v) && v >= 1) {
+        tgtPill.textContent = v + '°';
+        adjustTemp(r.id, v);
+      } else {
+        tgtPill.textContent = (r.temp != null ? r.temp : 20) + '°';
+      }
+    };
+    tgtInput.addEventListener('blur', commit);
+    tgtInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') commit(); });
   }
 
   if (mobile) {

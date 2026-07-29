@@ -7,7 +7,8 @@ import { saveLayout } from './history-undo.js';
 async function adjustTemp(rid, dir) {
   const r = state.layout.relays.find((x) => x.id === rid);
   if (!r || !r.bound || !r.relay || !r.sensor) return;
-  const newTemp = Math.max(1, (r.temp || 20) + dir * 0.5);
+  // if dir is a number > 0.5, treat it as an absolute target temp, not a direction
+  const newTemp = Math.abs(dir) > 1 ? Math.max(1, dir) : Math.max(1, (r.temp || 20) + dir * 0.5);
   try {
     await api(`/api/relays/${r.id}/bind`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
