@@ -40,6 +40,9 @@
   --dot: #aeb6c4;
   --caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath fill='%23626b7a' d='M0 0l6 7 6-7z'/%3E%3C/svg%3E");
   --stale-bg: #fee2e2; --stale-fg: #7f1d1d; --stale-border: #fca5a5;
+  /* layout tokens, kept live by js/zoom-lock.js (#52); these are the 100%-zoom values */
+  --header-zoom: 1;
+  --header-h: 72px;
 }
 html[data-theme="dark"] {
   --bg: #0f1115;

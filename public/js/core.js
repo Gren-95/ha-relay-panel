@@ -31,7 +31,9 @@ function setMsg(el, m, cls) { if (!el) return; el.textContent = m || ''; el.clas
 // range button active state: toggle the primary-fill utilities
 function setRangeActive(btn, on) { ['bg-primary', 'border-primary', 'text-white'].forEach((c) => btn.classList.toggle(c, on)); }
 // canvas class strings (JS rebuilds #canvas.className each render)
-const CANVAS_DESKTOP = 'canvas relative m-5 min-h-[calc(100vh_-_130px)] bg-surface-2 border border-border rounded-2xl overflow-auto [background-image:radial-gradient(var(--dot)_1.4px,transparent_1.4px)] [background-size:26px_26px] mobile:m-2.5 mobile:overflow-auto [.kiosk_&]:m-0 [.kiosk_&]:border-0 [.kiosk_&]:rounded-none [.kiosk_&]:min-h-screen [.kiosk_&]:bg-surface [.kiosk_&]:[background-image:radial-gradient(var(--border)_1.3px,transparent_1.3px)] [.kiosk_&]:[background-size:32px_32px]';
+// header height is a variable now (it counter-scales against browser zoom, #52), so
+// the canvas subtracts --header-h + its own 2x20px margin rather than a flat 130px
+const CANVAS_DESKTOP = 'canvas relative m-5 min-h-[calc(100vh_-_var(--header-h,72px)_-_58px)] bg-surface-2 border border-border rounded-2xl overflow-auto [background-image:radial-gradient(var(--dot)_1.4px,transparent_1.4px)] [background-size:26px_26px] mobile:m-2.5 mobile:overflow-auto [.kiosk_&]:m-0 [.kiosk_&]:border-0 [.kiosk_&]:rounded-none [.kiosk_&]:min-h-screen [.kiosk_&]:bg-surface [.kiosk_&]:[background-image:radial-gradient(var(--border)_1.3px,transparent_1.3px)] [.kiosk_&]:[background-size:32px_32px]';
 const CANVAS_MOBILE = 'canvas flex flex-col gap-3.5 bg-transparent border-0 p-0 m-3 min-h-0 overflow-visible';
 
 async function api(path, opts) {
