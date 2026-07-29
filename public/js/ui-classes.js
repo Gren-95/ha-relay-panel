@@ -25,7 +25,8 @@
     label: 'flex flex-col gap-[5px] text-[.95rem] font-semibold text-muted',
     // panels
     panelH2: 'm-0 text-[1.25rem] font-extrabold',
-    editorAside: 'fixed top-0 right-0 w-[400px] h-full bg-surface border-l-2 border-border pt-[90px] px-[22px] pb-[22px] flex flex-col gap-3 z-20 overflow-y-auto shadow-[-4px_0_16px_rgba(20,18,15,.1)] mobile:w-full mobile:left-0 mobile:right-0 mobile:top-auto mobile:bottom-0 mobile:h-auto mobile:max-h-[85vh] mobile:border-l-0 mobile:border-t-2 mobile:rounded-t-2xl mobile:p-4',
+    // pt clears the sticky header, whose height now varies with browser zoom (#52)
+    editorAside: 'fixed top-0 right-0 w-[400px] h-full bg-surface border-l-2 border-border pt-[calc(var(--header-h,72px)_+_18px)] px-[22px] pb-[22px] flex flex-col gap-3 z-20 overflow-y-auto shadow-[-4px_0_16px_rgba(20,18,15,.1)] mobile:w-full mobile:left-0 mobile:right-0 mobile:top-auto mobile:bottom-0 mobile:h-auto mobile:max-h-[85vh] mobile:border-l-0 mobile:border-t-2 mobile:rounded-t-2xl mobile:p-4',
   };
 
   // Expand each data-ui="tokenA tokenB" into the element's class list (existing

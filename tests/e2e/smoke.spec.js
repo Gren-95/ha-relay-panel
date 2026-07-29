@@ -66,6 +66,22 @@ test.describe('relay-panel smoke', () => {
     expect(after).not.toBe(initial);
   });
 
+  // #52: the header counter-scales against browser zoom. Playwright can't drive
+  // Ctrl +/- , so this pins down what is testable — the vars are published, and the
+  // one that downstream sizing reads tracks the header's real height.
+  test('header zoom lock publishes its size vars', async ({ page }) => {
+    await mockApi(page);
+    await page.goto('/');
+    await expect(page.locator('header')).toBeVisible();
+    const vars = await page.locator('html').evaluate((el) => ({
+      zoom: el.style.getPropertyValue('--header-zoom'),
+      h: el.style.getPropertyValue('--header-h'),
+    }));
+    expect(Number(vars.zoom)).toBe(1);   // a headless window is never zoomed
+    const height = await page.locator('header').evaluate((el) => el.getBoundingClientRect().height);
+    expect(parseInt(vars.h, 10)).toBe(Math.round(height));
+  });
+
   test('mobile viewport shows hamburger menu', async ({ page }) => {
     await mockApi(page);
     await page.setViewportSize({ width: 500, height: 800 });
