@@ -33,6 +33,8 @@ function render() {
   }
   canvas.style.minWidth = Math.max(maxX, window.innerWidth - 40) + 'px';
   canvas.style.minHeight = Math.max(maxY, window.innerHeight - 130) + 'px';
+  // Signal that the canvas DOM has been rebuilt (editor blur re-apply, etc.)
+  canvas.dispatchEvent(new CustomEvent('render'));
 }
 
 // shared area master on/off buttons (keeps .area-master hook for live-mode hide + .am-btn hooks)
@@ -78,6 +80,7 @@ function renderMobile() {
   for (const d of state.layout.devices) if (!doneDev.has(d.id)) canvas.appendChild(deviceBlock(d));
   // loose relays (no device, not already shown)
   for (const r of state.layout.relays) if (!r.device && !doneRel.has(r.id)) canvas.appendChild(card(r, true));
+  canvas.dispatchEvent(new CustomEvent('render'));
 }
 
 // ---- group boxes: HA areas ('area') and physical relay devices ('device') ----

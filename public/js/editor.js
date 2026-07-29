@@ -46,6 +46,9 @@ function openEditor(r) {
     const btn = $('#' + id); if (btn) btn.classList.toggle('hidden', !show);
   });
   $('#editor').classList.remove('hidden');
+  $('#backdrop').classList.remove('hidden');
+  document.body.classList.add('editor-open');
+  applyBlur();
   requestAnimationFrame(positionResizeHandles);
 }
 
@@ -145,7 +148,35 @@ async function toggleAutomation() {
     edMsg(enable ? t('automation_enabled') : t('automation_disabled_maint'), 'ok');
   } catch (e) { edMsg('error: ' + e.message, 'err'); loadAutomationState(r); }
 }
-function closeEditor() { state.selected = null; $('#editor').classList.add('hidden'); }
+function closeEditor() { state.selected = null; $('#editor').classList.add('hidden'); $('#backdrop').classList.add('hidden'); document.body.classList.remove('editor-open'); clearBlur(); }
+
+// Apply .blurred to everything except the relay being edited and its containing
+// area / device group.  Called on editor open + re-applied after every render().
+function applyBlur() {
+  if ($('#editor').classList.contains('hidden')) return; // not open
+  const selId = state.selected;
+  const r = state.layout.relays.find(x => x.id === selId);
+  if (!r) return;
+
+  // Container boxes (class="area") that contain the selected relay
+  const selArea = state.layout.areas.find(a => a.areaId === r.area);
+  const selAreaGid = selArea ? selArea.id : null;
+  const selDevGid = r.device || null;
+
+  // Blur every area/device box EXCEPT the ones wrapping the selected relay
+  document.querySelectorAll('#canvas .area').forEach(el => {
+    const gid = el.dataset.gid;
+    el.classList.toggle('blurred', gid !== selAreaGid && gid !== selDevGid);
+  });
+
+  // Blur every relay card EXCEPT the selected one
+  document.querySelectorAll('#canvas .relay').forEach(el => {
+    el.classList.toggle('blurred', el.dataset.id !== selId);
+  });
+}
+function clearBlur() {
+  document.querySelectorAll('.blurred').forEach(el => el.classList.remove('blurred'));
+}
 function edMsg(m, cls) { setMsg($('#ed-msg'), m, cls); }
 function selected() { return state.layout.relays.find((x) => x.id === state.selected); }
 
@@ -249,6 +280,10 @@ async function deleteRelay() {
 // wiring for the relay editor panel
 export function initEditor() {
 $('#ed-close').addEventListener('click', closeEditor);
+$('#backdrop').addEventListener('click', closeEditor);
+// Re-apply blur synchronously after every render() rebuilds the canvas DOM.
+// Using a custom event dispatched at the end of render() — no debounce, no flash.
+$('#canvas').addEventListener('render', applyBlur);
 $('#ed-duplicate').addEventListener('click', duplicateRelay);
 $('#ed-bind').addEventListener('click', bind);
 $('#ed-unbind').addEventListener('click', unbind);

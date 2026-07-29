@@ -2,6 +2,7 @@ import { state, esc } from './core.js';
 import { t } from './i18n.js';
 import { areaColor, areaName, boxFor, clampToBox, num } from './layout.js';
 import { toggleRelay, showWarnPop, adjustTemp } from './relay-actions.js';
+import { openLogin } from './auth.js';
 import { openEditor } from './editor.js';
 import { dragMove } from './board.js';
 import { saveLayout } from './history-undo.js';
@@ -14,7 +15,7 @@ function card(r, mobile) {
     'relay bg-surface rounded-[14px] px-[14px] shadow-panel select-none flex items-center gap-3 box-border touch-none',
     maint ? 'border-2 border-heat' : 'border border-border',
     mobile ? 'static w-full h-auto min-h-[84px]'
-           : 'absolute z-[3] w-[340px] h-[100px]' + (state.edit && !r.device ? ' cursor-grab' : ''),
+           : 'absolute z-[3] w-[340px] h-[100px]' + (state.edit && !r.device ? ' cursor-grab' : ' cursor-pointer'),
   ].join(' ');
   el.dataset.id = r.id;
   if (!mobile) { el.style.left = num(r.x) + 'px'; el.style.top = num(r.y) + 'px'; }
@@ -92,7 +93,7 @@ function card(r, mobile) {
   // manual on/off toggle (works in both edit & live modes)
   const tog = el.querySelector('.r-toggle');
   tog.addEventListener('pointerdown', (e) => e.stopPropagation()); // don't start a drag
-  tog.addEventListener('click', (e) => { e.stopPropagation(); toggleRelay(r); });
+  tog.addEventListener('click', (e) => { e.stopPropagation(); if (!state.authed) { openLogin(); return; } toggleRelay(r); });
 
   const wi = el.querySelector('.warn-icon');
   if (wi) {
@@ -114,6 +115,7 @@ function card(r, mobile) {
       const v = parseFloat(tgtInput.value);
       tgtInput.classList.add('hidden');
       tgtPill.classList.remove('hidden');
+      if (!state.authed) { tgtPill.textContent = (r.temp != null ? r.temp : 20) + '°'; openLogin(); return; }
       if (isFinite(v) && v >= 1) {
         tgtPill.textContent = v + '°';
         adjustTemp(r.id, v);
@@ -123,6 +125,14 @@ function card(r, mobile) {
     };
     tgtInput.addEventListener('blur', commit);
     tgtInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') commit(); });
+  }
+
+  // Card body click → open editor sidebar (except when clicking toggle / warn / target-temp)
+  if (!mobile && (!state.edit || r.device)) {
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('.r-toggle') || e.target.closest('.warn-icon') || e.target.closest('.tgt-text') || e.target.closest('.tgt-input')) return;
+      openEditor(r);
+    });
   }
 
   if (mobile) {
