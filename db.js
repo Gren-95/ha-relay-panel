@@ -141,11 +141,16 @@ async function saveSession(token, username, expiresAt) {
 }
 
 async function getSession(token) {
-  // Clean expired sessions on read (lazy cleanup)
-  await pool.query('DELETE FROM sessions WHERE expires_at < NOW()');
   const [rows] = await pool.query('SELECT username, expires_at FROM sessions WHERE token = ? AND expires_at >= NOW()', [token]);
   if (!rows.length) return null;
   return { user: rows[0].username, exp: new Date(rows[0].expires_at).getTime() };
+}
+
+// Periodic sweep — run once every 10 min instead of on every auth read (#49)
+function startSessionSweep() {
+  const sweep = () => pool.query('DELETE FROM sessions WHERE expires_at < NOW()').catch(() => {});
+  sweep(); // run once at startup
+  setInterval(sweep, 10 * 60 * 1000);
 }
 
 async function deleteSession(token) {
@@ -156,4 +161,4 @@ async function deleteSessionsForUser(username) {
   await pool.query('DELETE FROM sessions WHERE username = ?', [username]);
 }
 
-module.exports = { initDb, getLayout, saveLayout, listBackups, restoreBackup, addAuditLog, getActivityLog, saveSession, getSession, deleteSession, deleteSessionsForUser };
+module.exports = { initDb, getLayout, saveLayout, listBackups, restoreBackup, addAuditLog, getActivityLog, saveSession, getSession, deleteSession, deleteSessionsForUser, startSessionSweep };

@@ -27,25 +27,42 @@ function findDevice(ieee) {
 }
 
 // Rename a Zigbee device in its Z2M instance (propagates to HA via discovery).
+// Uses a single MQTT connection for both discovery and rename — issue #49.
 async function renameZigbee(ieee, newName) {
-  const dev = await findDevice(ieee);
-  if (!dev) throw new Error('device not found in any Z2M instance');
-  await new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const client = mqtt.connect(BROKER, { connectTimeout: 4000, reconnectPeriod: 0 });
-    const respTopic = `${dev.base}/bridge/response/device/rename`;
+    let dev = null;
     const fin = (v, err) => { try { client.end(true); } catch {} err ? reject(err) : resolve(v); };
-    const to = setTimeout(() => fin(true), 5000); // don't hang if no response
-    client.on('connect', () => client.subscribe(respTopic, () => {
-      client.publish(`${dev.base}/bridge/request/device/rename`, JSON.stringify({ from: dev.name, to: newName }));
-    }));
+    const to = setTimeout(() => {
+      if (dev) fin(dev.base); else fin(null, new Error('device not found in any Z2M instance'));
+    }, 8000);
+
     client.on('error', (e) => { clearTimeout(to); fin(null, e); });
-    client.on('message', (t, p) => {
-      let m; try { m = JSON.parse(p.toString()); } catch { return; }
-      clearTimeout(to);
-      if (m.status === 'ok') fin(true); else fin(null, new Error((m.error && m.error.message) || m.error || 'z2m rename failed'));
+
+    // Phase 1: discover the device across all Z2M instances
+    client.on('connect', () => client.subscribe('+/bridge/devices'));
+    client.on('message', function onDevices(topic, payload) {
+      if (dev) return; // already found, waiting for rename response
+      const base = topic.split('/')[0];
+      let list; try { list = JSON.parse(payload.toString()); } catch { return; }
+      for (const d of list) {
+        if (String(d.ieee_address || '').toLowerCase() === ieee.toLowerCase()) {
+          dev = { base, name: d.friendly_name }; break;
+        }
+      }
+      if (!dev) return;
+      // Phase 2: publish rename request and listen for response
+      client.removeListener('message', onDevices);
+      const respTopic = `${dev.base}/bridge/response/device/rename`;
+      client.subscribe(respTopic);
+      client.publish(`${dev.base}/bridge/request/device/rename`, JSON.stringify({ from: dev.name, to: newName }));
+      client.on('message', (t, p) => {
+        let m; try { m = JSON.parse(p.toString()); } catch { return; }
+        clearTimeout(to);
+        if (m.status === 'ok') fin(dev.base); else fin(null, new Error((m.error && m.error.message) || m.error || 'z2m rename failed'));
+      });
     });
   });
-  return dev.base;
 }
 
 module.exports = { findDevice, renameZigbee };

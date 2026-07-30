@@ -33,11 +33,24 @@ app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 const PORT = process.env.PORT || 3000;
 
+let server;
+
 db.initDb()
   .then(() => {
-    app.listen(PORT, () => {
+    db.startSessionSweep(); // periodic instead of per-request (#49)
+    server = app.listen(PORT, () => {
       console.log(`relay-panel on :${PORT}, HA ${ha.HA_URL}`);
       startNotifyWatcher();
     });
   })
   .catch((e) => { console.error('DB init failed:', e.message); process.exit(1); });
+
+// Graceful shutdown — close connections cleanly on SIGTERM/SIGINT (#49)
+function shutdown(signal) {
+  console.log(`${signal} received — shutting down`);
+  if (server) server.close(() => console.log('HTTP server closed'));
+  // Let in-flight requests finish; docker's stop timeout will force-kill after grace period
+  setTimeout(() => process.exit(0), 3000);
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
