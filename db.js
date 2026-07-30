@@ -152,4 +152,8 @@ async function deleteSession(token) {
   await pool.query('DELETE FROM sessions WHERE token = ?', [token]);
 }
 
-module.exports = { initDb, getLayout, saveLayout, listBackups, restoreBackup, addAuditLog, getActivityLog, saveSession, getSession, deleteSession };
+async function deleteSessionsForUser(username) {
+  await pool.query('DELETE FROM sessions WHERE username = ?', [username]);
+}
+
+module.exports = { initDb, getLayout, saveLayout, listBackups, restoreBackup, addAuditLog, getActivityLog, saveSession, getSession, deleteSession, deleteSessionsForUser };
