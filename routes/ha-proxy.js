@@ -20,10 +20,11 @@ router.get('/api/relay-devices', wrap(async (req, res) => {
   res.json(await ha.getRelayDevices());
 }));
 
-// --- live temps + relay states ---
+// --- live temps + relay states + automation map (single HA fetch, issue #48) ---
 router.get('/api/live', wrap(async (req, res) => {
   const ids = String(req.query.ids || '').split(',').map((s) => s.trim()).filter(Boolean);
-  res.json(await ha.getStates(ids));
+  const result = await ha.getStatesAndAutomations(ids);
+  res.json({ ...result.states, _automations: result.automations });
 }));
 
 // --- 24h sensor history (sparkline) ---

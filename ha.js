@@ -92,6 +92,33 @@ async function getRelayDevices() {
 }
 
 // Live state for a set of entity_ids.
+// Single HA fetch returning both live states and automation map.
+// Merges what used to be two separate haFetch('/api/states') calls per poll tick
+// (getStates + listRelayAutomations) into one — issue #48.
+async function getStatesAndAutomations(ids) {
+  const idSet = new Set(ids);
+  const out = {};
+  const autos = {};
+  try {
+    const all = await haFetch('/api/states');
+    for (const s of all) {
+      if (idSet.has(s.entity_id)) {
+        out[s.entity_id] = { state: s.state, unit: (s.attributes || {}).unit_of_measurement || '', last_changed: s.last_changed };
+      }
+      if (s.entity_id.startsWith('automation.')) {
+        const aid = (s.attributes || {}).id;
+        if (typeof aid === 'string' && aid.startsWith('relaypanel_')) autos[aid] = s.state === 'on';
+      }
+    }
+  } catch {
+    for (const id of ids) out[id] = { state: 'unavailable', unit: '', missing: true };
+  }
+  for (const id of ids) {
+    if (!out[id]) out[id] = { state: 'unavailable', unit: '', missing: true };
+  }
+  return { states: out, automations: autos };
+}
+
 async function getStates(ids) {
   const idSet = new Set(ids);
   const out = {};
@@ -424,6 +451,7 @@ module.exports = {
   getAreas,
   getRelayDevices,
   getStates,
+  getStatesAndAutomations,
   getHistory,
   getHistoryExport,
   haReachable,

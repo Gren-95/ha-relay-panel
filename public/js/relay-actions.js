@@ -80,9 +80,12 @@ async function refreshLive() {
   const ids = new Set();
   for (const r of state.layout.relays) { if (r.sensor) ids.add(r.sensor); if (r.relay) ids.add(r.relay); }
   try {
+    // Single /api/live now returns both states and automation map (issue #48)
+    const livePromise = ids.size
+      ? api('/api/live?ids=' + encodeURIComponent([...ids].join(',')))
+      : Promise.resolve({ ...state.live, _automations: state.autoStates || {} });
     const promises = [
-      ids.size ? api('/api/live?ids=' + encodeURIComponent([...ids].join(','))) : Promise.resolve(state.live),
-      api('/api/automations').catch(() => state.autoStates || {}),
+      livePromise,
       api('/api/ha-status').catch(() => ({ reachable: true })),
     ];
     // In kiosk mode, wait for layout refresh before rendering
@@ -92,8 +95,10 @@ async function refreshLive() {
         state.layout = layout;
       } catch {}
     }
-    const [live, autos, haStatus] = await Promise.all(promises.slice(0, 3));
-    state.live = live; state.autoStates = autos || {};
+    const [liveData, haStatus] = await Promise.all(promises);
+    state.autoStates = liveData._automations || {};
+    delete liveData._automations;
+    state.live = liveData;
     $('#ha-banner').classList.toggle('hidden', haStatus.reachable !== false);
     render();
   } catch {}
