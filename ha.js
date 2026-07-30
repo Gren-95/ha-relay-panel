@@ -34,7 +34,7 @@ async function getEntities() {
     } else if (
       domain === 'sensor' &&
       (attr.device_class === 'temperature' ||
-        (attr.unit_of_measurement || '').includes('C'))
+        /^°?[CF]$|^°[CF]$/.test((attr.unit_of_measurement || '').trim()))
     ) {
       sensors.push({
         entity_id: s.entity_id,
@@ -201,13 +201,16 @@ async function verifyHaLogin(username, password) {
   catch (e) { return { ok: false, error: 'cannot reach Home Assistant' }; }
   if (!sf || !sf.flow_id) { return { ok: false, error: 'HA login unavailable' }; }
 
+  // Always delete the login flow when we're done with it — even on exceptions (#49)
+  const deleteFlow = () => fetch(`${HA_URL}/auth/login_flow/${sf.flow_id}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: cid }) }).catch(() => {});
+
   let r;
   try { r = await jfetch(`${HA_URL}/auth/login_flow/${sf.flow_id}`, { client_id: cid, username, password }); }
-  catch (e) { return { ok: false, error: 'Home Assistant did not respond' }; }
+  catch (e) { deleteFlow(); return { ok: false, error: 'Home Assistant did not respond' }; }
 
   if (r && r.type === 'create_entry') return { ok: true, user: username };
   // abandon the flow, translate the outcome
-  fetch(`${HA_URL}/auth/login_flow/${sf.flow_id}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: cid }) }).catch(() => {});
+  deleteFlow();
   if (r && r.type === 'form' && /mfa|totp|2fa/i.test(r.step_id || '')) return { ok: false, error: 'this account uses 2-factor login (not supported here)' };
   return { ok: false, error: 'invalid username or password' };
 }
