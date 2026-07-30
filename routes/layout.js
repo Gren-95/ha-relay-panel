@@ -17,10 +17,15 @@ router.put('/api/layout', requireAuth, wrap(async (req, res) => {
     areas: Array.isArray(b.areas) ? b.areas : [],
     devices: Array.isArray(b.devices) ? b.devices : [],
   };
-  const result = await db.saveLayout(layout);
-  await db.addAuditLog(await currentUser(req), 'layout.save',
-    { relays: layout.relays.length, areas: layout.areas.length, devices: layout.devices.length });
-  res.json(result);
+  try {
+    const result = await db.saveLayout(layout, b.updated_at);
+    await db.addAuditLog(await currentUser(req), 'layout.save',
+      { relays: layout.relays.length, areas: layout.areas.length, devices: layout.devices.length });
+    res.json(result);
+  } catch (e) {
+    if (e.status === 409) return res.status(409).json({ ok: false, error: e.message });
+    throw e;
+  }
 }));
 
 // --- layout backups (recover a wiped/old layout) ---

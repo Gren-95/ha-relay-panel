@@ -23,6 +23,8 @@ async function boot() {
     const [entities, areas, devices] = await Promise.all([
       api('/api/entities').catch(() => state.entities), api('/api/areas').catch(() => []), api('/api/relay-devices').catch(() => []),
     ]);
+    state.layoutVersion = layout.updated_at || null;  // for optimistic concurrency (#46)
+    delete layout.updated_at;
     state.layout = layout; state.loaded = true;   // only now is it safe to persist
     state.entities = entities;
     state.haAreas = Array.isArray(areas) ? areas : [];

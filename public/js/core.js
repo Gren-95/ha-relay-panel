@@ -4,6 +4,7 @@ import { render } from './board.js';
 
 const state = {
   layout: { relays: [], areas: [], devices: [] },
+  layoutVersion: null,  // updated_at from DB — sent back on PUT for optimistic concurrency (#46)
   entities: { switches: [], sensors: [] },
   haAreas: [],
   relayDevices: [],
@@ -44,7 +45,7 @@ async function api(path, opts) {
     if (typeof applyMode === 'function') { applyMode(); updateAuthUI(); render(); openLogin(); }
     throw new Error(data.error || 'Sign in required');
   }
-  if (!res.ok) throw new Error(data.error || res.statusText);
+  if (!res.ok) throw Object.assign(new Error(data.error || res.statusText), { status: res.status });
   return data;
 }
 function setStatus(m) { $('#status').textContent = m || ''; }

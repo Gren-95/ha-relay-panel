@@ -73,14 +73,24 @@ function normalize(l) {
 const isEmpty = (l) => !l || (!l.relays.length && !l.devices.length && !l.areas.length);
 
 async function getLayout() {
-  const [rows] = await pool.query('SELECT layout FROM panel WHERE id = 1');
-  if (!rows.length) return { relays: [], areas: [], devices: [] };
-  return normalize(rows[0].layout);
+  const [rows] = await pool.query('SELECT layout, updated_at FROM panel WHERE id = 1');
+  if (!rows.length) return { relays: [], areas: [], devices: [], updated_at: null };
+  const layout = normalize(rows[0].layout);
+  layout.updated_at = rows[0].updated_at ? new Date(rows[0].updated_at).getTime() : null;
+  return layout;
 }
 
-async function saveLayout(layout) {
+async function saveLayout(layout, expectedUpdatedAt) {
   const next = normalize(layout);
   const cur = await getLayout();
+  const curVersion = cur.updated_at;   // snapshot before we strip it
+  // Optimistic concurrency: if caller expects a specific version, reject stale writes
+  if (expectedUpdatedAt != null && curVersion != null && curVersion !== expectedUpdatedAt) {
+    throw Object.assign(new Error('Conflict — layout was modified by another session'), { status: 409 });
+  }
+  // metadata — belongs alongside the layout, not inside the stored JSON
+  delete next.updated_at;
+  delete cur.updated_at;
   // back up the current layout before overwriting (only when it has content and
   // actually differs), so any change — including a wipe — is recoverable.
   if (!isEmpty(cur) && JSON.stringify(cur) !== JSON.stringify(next)) {
