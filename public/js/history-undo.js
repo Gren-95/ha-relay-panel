@@ -9,10 +9,30 @@ async function saveLayout() {
   if (!state.authed) return; // viewers don't persist layout (and shouldn't be prompted to log in)
   if (!state.loaded) return; // never overwrite the DB before the real layout has loaded
   try {
-    await api('/api/layout', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(state.layout) });
+    const body = { ...state.layout, updated_at: state.layoutVersion };
+    const result = await api('/api/layout', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    state.layoutVersion = result.updated_at; // bump to the version we just wrote
     pushHistory();
     setStatus(t('saved')); setTimeout(() => setStatus(''), 1000);
-  } catch (e) { setStatus(t('save_error') + (e.message ? ': ' + e.message : '')); }
+  } catch (e) {
+    if (e.status === 409) {
+      // Stale write — fetch the fresh version token & retry with our local changes
+      try {
+        setStatus(t('save_conflict'));
+        const latest = await api('/api/layout');
+        state.layoutVersion = latest.updated_at;
+        const retryBody = { ...state.layout, updated_at: state.layoutVersion };
+        const retryResult = await api('/api/layout', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(retryBody) });
+        state.layoutVersion = retryResult.updated_at;
+        pushHistory();
+        setStatus(t('saved')); setTimeout(() => setStatus(''), 1000);
+      } catch (retryErr) {
+        setStatus(t('save_error') + (retryErr.message ? ': ' + retryErr.message : ''));
+      }
+    } else {
+      setStatus(t('save_error') + (e.message ? ': ' + e.message : ''));
+    }
+  }
 }
 
 // --- undo / redo history (snapshots of the layout) ---

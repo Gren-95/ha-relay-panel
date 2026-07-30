@@ -75,7 +75,7 @@ const TR = {
     username: 'Kasutajanimi', password: 'Parool', sign_in: 'Logi sisse', cancel: 'Tühista',
     // dynamic
     mode_edit: 'Muuda', mode_live: 'Vaade',
-    saved: 'salvestatud', save_error: 'salvestamise viga', sign_in_to_save: 'salvestamiseks logi sisse',
+    saved: 'salvestatud', save_error: 'salvestamise viga', save_conflict: 'konflikt — uuesti salvestamine…', sign_in_to_save: 'salvestamiseks logi sisse',
     signing_in: 'logib sisse…', signed_in_loading: 'sisse logitud — laen…',
     enter_user_pass: 'Sisesta kasutajanimi ja parool.', sign_in_failed: 'Sisselogimine ebaõnnestus.',
     timed_out: 'Aegus — kontrolli ühendust ja proovi uuesti.',
@@ -96,7 +96,7 @@ const TR = {
 };
 const EN = {  // English fallbacks for dynamic (non-HTML) strings
   mode_edit: 'Edit', mode_live: 'Live',
-  saved: 'saved', save_error: 'save error', sign_in_to_save: 'sign in to save',
+  saved: 'saved', save_error: 'save error', save_conflict: 'conflict — retrying…', sign_in_to_save: 'sign in to save',
   signing_in: 'signing in…', signed_in_loading: 'signed in — loading…',
   enter_user_pass: 'Enter username and password.', sign_in_failed: 'Sign in failed.',
   timed_out: 'Timed out — check the connection and try again.',
