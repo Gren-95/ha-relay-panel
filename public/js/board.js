@@ -140,8 +140,14 @@ function renderBox(g, kind) {
   // wide-gap dashed SVG stroke, which has to be re-emitted whenever the box resizes.
   // `top` comes from HDR via inline style, not a Tailwind class: an interpolated
   // `top-[${HDR}px]` is invisible to Tailwind's source scan and would never compile.
-  const bodyBg = () => (isDev ? bodyFill(boxTint(hue))
-    : `${dashedSides(num(g.w, MIN_AREA_W), num(g.h, MIN_AREA_H) - HDR, line)} 0 0 / 100% 100% no-repeat, ${bodyFill(boxTint(hue))}`);
+  const bodyBg = () => {
+    // Offset the dotted grid so it aligns with the canvas grid — makes dots appear
+    // to stay pinned to the canvas when the area is dragged, instead of looking static.
+    const ox = Math.round(-num(g.x) % 26);
+    const oy = Math.round(-(num(g.y) + HDR) % 26);
+    const dots = bodyFill(boxTint(hue)).replace(' 0 0 /', ` ${ox}px ${oy}px /`);
+    return isDev ? dots : `${dashedSides(num(g.w, MIN_AREA_W), num(g.h, MIN_AREA_H) - HDR, line)} 0 0 / 100% 100% no-repeat, ${dots}`;
+  };
   const body = `<div class="area-body absolute inset-x-0 bottom-0 rounded-b-2xl pointer-events-none ${isDev ? 'border-2 border-t-0 border-solid' : ''}" style="top:${HDR}px;border-color:${line};background:${bodyBg()}"></div>`;
   el.innerHTML = head + body + resize;
 
@@ -225,6 +231,11 @@ function groupHeaderDrag(head, el, g, isMember, isDev) {
       }
       const adx = nx - gx, ady = ny - gy; // effective (clamped) delta
       g.x = nx; g.y = ny; el.style.left = nx + 'px'; el.style.top = ny + 'px';
+      // Shift the dotted grid so dots stay pinned to the canvas during drag
+      const bodyEl = el.querySelector('.area-body');
+      if (bodyEl) bodyEl.style.backgroundPosition = isDev
+        ? `${-nx % 26}px ${-(ny + HDR) % 26}px`
+        : `0 0, ${-nx % 26}px ${-(ny + HDR) % 26}px`;
       for (const m of movers) { m.obj.x = Math.max(0, m.x0 + adx); m.obj.y = Math.max(0, m.y0 + ady); if (m.el) { m.el.style.left = m.obj.x + 'px'; m.el.style.top = m.obj.y + 'px'; } }
     };
     const up = () => {

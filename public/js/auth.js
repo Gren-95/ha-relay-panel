@@ -15,6 +15,7 @@ async function checkSession() {
   // just signed in via the login-reload? drop straight into Edit mode
   let enter = false; try { enter = sessionStorage.getItem('rp-enter-edit') === '1'; if (enter) sessionStorage.removeItem('rp-enter-edit'); } catch {}
   if (enter && state.authed) { state.edit = true; applyMode(); render(); }
+  else if (state.authed) render(); // re-render so toggle buttons enable now that auth is confirmed
 }
 function openLogin() { $('#login-msg').textContent = ''; $('#login-user').value = ''; $('#login-pass').value = ''; $('#login-modal').classList.remove('hidden'); $('#login-user').focus(); }
 function closeLogin() { $('#login-modal').classList.add('hidden'); }
