@@ -60,6 +60,15 @@ Instructions for Claude Code in this project.
 - Clicking anything calls `raise()` (board.js) from a **capture-phase** `pointerdown` —
   child controls stopPropagation, and raising must not `render()` (that would destroy the
   element about to capture the pointer), so it writes z-indexes into the DOM via `applyZ()`.
-- Raising is group-aware: a card lifts its device box and area, a box lifts its contents.
+- A click raises the **outermost container** the object belongs to, with everything nested
+  in it (`zGroup`), so a group always occupies one contiguous band of the stack. Raising
+  only the clicked card left a physical relay half in front — its other outputs still cut
+  across by the board next to it. Outputs are pinned inside their box by
+  `reflowDeviceOutputs` and can't be separated, so the box + all its outputs move as one.
+- Within the raised band `zRank` orders it: everything else keeps its relative order, then
+  the clicked object's own physical relay, then the clicked object itself on top.
+- `normalizeZ` must never reorder the `relays`/`devices`/`areas` arrays — only set `z`.
+  `reflowDeviceOutputs` stacks outputs by array order, so reordering would visually
+  rearrange a physical relay's outputs.
 - Persisted through `PUT /api/layout/zorder` (debounced 600ms) — a separate endpoint on
   purpose: no backup snapshot, no `layout.save` audit entry, no version check.

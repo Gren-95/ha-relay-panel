@@ -218,48 +218,65 @@ function normalizeZ() {
   }
 }
 
-// Everything that has to travel with `o` when it is raised. Lifting a card alone
-// is not enough: if the box it lives in stays buried, its neighbours still cut
-// across the group. So a card lifts its containers, and a box lifts its contents.
+// --- what a click raises -----------------------------------------------------
+// A physical relay is one thing on the board, not a box plus some loose cards:
+// its outputs are pinned inside it by reflowDeviceOutputs and can never be moved
+// out. So raising an output has to raise the whole device — box and every sibling
+// output — or the group ends up half in front, its remaining cards still cut
+// across by the box next to it. Same for an area and everything nested in it.
+//
+// The rule: a click raises the OUTERMOST container the object belongs to, with
+// all of its contents, so a group always occupies one contiguous band of the
+// stack instead of interleaving with its neighbour.
+const devOf = (o) => (o && o.device ? state.layout.devices.find((d) => d.id === o.device) : null);
+const areaOf = (o, kind) => {
+  const id = kind === 'area' ? o.areaId : o.area;
+  return id ? state.layout.areas.find((a) => a.areaId === id) || null : null;
+};
+
 function zGroup(o, kind) {
   const g = { area: [], device: [], relay: [] };
-  const areaOf = (id) => state.layout.areas.find((a) => a.areaId === id);
-  if (kind === 'relay') {
-    g.relay.push(o);
-    const d = o.device && state.layout.devices.find((x) => x.id === o.device);
-    if (d) g.device.push(d);
-    const a = o.area && areaOf(o.area);
-    if (a) g.area.push(a);
-  } else if (kind === 'device') {
-    g.device.push(o);
-    g.relay.push(...state.layout.relays.filter((r) => r.device === o.id));
-    const a = o.area && areaOf(o.area);
-    if (a) g.area.push(a);
-  } else {
-    g.area.push(o);
-    g.device.push(...state.layout.devices.filter((d) => d.area === o.areaId));
+  const area = areaOf(o, kind);
+  if (area) {
+    g.area.push(area);
+    g.device.push(...state.layout.devices.filter((d) => d.area === area.areaId));
     const ids = new Set(g.device.map((d) => d.id));
-    g.relay.push(...state.layout.relays.filter((r) => r.area === o.areaId || ids.has(r.device)));
+    g.relay.push(...state.layout.relays.filter((r) => r.area === area.areaId || ids.has(r.device)));
+    return g;
   }
+  // no area: a device box (with its outputs) is the outermost thing, else the card alone
+  const dev = kind === 'device' ? o : devOf(o);
+  if (dev) {
+    g.device.push(dev);
+    g.relay.push(...state.layout.relays.filter((r) => r.device === dev.id));
+  } else g[kind].push(o);
   return g;
+}
+
+// Inside the raised band, keep the nesting readable: everything else holds its
+// relative order, then the clicked object's own physical relay (box + outputs),
+// then the object actually clicked, on top.
+function zRank(k, x, o, dev) {
+  if (x === o) return 2;
+  if (dev && (k === 'device' ? x === dev : k === 'relay' && x.device === dev.id)) return 1;
+  return 0;
 }
 
 const zSignature = () => ['area', 'device', 'relay'].map((k) => zList(k).map((o) => num(o.z)).join(',')).join('|');
 
-// Move `o` (and its group) to the top of the stack. Returns false when nothing
-// actually moved, so a click on something already in front doesn't hit the DB.
+// Move `o` — and the group it belongs to — to the top of the stack. Returns false
+// when nothing actually moved, so a click on something already in front doesn't
+// churn the DB.
 function bringToFront(o, kind) {
   const before = zSignature();
   const g = zGroup(o, kind);
+  const dev = kind === 'device' ? o : devOf(o);
   for (const k of ['area', 'device', 'relay']) {
     if (!g[k].length) continue;
-    const list = zList(k);
-    let top = list.reduce((m, x) => Math.max(m, num(x.z)), 0);
-    // keep the group's own relative order, but the clicked object ends up last —
-    // i.e. highest — so it wins against its own siblings too
-    const picked = g[k].filter((x) => x !== o).sort((a, b) => num(a.z) - num(b.z));
-    if (g[k].includes(o)) picked.push(o);
-    picked.forEach((x) => { x.z = ++top; });
+    let top = zList(k).reduce((m, x) => Math.max(m, num(x.z)), 0);
+    g[k].slice()
+      .sort((a, b) => (zRank(k, a, o, dev) - zRank(k, b, o, dev)) || (num(a.z) - num(b.z)))
+      .forEach((x) => { x.z = ++top; });
   }
   normalizeZ();
   return zSignature() !== before;
