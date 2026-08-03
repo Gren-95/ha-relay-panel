@@ -193,6 +193,76 @@ function normalizeLayout() {
   }
   for (const d of state.layout.devices) reflowDeviceOutputs(d);
   for (const a of state.layout.areas) fitAreaToContents(a);
+  normalizeZ();
+}
+
+// --- stacking order ----------------------------------------------------------
+// Every board object carries a `z` rank, persisted with the layout, that records
+// how recently it was clicked. Rendering turns that rank into a real z-index in
+// steps of Z_STEP, offset by tier — so however the ranks move, the invariant
+// "area box behind device box behind relay card" can never be clicked away.
+// (An area brought to the front would otherwise bury the cards it contains.)
+const Z_STEP = 10;
+const Z_BASE = { area: 10, device: 100000, relay: 1000000 };
+const zList = (kind) => (kind === 'relay' ? state.layout.relays : kind === 'device' ? state.layout.devices : state.layout.areas);
+const zIndexOf = (o, kind) => Z_BASE[kind] + num(o.z) * Z_STEP;
+
+// Compact each tier's ranks to 0..n-1 in click order. Objects with no `z` yet —
+// a layout saved before this existed, or a box just added — fall back to their
+// array index, which is exactly the order the board painted them in before.
+function normalizeZ() {
+  for (const list of [state.layout.areas, state.layout.devices, state.layout.relays]) {
+    list.map((o, i) => ({ o, i }))
+      .sort((a, b) => (num(a.o.z, a.i) - num(b.o.z, b.i)) || (a.i - b.i))
+      .forEach((e, rank) => { e.o.z = rank; });
+  }
+}
+
+// Everything that has to travel with `o` when it is raised. Lifting a card alone
+// is not enough: if the box it lives in stays buried, its neighbours still cut
+// across the group. So a card lifts its containers, and a box lifts its contents.
+function zGroup(o, kind) {
+  const g = { area: [], device: [], relay: [] };
+  const areaOf = (id) => state.layout.areas.find((a) => a.areaId === id);
+  if (kind === 'relay') {
+    g.relay.push(o);
+    const d = o.device && state.layout.devices.find((x) => x.id === o.device);
+    if (d) g.device.push(d);
+    const a = o.area && areaOf(o.area);
+    if (a) g.area.push(a);
+  } else if (kind === 'device') {
+    g.device.push(o);
+    g.relay.push(...state.layout.relays.filter((r) => r.device === o.id));
+    const a = o.area && areaOf(o.area);
+    if (a) g.area.push(a);
+  } else {
+    g.area.push(o);
+    g.device.push(...state.layout.devices.filter((d) => d.area === o.areaId));
+    const ids = new Set(g.device.map((d) => d.id));
+    g.relay.push(...state.layout.relays.filter((r) => r.area === o.areaId || ids.has(r.device)));
+  }
+  return g;
+}
+
+const zSignature = () => ['area', 'device', 'relay'].map((k) => zList(k).map((o) => num(o.z)).join(',')).join('|');
+
+// Move `o` (and its group) to the top of the stack. Returns false when nothing
+// actually moved, so a click on something already in front doesn't hit the DB.
+function bringToFront(o, kind) {
+  const before = zSignature();
+  const g = zGroup(o, kind);
+  for (const k of ['area', 'device', 'relay']) {
+    if (!g[k].length) continue;
+    const list = zList(k);
+    let top = list.reduce((m, x) => Math.max(m, num(x.z)), 0);
+    // keep the group's own relative order, but the clicked object ends up last —
+    // i.e. highest — so it wins against its own siblings too
+    const picked = g[k].filter((x) => x !== o).sort((a, b) => num(a.z) - num(b.z));
+    if (g[k].includes(o)) picked.push(o);
+    picked.forEach((x) => { x.z = ++top; });
+  }
+  normalizeZ();
+  return zSignature() !== before;
 }
 
 // The area box whose bounds contain point (px,py), if any.
@@ -234,4 +304,5 @@ export { fillSelects, refreshAreaPicker, areaColor, areaName, headColor, boxTint
   num, CARD_W, CARD_H, GAP, PAD, HDR, DEV_W, MIN_AREA_W, MIN_AREA_H, innerX, innerY,
   boxFor, clampToBox, clampBoxToArea, centerInBox, reflowDeviceOutputs, minAreaSize,
   slotInArea, growToInclude, containArea, fitAreaToContents, packArea, normalizeLayout,
-  areaAt, assignDeviceArea, pinDeviceToArea };
+  areaAt, assignDeviceArea, pinDeviceToArea,
+  Z_STEP, Z_BASE, zIndexOf, normalizeZ, bringToFront };

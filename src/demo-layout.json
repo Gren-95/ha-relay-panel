@@ -6,8 +6,8 @@
     { "id":"r4","name":"Bathroom heater","relay":"switch.bathroom_heater","sensor":"sensor.bathroom_temp","area":"area_bedroom","mode":"below","temp":22,"deadband":0,"bound":true,"x":420,"y":200 }
   ],
   "areas": [
-    { "areaId":"area_living","name":"Living room","x":40,"y":40,"w":360,"h":150 },
-    { "areaId":"area_bedroom","name":"Bedrooms","x":400,"y":40,"w":360,"h":280 }
+    { "id":"a1","areaId":"area_living","name":"Living room","x":40,"y":40,"w":360,"h":150 },
+    { "id":"a2","areaId":"area_bedroom","name":"Bedrooms","x":400,"y":40,"w":360,"h":280 }
   ],
   "devices": [],
   "presets": []

@@ -101,6 +101,29 @@ async function saveLayout(layout, expectedUpdatedAt) {
   return getLayout();
 }
 
+// Apply only the per-object stacking ranks (`z`) onto the stored layout. Clicking
+// a card re-stacks the board, so this runs orders of magnitude more often than a
+// real layout edit: it deliberately skips the backup snapshot and the version
+// check, and touches nothing but `z`. Returns the fresh row so the caller can
+// keep its optimistic-concurrency token in step.
+async function saveZOrder(order) {
+  const cur = await getLayout();
+  delete cur.updated_at;
+  const apply = (list, map) => {
+    if (!map || typeof map !== 'object') return;
+    for (const o of list) {
+      if (!Object.prototype.hasOwnProperty.call(map, o.id)) continue;
+      const v = Number(map[o.id]);
+      if (Number.isFinite(v)) o.z = Math.max(0, Math.round(v));
+    }
+  };
+  apply(cur.areas, order.areas);
+  apply(cur.devices, order.devices);
+  apply(cur.relays, order.relays);
+  await pool.query('UPDATE panel SET layout = ? WHERE id = 1', [JSON.stringify(cur)]);
+  return getLayout();
+}
+
 async function listBackups() {
   const [rows] = await pool.query('SELECT id, relays, created_at FROM panel_backup ORDER BY id DESC');
   return rows.map((r) => ({ id: r.id, relays: r.relays, created_at: r.created_at }));
@@ -161,4 +184,4 @@ async function deleteSessionsForUser(username) {
   await pool.query('DELETE FROM sessions WHERE username = ?', [username]);
 }
 
-module.exports = { initDb, getLayout, saveLayout, listBackups, restoreBackup, addAuditLog, getActivityLog, saveSession, getSession, deleteSession, deleteSessionsForUser, startSessionSweep };
+module.exports = { initDb, getLayout, saveLayout, saveZOrder, listBackups, restoreBackup, addAuditLog, getActivityLog, saveSession, getSession, deleteSession, deleteSessionsForUser, startSessionSweep };

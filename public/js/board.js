@@ -2,13 +2,36 @@ import { state, canvas, CANVAS_DESKTOP, CANVAS_MOBILE, esc, setStatus, flashStat
 import { t } from './i18n.js';
 import { refreshAreaPicker, normalizeLayout, areaColor, headColor, boxTint, headTint, opaque, bodyFill, dashedSides, areaName,
   pinDeviceToArea, containArea, fitAreaToContents, minAreaSize, reflowDeviceOutputs,
-  num, CARD_W, CARD_H, PAD, HDR, DEV_W, MIN_AREA_W, MIN_AREA_H } from './layout.js';
+  num, CARD_W, CARD_H, PAD, HDR, DEV_W, MIN_AREA_W, MIN_AREA_H,
+  zIndexOf, bringToFront } from './layout.js';
 import { updateSummary, setAreaRelays } from './relay-actions.js';
 import { card } from './card.js';
 import { openDeviceEditor } from './device-editor.js';
-import { saveLayout } from './history-undo.js';
+import { saveLayout, saveZOrder } from './history-undo.js';
 
 const isMobile = () => window.innerWidth <= 700;
+
+// --- click-to-front ----------------------------------------------------------
+// Push the current z ranks straight into the live DOM. This is deliberately not
+// a render(): raising happens on pointerdown, and rebuilding the canvas there
+// would destroy the very element that is about to capture the pointer, killing
+// the drag on its first move.
+function applyZ() {
+  const set = (el, o, kind) => { if (el) el.style.zIndex = zIndexOf(o, kind); };
+  const box = (id) => canvas.querySelector('.area[data-gid="' + id + '"]');
+  for (const a of state.layout.areas) set(box(a.id), a, 'area');
+  for (const d of state.layout.devices) set(box(d.id), d, 'device');
+  for (const r of state.layout.relays) set(canvas.querySelector('.relay[data-id="' + r.id + '"]'), r, 'relay');
+}
+
+// Clicking anything on the board brings it (and its group) to the front, and the
+// new order is persisted so the board looks the same on the next visit.
+function raise(o, kind) {
+  if (isMobile()) return;              // the list layout has no overlap to resolve
+  if (!bringToFront(o, kind)) return;  // already on top — don't churn the DB
+  applyZ();
+  saveZOrder();
+}
 
 function render() {
   refreshAreaPicker();
@@ -109,7 +132,8 @@ function renderBox(g, kind) {
   // border-color + background come from inline style (dynamic per-area hue)
   // The box carries no border of its own: the titlebar and the body each draw their
   // own, so the bar can be fully boxed in solid while the canvas below it is dotted.
-  el.className = 'area absolute ' + (isDev ? 'z-[2]' : 'z-[1]');
+  el.className = 'area absolute';
+  el.style.zIndex = zIndexOf(g, kind);
   el.dataset.gid = g.id;
   el.style.left = num(g.x) + 'px';
   el.style.top = num(g.y) + 'px';
@@ -150,6 +174,10 @@ function renderBox(g, kind) {
   };
   const body = `<div class="area-body absolute inset-x-0 bottom-0 rounded-b-2xl pointer-events-none ${isDev ? 'border-2 border-t-0 border-solid' : ''}" style="top:${HDR}px;border-color:${line};background:${bodyBg()}"></div>`;
   el.innerHTML = head + body + resize;
+
+  // capture phase: the header drag and the master buttons both stopPropagation,
+  // and a box must come forward no matter which of its controls was hit
+  el.addEventListener('pointerdown', () => raise(g, kind), true);
 
   const isMember = memberFilter(g, kind);
   el.querySelectorAll('.am-btn').forEach((b) => {
@@ -292,4 +320,4 @@ function addPhysicalRelay(deviceId) {
 }
 
 export { isMobile, render, renderMobile, memberFilter, renderBox, groupHeaderDrag,
-  dragMove, addArea, addPhysicalRelay, areaMaster };
+  dragMove, addArea, addPhysicalRelay, areaMaster, applyZ, raise };

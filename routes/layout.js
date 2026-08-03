@@ -28,6 +28,14 @@ router.put('/api/layout', requireAuth, wrap(async (req, res) => {
   }
 }));
 
+// Stacking order only (click-to-front). Kept off the full-save path on purpose:
+// re-stacking must not snapshot a backup, must not fill the activity log, and
+// must not fail on a stale version token.
+router.put('/api/layout/zorder', requireAuth, wrap(async (req, res) => {
+  const b = req.body || {};
+  res.json(await db.saveZOrder({ areas: b.areas, devices: b.devices, relays: b.relays }));
+}));
+
 // --- layout backups (recover a wiped/old layout) ---
 router.get('/api/layout/backups', wrap(async (req, res) => {
   res.json({ ok: true, backups: await db.listBackups() });

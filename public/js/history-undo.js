@@ -2,12 +2,37 @@ import { state, setStatus, flashStatus, api } from './core.js';
 import { t } from './i18n.js';
 import { closeEditor } from './editor.js';
 import { closeDeviceEditor } from './device-editor.js';
-import { fillSelects } from './layout.js';
+import { fillSelects, num } from './layout.js';
 import { render } from './board.js';
+
+// --- stacking order --------------------------------------------------------
+// Clicking a card re-stacks the board, so the order changes far more often than
+// the layout itself. It gets its own endpoint — no backup snapshot, no audit
+// entry — and a burst of clicks is coalesced into a single PUT.
+const Z_DEBOUNCE = 600;
+let zTimer = null;
+
+function saveZOrder() {
+  if (!state.authed || !state.loaded) return; // viewers re-stack locally only
+  clearTimeout(zTimer);
+  zTimer = setTimeout(flushZOrder, Z_DEBOUNCE);
+}
+
+async function flushZOrder() {
+  clearTimeout(zTimer); zTimer = null;
+  if (!state.authed || !state.loaded) return;
+  const ranks = (list) => Object.fromEntries(list.map((o) => [o.id, num(o.z)]));
+  const body = { areas: ranks(state.layout.areas), devices: ranks(state.layout.devices), relays: ranks(state.layout.relays) };
+  try {
+    const result = await api('/api/layout/zorder', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    state.layoutVersion = result.updated_at;  // keep the concurrency token in step
+  } catch { /* stacking order is cosmetic — never interrupt the user over it */ }
+}
 
 async function saveLayout() {
   if (!state.authed) return; // viewers don't persist layout (and shouldn't be prompted to log in)
   if (!state.loaded) return; // never overwrite the DB before the real layout has loaded
+  clearTimeout(zTimer); zTimer = null; // a full save already carries the z ranks
   try {
     const body = { ...state.layout, updated_at: state.layoutVersion };
     const result = await api('/api/layout', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -38,7 +63,12 @@ async function saveLayout() {
 // --- undo / redo history (snapshots of the layout) ---
 const history = { stack: [], idx: -1, restoring: false };
 const snapshot = () => JSON.stringify(state.layout);
-function initHistory() { history.stack = [snapshot()]; history.idx = 0; }
+function initHistory() {
+  history.stack = [snapshot()]; history.idx = 0;
+  // don't lose a debounced re-stack when the tab is closed or backgrounded
+  window.addEventListener('pagehide', () => { if (zTimer) flushZOrder(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden && zTimer) flushZOrder(); });
+}
 function pushHistory() {
   if (history.restoring) return;
   const snap = snapshot();
@@ -66,4 +96,4 @@ async function redo() {
   history.idx++; await applyHistory(); flashStatus(t('redo'), 800);
 }
 
-export { saveLayout, initHistory, pushHistory, applyHistory, undo, redo };
+export { saveLayout, saveZOrder, flushZOrder, initHistory, pushHistory, applyHistory, undo, redo };
