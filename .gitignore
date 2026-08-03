@@ -2,3 +2,4 @@
 node_modules/
 *.log
 compose.yml.bak.*
+test-results/

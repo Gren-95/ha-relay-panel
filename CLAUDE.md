@@ -47,3 +47,19 @@ Instructions for Claude Code in this project.
 - Sends via HA's `notify.<service>` API (configurable with `NOTIFY_SERVICE` env var)
 - Per-relay: `notify` (bool) and `notify_deviation` (°C, default 5) fields on relay objects
 - Debounce: `notifyAlerts` Map tracks already-alerted incidents, clears on recovery
+
+## Board stacking order (click-to-front)
+
+- Every area/device/relay object carries a `z` rank in the layout JSON — no schema change.
+  `normalizeZ()` (layout.js, run from `normalizeLayout()`) compacts each list to 0..n-1;
+  objects with no `z` fall back to their array index, which is the pre-feature paint order.
+- `zIndexOf(o, kind)` = `Z_BASE[kind] + z * 10`. The tier bases (area 10 / device 100000 /
+  relay 1000000) keep boxes behind the cards they contain no matter how the ranks move.
+- `#canvas` must keep the `isolate` class: card z-indexes run into the millions and would
+  otherwise paint over the header, editor asides and modals.
+- Clicking anything calls `raise()` (board.js) from a **capture-phase** `pointerdown` —
+  child controls stopPropagation, and raising must not `render()` (that would destroy the
+  element about to capture the pointer), so it writes z-indexes into the DOM via `applyZ()`.
+- Raising is group-aware: a card lifts its device box and area, a box lifts its contents.
+- Persisted through `PUT /api/layout/zorder` (debounced 600ms) — a separate endpoint on
+  purpose: no backup snapshot, no `layout.save` audit entry, no version check.

@@ -1,11 +1,11 @@
 import { state, esc } from './core.js';
 import { t } from './i18n.js';
-import { areaColor, areaName, boxFor, clampToBox, num } from './layout.js';
+import { areaColor, areaName, boxFor, clampToBox, num, zIndexOf } from './layout.js';
 import { toggleRelay, showWarnPop, adjustTemp } from './relay-actions.js';
 import { openLogin } from './auth.js';
 import { openEditor } from './editor.js';
 import { openChartModal } from './chart.js';
-import { dragMove } from './board.js';
+import { dragMove, raise } from './board.js';
 import { saveLayout } from './history-undo.js';
 
 function card(r, mobile) {
@@ -16,10 +16,16 @@ function card(r, mobile) {
     'relay bg-surface rounded-[14px] px-[14px] shadow-panel select-none flex items-center gap-3 box-border touch-none',
     maint ? 'border-2 border-heat' : 'border border-border',
     mobile ? 'static w-full h-auto min-h-[84px]'
-           : 'absolute z-[3] w-[340px] h-[100px]' + (state.edit && !r.device ? ' cursor-grab' : ' cursor-pointer'),
+           : 'absolute w-[340px] h-[100px]' + (state.edit && !r.device ? ' cursor-grab' : ' cursor-pointer'),
   ].join(' ');
   el.dataset.id = r.id;
-  if (!mobile) { el.style.left = num(r.x) + 'px'; el.style.top = num(r.y) + 'px'; }
+  if (!mobile) {
+    el.style.left = num(r.x) + 'px'; el.style.top = num(r.y) + 'px';
+    el.style.zIndex = zIndexOf(r, 'relay');
+    // capture phase: the toggle, warn icon and target-temp pill all stopPropagation
+    // on pointerdown, and the card still has to come forward when they are hit
+    el.addEventListener('pointerdown', () => raise(r, 'relay'), true);
+  }
   if (r.area) { const hue = areaColor(r.area); el.style.borderLeft = `4px solid hsl(${hue},60%,50%)`; }
 
   const live = state.live[r.sensor] || {};
