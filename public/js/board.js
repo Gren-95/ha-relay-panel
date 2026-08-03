@@ -17,11 +17,11 @@ const isMobile = () => window.innerWidth <= 700;
 // would destroy the very element that is about to capture the pointer, killing
 // the drag on its first move.
 function applyZ() {
-  const set = (el, o, kind) => { if (el) el.style.zIndex = zIndexOf(o, kind); };
+  const set = (el, o) => { if (el) el.style.zIndex = zIndexOf(o); };
   const box = (id) => canvas.querySelector('.area[data-gid="' + id + '"]');
-  for (const a of state.layout.areas) set(box(a.id), a, 'area');
-  for (const d of state.layout.devices) set(box(d.id), d, 'device');
-  for (const r of state.layout.relays) set(canvas.querySelector('.relay[data-id="' + r.id + '"]'), r, 'relay');
+  for (const a of state.layout.areas) set(box(a.id), a);
+  for (const d of state.layout.devices) set(box(d.id), d);
+  for (const r of state.layout.relays) set(canvas.querySelector('.relay[data-id="' + r.id + '"]'), r);
 }
 
 // Clicking anything on the board brings it (and its group) to the front, and the
@@ -133,7 +133,7 @@ function renderBox(g, kind) {
   // The box carries no border of its own: the titlebar and the body each draw their
   // own, so the bar can be fully boxed in solid while the canvas below it is dotted.
   el.className = 'area absolute';
-  el.style.zIndex = zIndexOf(g, kind);
+  el.style.zIndex = zIndexOf(g);
   el.dataset.gid = g.id;
   el.style.left = num(g.x) + 'px';
   el.style.top = num(g.y) + 'px';

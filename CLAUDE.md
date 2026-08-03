@@ -50,25 +50,31 @@ Instructions for Claude Code in this project.
 
 ## Board stacking order (click-to-front)
 
-- Every area/device/relay object carries a `z` rank in the layout JSON — no schema change.
-  `normalizeZ()` (layout.js, run from `normalizeLayout()`) compacts each list to 0..n-1;
-  objects with no `z` fall back to their array index, which is the pre-feature paint order.
-- `zIndexOf(o, kind)` = `Z_BASE[kind] + z * 10`. The tier bases (area 10 / device 100000 /
-  relay 1000000) keep boxes behind the cards they contain no matter how the ranks move.
-- `#canvas` must keep the `isolate` class: card z-indexes run into the millions and would
-  otherwise paint over the header, editor asides and modals.
+- A physical relay is ONE object on the board: the box plus the outputs pinned inside it by
+  `reflowDeviceOutputs`. Click any part of it and the whole thing comes forward together.
+- **Do not band by kind.** An earlier version gave boxes and cards separate z-ranges (all
+  boxes under all cards); a raised board's box could then never rise above the neighbouring
+  board's outputs, so every group came forward half-buried. That was the bug.
+- The rendered z-index comes from `zStack()` — a depth-first walk of the containment tree,
+  `area box, [device box, its outputs | loose card]…, next area box, …` — numbered
+  `(i+1) * 10`. A container is emitted before its contents, so it always paints underneath
+  them, and each group lands on consecutive levels: one contiguous band that moves as a unit.
+- `z` on each object is only **click recency**, used to order siblings; it is not the
+  z-index. `normalizeZ()` compacts it to 0..n-1 across the whole board (one shared number
+  space — an area, a device box and a loose card can all be siblings) and calls `zRefresh()`,
+  which caches the walk in `zMap` keyed by object identity. `zIndexOf(o)` reads that cache.
+- Outputs inside a box are emitted in **array order**, not click order: they are pinned in a
+  vertical stack and can never overlap each other, and `reflowDeviceOutputs` lays them out by
+  array order. So `normalizeZ` must never reorder the `relays`/`devices`/`areas` arrays —
+  only set `z`. Reordering would visually rearrange a board's outputs.
+- `bringToFront` bumps two things at most: the object's top-level root (its area, else its
+  device box, else itself) above its top-level siblings, and — when inside an area — the
+  clicked box/card above that area's other children.
+- `#canvas` must keep the `isolate` class: levels count up from the bottom of the board, so
+  on a busy board they run straight through the range the overlays use (editor `z-20`,
+  backdrop `z-[19]`, header `z-[21]`, modals `z-[50]`/`z-[60]`).
 - Clicking anything calls `raise()` (board.js) from a **capture-phase** `pointerdown` —
   child controls stopPropagation, and raising must not `render()` (that would destroy the
   element about to capture the pointer), so it writes z-indexes into the DOM via `applyZ()`.
-- A click raises the **outermost container** the object belongs to, with everything nested
-  in it (`zGroup`), so a group always occupies one contiguous band of the stack. Raising
-  only the clicked card left a physical relay half in front — its other outputs still cut
-  across by the board next to it. Outputs are pinned inside their box by
-  `reflowDeviceOutputs` and can't be separated, so the box + all its outputs move as one.
-- Within the raised band `zRank` orders it: everything else keeps its relative order, then
-  the clicked object's own physical relay, then the clicked object itself on top.
-- `normalizeZ` must never reorder the `relays`/`devices`/`areas` arrays — only set `z`.
-  `reflowDeviceOutputs` stacks outputs by array order, so reordering would visually
-  rearrange a physical relay's outputs.
 - Persisted through `PUT /api/layout/zorder` (debounced 600ms) — a separate endpoint on
   purpose: no backup snapshot, no `layout.save` audit entry, no version check.

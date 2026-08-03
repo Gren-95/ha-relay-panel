@@ -29,6 +29,7 @@ function mockApi(page, store) {
     page.route('**/api/entities', (route) => route.fulfill({ json: { switches: [], sensors: [] } })),
     page.route('**/api/areas', (route) => route.fulfill({ json: [
       { id: 'area_living', name: 'Living room' }, { id: 'area_bedroom', name: 'Bedrooms' },
+      { id: 'area_plant', name: 'Plant room' },
     ] })),
     page.route('**/api/relay-devices', (route) => route.fulfill({ json: [] })),
     page.route('**/api/live**', (route) => route.fulfill({ json: {} })),
@@ -41,15 +42,10 @@ function mockApi(page, store) {
 
 const newStore = () => ({ layout: JSON.parse(JSON.stringify(demoLayout)), version: 1, puts: [] });
 
-// z-index of every card, keyed by relay id
-const cardZ = (page) => page.evaluate(() => Object.fromEntries(
-  [...document.querySelectorAll('#canvas .relay')].map((el) => [el.dataset.id, Number(getComputedStyle(el).zIndex)])
-));
-const boxZ = (page) => page.evaluate(() => [...document.querySelectorAll('#canvas .area')]
-  .map((el) => Number(getComputedStyle(el).zIndex)));
-// z-index of every group box, keyed by its layout id
-const groupZ = (page) => page.evaluate(() => Object.fromEntries(
-  [...document.querySelectorAll('#canvas .area')].map((el) => [el.dataset.gid, Number(getComputedStyle(el).zIndex)])
+// Rendered level of every board object — group boxes and cards share one scale.
+const levelsOf = (page) => page.evaluate(() => Object.fromEntries(
+  [...document.querySelectorAll('#canvas .area, #canvas .relay')]
+    .map((el) => [el.dataset.gid || el.dataset.id, Number(getComputedStyle(el).zIndex)])
 ));
 
 // Two overlapping physical relays, three outputs each. Output positions are
@@ -73,7 +69,28 @@ function hardwareLayout(areaId) {
     areas: areaId ? [{ id: 'a1', areaId, name: 'Plant room', x: 20, y: 20, w: 700, h: 700 }] : [],
   };
 }
-const outsOf = (zs, dev) => Object.keys(zs).filter((id) => id.startsWith(dev)).map((id) => zs[id]);
+
+// Every level held by a physical relay: the box plus all of its outputs. This is
+// the unit that has to move together.
+const boardLevels = (z, dev) => Object.keys(z)
+  .filter((id) => id === dev || id.startsWith(dev + 'o')).map((id) => z[id]);
+
+// A container is painted under the things inside it — the one ordering rule that
+// no click may ever break, or a box would swallow its own cards.
+function expectContainment(z, layout) {
+  const boxOfArea = (areaId) => (layout.areas.find((a) => a.areaId === areaId) || {}).id;
+  for (const d of layout.devices) {
+    const a = boxOfArea(d.area);
+    if (a) expect(z[d.id], `device ${d.id} above its area`).toBeGreaterThan(z[a]);
+  }
+  for (const r of layout.relays) {
+    if (r.device) expect(z[r.id], `card ${r.id} above its box`).toBeGreaterThan(z[r.device]);
+    else {
+      const a = boxOfArea(r.area);
+      if (a) expect(z[r.id], `card ${r.id} above its area`).toBeGreaterThan(z[a]);
+    }
+  }
+}
 
 // A card click also opens the relay editor, whose backdrop then swallows the next
 // click — so dismiss it before clicking the board again.
@@ -83,35 +100,41 @@ async function closeEditor(page) {
 }
 
 test.describe('board stacking order', () => {
-  test('every card gets its own z-index, ten apart, above the group boxes', async ({ page }) => {
+  test('every object gets its own level, ten apart, containers underneath', async ({ page }) => {
     await mockApi(page, newStore());
     await page.goto('/');
     await expect(page.locator('#canvas .relay').first()).toBeVisible();
 
-    const zs = Object.values(await cardZ(page)).sort((a, b) => a - b);
-    expect(zs.length).toBe(demoLayout.relays.length);
-    expect(new Set(zs).size).toBe(zs.length);                 // no two cards share a level
-    for (let i = 1; i < zs.length; i++) expect(zs[i] - zs[i - 1]).toBe(10);
-
-    // the tier invariant: an area box can never be raised over the cards it holds
-    expect(Math.max(...(await boxZ(page)))).toBeLessThan(Math.min(...zs));
+    const z = await levelsOf(page);
+    const n = demoLayout.relays.length + demoLayout.areas.length;
+    const sorted = Object.values(z).sort((a, b) => a - b);
+    expect(sorted.length).toBe(n);
+    expect(new Set(sorted).size).toBe(n);                       // nothing shares a level
+    expect(sorted).toEqual(sorted.map((_, i) => (i + 1) * 10)); // one contiguous run, step 10
+    expectContainment(z, demoLayout);
   });
 
   // The production layout carries an orphaned `z: 3` on every relay, left behind
   // by something no version of the app ever read. Equal ranks must fall back to
-  // array order, not collapse back onto one level.
+  // list order, not collapse everything back onto one level.
   test('a layout where every object already has the same z still separates', async ({ page }) => {
-    const store = newStore();
-    store.layout.relays.forEach((r) => { r.z = 3; });
-    await mockApi(page, store);
+    const seeded = newStore();
+    seeded.layout.relays.forEach((r) => { r.z = 3; });
+    await mockApi(page, seeded);
     await page.goto('/');
     await expect(page.locator('#canvas .relay').first()).toBeVisible();
+    const withZ = await levelsOf(page);
 
-    const zs = await cardZ(page);
-    expect(new Set(Object.values(zs)).size).toBe(store.layout.relays.length);
-    // ties break on array order, i.e. exactly how the board painted them before
-    const order = Object.keys(zs).sort((a, b) => zs[a] - zs[b]);
-    expect(order).toEqual(demoLayout.relays.map((r) => r.id));
+    expect(new Set(Object.values(withZ)).size).toBe(Object.keys(withZ).length);
+    expectContainment(withZ, demoLayout);
+
+    // and it lands on exactly the stack a layout with no `z` at all produces
+    await page.context().clearCookies();
+    const fresh = newStore();
+    await mockApi(page, fresh);
+    await page.goto('/');
+    await expect(page.locator('#canvas .relay').first()).toBeVisible();
+    expect(await levelsOf(page)).toEqual(withZ);
   });
 
   test('clicking a card raises it above the others', async ({ page }) => {
@@ -119,17 +142,19 @@ test.describe('board stacking order', () => {
     await page.goto('/');
     await expect(page.locator('#canvas .relay').first()).toBeVisible();
 
-    const before = await cardZ(page);
-    const lowest = Object.keys(before).reduce((a, b) => (before[a] < before[b] ? a : b));
-    expect(before[lowest]).toBe(Math.min(...Object.values(before)));
+    const before = await levelsOf(page);
+    const cards = demoLayout.relays.map((r) => r.id);
+    const lowest = cards.reduce((a, b) => (before[a] < before[b] ? a : b));
 
     await page.locator(`#canvas .relay[data-id="${lowest}"] .r-name`).click();
-    const after = await cardZ(page);
+    const after = await levelsOf(page);
     expect(after[lowest]).toBe(Math.max(...Object.values(after)));
+    expectContainment(after, demoLayout);
   });
 
-  // Cards carry z-indexes in the millions. #canvas isolates them into its own
-  // stacking context; drop that and they paint straight over the overlays.
+  // Cards get one level each counting up from the bottom of the board, so on a
+  // busy board they run straight through the range the overlays sit in. #canvas
+  // isolates them into its own stacking context; drop that and they paint over.
   test('overlays still cover the board', async ({ page }) => {
     await mockApi(page, newStore());
     await page.goto('/');
@@ -148,14 +173,13 @@ test.describe('board stacking order', () => {
     await expect(page.locator('header')).toBeVisible();
   });
 
-  // A physical relay is one object on the board: its outputs are pinned inside the
-  // box and cannot be moved out, so the box and every output must travel together.
-  // Raising only the clicked card left the rest of the group buried under the
-  // neighbouring board — the "finicky" interleaving.
+  // A physical relay is one object: the box plus the outputs pinned inside it.
+  // Clicking any part of it must lift the whole thing over the whole of the board
+  // next to it — box included, not just the cards.
   for (const areaId of ['', 'area_plant']) {
     const where = areaId ? 'inside an area' : 'on the bare canvas';
 
-    test(`clicking one output raises its whole physical relay (${where})`, async ({ page }) => {
+    test(`clicking one output raises the whole physical relay (${where})`, async ({ page }) => {
       const store = newStore();
       store.layout = hardwareLayout(areaId);
       await mockApi(page, store);
@@ -163,28 +187,21 @@ test.describe('board stacking order', () => {
       await expect(page.locator('#canvas .relay')).toHaveCount(6);
 
       await page.locator('#canvas .relay[data-id="dBo1"] .r-name').click();
-
-      const zs = await cardZ(page);
-      // every output of board B now sits above every output of board A
-      expect(Math.min(...outsOf(zs, 'dB'))).toBeGreaterThan(Math.max(...outsOf(zs, 'dA')));
-      // and the one actually clicked is on top
-      expect(zs.dBo1).toBe(Math.max(...Object.values(zs)));
-      // the box itself comes with them, above the other board's box
-      const boxes = await groupZ(page);
-      expect(boxes.dB).toBeGreaterThan(boxes.dA);
+      const z = await levelsOf(page);
+      // board B — its box AND its outputs — clears the whole of board A
+      expect(Math.min(...boardLevels(z, 'dB'))).toBeGreaterThan(Math.max(...boardLevels(z, 'dA')));
+      expectContainment(z, store.layout);
 
       // now the other board, to prove it swaps back rather than sticking
       await closeEditor(page);
       await page.locator('#canvas .relay[data-id="dAo2"] .r-name').click();
-      const zs2 = await cardZ(page);
-      expect(Math.min(...outsOf(zs2, 'dA'))).toBeGreaterThan(Math.max(...outsOf(zs2, 'dB')));
-      expect(zs2.dAo2).toBe(Math.max(...Object.values(zs2)));
-      const boxes2 = await groupZ(page);
-      expect(boxes2.dA).toBeGreaterThan(boxes2.dB);
+      const z2 = await levelsOf(page);
+      expect(Math.min(...boardLevels(z2, 'dA'))).toBeGreaterThan(Math.max(...boardLevels(z2, 'dB')));
+      expectContainment(z2, store.layout);
     });
   }
 
-  test('clicking the physical relay box raises its outputs too', async ({ page }) => {
+  test('clicking the physical relay box raises it the same way', async ({ page }) => {
     const store = newStore();
     store.layout = hardwareLayout('');
     await mockApi(page, store);
@@ -192,27 +209,26 @@ test.describe('board stacking order', () => {
     await expect(page.locator('#canvas .relay')).toHaveCount(6);
 
     await page.locator('#canvas .area[data-gid="dB"] .area-head').click();
-    const zs = await cardZ(page);
-    expect(Math.min(...outsOf(zs, 'dB'))).toBeGreaterThan(Math.max(...outsOf(zs, 'dA')));
-    const boxes = await groupZ(page);
-    expect(boxes.dB).toBeGreaterThan(boxes.dA);
+    const z = await levelsOf(page);
+    expect(Math.min(...boardLevels(z, 'dB'))).toBeGreaterThan(Math.max(...boardLevels(z, 'dA')));
+    expectContainment(z, store.layout);
   });
 
-  test('outputs keep their order inside the box when it is raised', async ({ page }) => {
+  test('a board keeps its outputs in output order, and they stay put', async ({ page }) => {
     const store = newStore();
     store.layout = hardwareLayout('');
     await mockApi(page, store);
     await page.goto('/');
     await expect(page.locator('#canvas .relay')).toHaveCount(6);
 
-    // the middle output is clicked, so it lands on top — but the other two must
-    // still stack in their original order underneath, not shuffle
+    // outputs are pinned in a vertical stack inside the box and can never overlap
+    // each other, so their levels follow output order — clicking one does not
+    // reshuffle the board's own cards
     await page.locator('#canvas .relay[data-id="dBo1"] .r-name').click();
-    const zs = await cardZ(page);
-    expect(zs.dBo1).toBeGreaterThan(zs.dBo2);
-    expect(zs.dBo2).toBeGreaterThan(zs.dBo0);
+    const z = await levelsOf(page);
+    expect(z.dBo0).toBeLessThan(z.dBo1);
+    expect(z.dBo1).toBeLessThan(z.dBo2);
 
-    // and the cards are still laid out top-to-bottom in output order
     const tops = await page.evaluate(() => ['dBo0', 'dBo1', 'dBo2']
       .map((id) => document.querySelector(`.relay[data-id="${id}"]`).getBoundingClientRect().top));
     expect(tops[0]).toBeLessThan(tops[1]);
@@ -221,18 +237,17 @@ test.describe('board stacking order', () => {
 
   test('the click order is written to the server and survives a reload', async ({ page }) => {
     const store = newStore();
+    store.layout = hardwareLayout('');
     await mockApi(page, store);
     await page.goto('/');
-    await expect(page.locator('#canvas .relay').first()).toBeVisible();
+    await expect(page.locator('#canvas .relay')).toHaveCount(6);
 
-    const before = await cardZ(page);
-    const lowest = Object.keys(before).reduce((a, b) => (before[a] < before[b] ? a : b));
-    await page.locator(`#canvas .relay[data-id="${lowest}"] .r-name`).click();
+    await page.locator('#canvas .relay[data-id="dAo0"] .r-name').click();
     await expect.poll(() => store.puts.length, { timeout: 5000 }).toBeGreaterThan(0);
 
     await page.reload();
-    await expect(page.locator('#canvas .relay').first()).toBeVisible();
-    const after = await cardZ(page);
-    expect(after[lowest]).toBe(Math.max(...Object.values(after)));
+    await expect(page.locator('#canvas .relay')).toHaveCount(6);
+    const z = await levelsOf(page);
+    expect(Math.min(...boardLevels(z, 'dA'))).toBeGreaterThan(Math.max(...boardLevels(z, 'dB')));
   });
 });

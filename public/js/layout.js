@@ -197,88 +197,92 @@ function normalizeLayout() {
 }
 
 // --- stacking order ----------------------------------------------------------
-// Every board object carries a `z` rank, persisted with the layout, that records
-// how recently it was clicked. Rendering turns that rank into a real z-index in
-// steps of Z_STEP, offset by tier — so however the ranks move, the invariant
-// "area box behind device box behind relay card" can never be clicked away.
-// (An area brought to the front would otherwise bury the cards it contains.)
-const Z_STEP = 10;
-const Z_BASE = { area: 10, device: 100000, relay: 1000000 };
-const zList = (kind) => (kind === 'relay' ? state.layout.relays : kind === 'device' ? state.layout.devices : state.layout.areas);
-const zIndexOf = (o, kind) => Z_BASE[kind] + num(o.z) * Z_STEP;
-
-// Compact each tier's ranks to 0..n-1 in click order. Objects with no `z` yet —
-// a layout saved before this existed, or a box just added — fall back to their
-// array index, which is exactly the order the board painted them in before.
-function normalizeZ() {
-  for (const list of [state.layout.areas, state.layout.devices, state.layout.relays]) {
-    list.map((o, i) => ({ o, i }))
-      .sort((a, b) => (num(a.o.z, a.i) - num(b.o.z, b.i)) || (a.i - b.i))
-      .forEach((e, rank) => { e.o.z = rank; });
-  }
-}
-
-// --- what a click raises -----------------------------------------------------
-// A physical relay is one thing on the board, not a box plus some loose cards:
-// its outputs are pinned inside it by reflowDeviceOutputs and can never be moved
-// out. So raising an output has to raise the whole device — box and every sibling
-// output — or the group ends up half in front, its remaining cards still cut
-// across by the box next to it. Same for an area and everything nested in it.
+// A physical relay is ONE thing on the board: the box and the outputs pinned
+// inside it by reflowDeviceOutputs. So it has to stack as one — click it and the
+// box comes forward along with its cards, over the whole of the board next to it.
 //
-// The rule: a click raises the OUTERMOST container the object belongs to, with
-// all of its contents, so a group always occupies one contiguous band of the
-// stack instead of interleaving with its neighbour.
+// That rules out banding by kind (all boxes under all cards): a box could then
+// never rise above a neighbouring board's outputs, so a raised group always came
+// forward half-buried. Instead the rendered z-index comes from a depth-first walk
+// of the board's containment tree:
+//
+//   area box, [ device box, its outputs | loose card ]…, next area box, …
+//
+// A container is emitted before its contents, so it is always painted underneath
+// them, and each group's objects land on consecutive levels — one contiguous band
+// that moves as a unit. `z` itself is just click recency, used to order siblings.
+const Z_STEP = 10;
+
 const devOf = (o) => (o && o.device ? state.layout.devices.find((d) => d.id === o.device) : null);
 const areaOf = (o, kind) => {
   const id = kind === 'area' ? o.areaId : o.area;
-  return id ? state.layout.areas.find((a) => a.areaId === id) || null : null;
+  return (id && state.layout.areas.find((a) => a.areaId === id)) || null;
 };
+const byZ = (a, b) => num(a.o.z) - num(b.o.z);
+// a device box and a loose card are siblings: both are children of an area (or of
+// the canvas itself, when areaId is '')
+const devsIn = (areaId) => state.layout.devices.filter((d) => (d.area || '') === areaId).map((o) => ({ o, kind: 'device' }));
+const cardsIn = (areaId) => state.layout.relays.filter((r) => !r.device && (r.area || '') === areaId).map((o) => ({ o, kind: 'relay' }));
+const childrenOf = (areaId) => [...devsIn(areaId), ...cardsIn(areaId)].sort(byZ);
 
-function zGroup(o, kind) {
-  const g = { area: [], device: [], relay: [] };
-  const area = areaOf(o, kind);
-  if (area) {
-    g.area.push(area);
-    g.device.push(...state.layout.devices.filter((d) => d.area === area.areaId));
-    const ids = new Set(g.device.map((d) => d.id));
-    g.relay.push(...state.layout.relays.filter((r) => r.area === area.areaId || ids.has(r.device)));
-    return g;
-  }
-  // no area: a device box (with its outputs) is the outermost thing, else the card alone
-  const dev = kind === 'device' ? o : devOf(o);
-  if (dev) {
-    g.device.push(dev);
-    g.relay.push(...state.layout.relays.filter((r) => r.device === dev.id));
-  } else g[kind].push(o);
-  return g;
+// Bottom-to-top walk of the containment tree.
+function zStack() {
+  const out = [];
+  const emit = ({ o, kind }) => {
+    out.push(o);
+    if (kind === 'device') {
+      // outputs in array order — that is the order reflowDeviceOutputs stacks them
+      // down the box, and they are pinned inside it so they never overlap anyway
+      for (const r of state.layout.relays) if (r.device === o.id) out.push(r);
+    } else if (kind === 'area') {
+      for (const c of childrenOf(o.areaId)) emit(c);
+    }
+  };
+  const top = [...state.layout.areas.map((o) => ({ o, kind: 'area' })), ...childrenOf('')].sort(byZ);
+  for (const t of top) emit(t);
+  // Safety net: anything the walk missed (a device pinned to an area that is not
+  // on the board, say) still needs a level, or it would render with no z-index.
+  const seen = new Set(out);
+  for (const o of [...state.layout.areas, ...state.layout.devices, ...state.layout.relays]) if (!seen.has(o)) out.push(o);
+  return out;
 }
 
-// Inside the raised band, keep the nesting readable: everything else holds its
-// relative order, then the clicked object's own physical relay (box + outputs),
-// then the object actually clicked, on top.
-function zRank(k, x, o, dev) {
-  if (x === o) return 2;
-  if (dev && (k === 'device' ? x === dev : k === 'relay' && x.device === dev.id)) return 1;
-  return 0;
+// The walk is recomputed only when something actually changes, and cached by
+// object identity — render() and applyZ() both need every object's level.
+let zMap = new Map();
+function zRefresh() {
+  zMap = new Map();
+  zStack().forEach((o, i) => zMap.set(o, (i + 1) * Z_STEP));
+}
+const zIndexOf = (o) => zMap.get(o) || Z_STEP;
+
+// Compact click ranks to 0..n-1 across the whole board — one shared number space,
+// since an area box, a device box and a loose card can all be siblings. Objects
+// with no `z` yet (a layout saved before this existed, or a box just added) fall
+// back to their position in the concatenated lists.
+function normalizeZ() {
+  const all = [...state.layout.areas, ...state.layout.devices, ...state.layout.relays];
+  all.map((o, i) => ({ o, i }))
+    .sort((a, b) => (num(a.o.z, a.i) - num(b.o.z, b.i)) || (a.i - b.i))
+    .forEach((e, rank) => { e.o.z = rank; });
+  zRefresh();
 }
 
-const zSignature = () => ['area', 'device', 'relay'].map((k) => zList(k).map((o) => num(o.z)).join(',')).join('|');
+// ids in stack order — the whole of what a click can change visually
+const zSignature = () => zStack().map((o) => o.id).join(',');
+const bumpAbove = (o, siblings) => { o.z = siblings.reduce((m, x) => Math.max(m, num(x.o.z)), 0) + 1; };
 
-// Move `o` — and the group it belongs to — to the top of the stack. Returns false
-// when nothing actually moved, so a click on something already in front doesn't
-// churn the DB.
+// Raise whatever was clicked, as a unit with everything it belongs to: the group
+// goes to the front of the board, and inside an area the clicked box/card goes to
+// the front of that area. Returns false when nothing moved, so a click on
+// something already in front doesn't churn the DB.
 function bringToFront(o, kind) {
   const before = zSignature();
-  const g = zGroup(o, kind);
+  const area = areaOf(o, kind);
   const dev = kind === 'device' ? o : devOf(o);
-  for (const k of ['area', 'device', 'relay']) {
-    if (!g[k].length) continue;
-    let top = zList(k).reduce((m, x) => Math.max(m, num(x.z)), 0);
-    g[k].slice()
-      .sort((a, b) => (zRank(k, a, o, dev) - zRank(k, b, o, dev)) || (num(a.z) - num(b.z)))
-      .forEach((x) => { x.z = ++top; });
-  }
-  normalizeZ();
+  bumpAbove(area || dev || o, [...state.layout.areas.map((x) => ({ o: x })), ...childrenOf('')]);
+  if (area && kind !== 'area') bumpAbove(dev || o, childrenOf(area.areaId));
+  zRefresh();
   return zSignature() !== before;
 }
 
@@ -322,4 +326,4 @@ export { fillSelects, refreshAreaPicker, areaColor, areaName, headColor, boxTint
   boxFor, clampToBox, clampBoxToArea, centerInBox, reflowDeviceOutputs, minAreaSize,
   slotInArea, growToInclude, containArea, fitAreaToContents, packArea, normalizeLayout,
   areaAt, assignDeviceArea, pinDeviceToArea,
-  Z_STEP, Z_BASE, zIndexOf, normalizeZ, bringToFront };
+  Z_STEP, zIndexOf, zStack, normalizeZ, bringToFront };

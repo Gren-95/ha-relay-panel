@@ -21,7 +21,7 @@ function card(r, mobile) {
   el.dataset.id = r.id;
   if (!mobile) {
     el.style.left = num(r.x) + 'px'; el.style.top = num(r.y) + 'px';
-    el.style.zIndex = zIndexOf(r, 'relay');
+    el.style.zIndex = zIndexOf(r);
     // capture phase: the toggle, warn icon and target-temp pill all stopPropagation
     // on pointerdown, and the card still has to come forward when they are hit
     el.addEventListener('pointerdown', () => raise(r, 'relay'), true);
