@@ -63,6 +63,23 @@ test.describe('board stacking order', () => {
     expect(Math.max(...(await boxZ(page)))).toBeLessThan(Math.min(...zs));
   });
 
+  // The production layout carries an orphaned `z: 3` on every relay, left behind
+  // by something no version of the app ever read. Equal ranks must fall back to
+  // array order, not collapse back onto one level.
+  test('a layout where every object already has the same z still separates', async ({ page }) => {
+    const store = newStore();
+    store.layout.relays.forEach((r) => { r.z = 3; });
+    await mockApi(page, store);
+    await page.goto('/');
+    await expect(page.locator('#canvas .relay').first()).toBeVisible();
+
+    const zs = await cardZ(page);
+    expect(new Set(Object.values(zs)).size).toBe(store.layout.relays.length);
+    // ties break on array order, i.e. exactly how the board painted them before
+    const order = Object.keys(zs).sort((a, b) => zs[a] - zs[b]);
+    expect(order).toEqual(demoLayout.relays.map((r) => r.id));
+  });
+
   test('clicking a card raises it above the others', async ({ page }) => {
     await mockApi(page, newStore());
     await page.goto('/');
