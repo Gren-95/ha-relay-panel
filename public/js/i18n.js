@@ -170,7 +170,7 @@ function applyI18n() {
   });
   document.querySelectorAll('[data-i18n-ph]').forEach((el) => { const v = LANG === 'et' ? TR.et[el.dataset.i18nPh] : null; if (v != null) el.placeholder = v; });
   document.querySelectorAll('[data-i18n-title]').forEach((el) => { const v = LANG === 'et' ? TR.et[el.dataset.i18nTitle] : null; if (v != null) el.title = v; });
-  const lb = document.getElementById('btn-lang'); if (lb) lb.textContent = LANG === 'et' ? '🇬🇧' : '🇪🇪';
+  const lb = document.getElementById('btn-lang'); if (lb) lb.textContent = LANG === 'et' ? '🇪🇪' : '🇬🇧';
   document.documentElement.lang = LANG;
 }
 function setLang(l) {
