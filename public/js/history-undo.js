@@ -1,4 +1,4 @@
-import { state, setStatus, api } from './core.js';
+import { state, setStatus, flashStatus, api } from './core.js';
 import { t } from './i18n.js';
 import { closeEditor } from './editor.js';
 import { closeDeviceEditor } from './device-editor.js';
@@ -13,7 +13,7 @@ async function saveLayout() {
     const result = await api('/api/layout', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     state.layoutVersion = result.updated_at; // bump to the version we just wrote
     pushHistory();
-    setStatus(t('saved')); setTimeout(() => setStatus(''), 1000);
+    flashStatus(t('saved'), 1000);
   } catch (e) {
     if (e.status === 409) {
       // Stale write — fetch the fresh version token & retry with our local changes
@@ -25,7 +25,7 @@ async function saveLayout() {
         const retryResult = await api('/api/layout', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(retryBody) });
         state.layoutVersion = retryResult.updated_at;
         pushHistory();
-        setStatus(t('saved')); setTimeout(() => setStatus(''), 1000);
+        flashStatus(t('saved'), 1000);
       } catch (retryErr) {
         setStatus(t('save_error') + (retryErr.message ? ': ' + retryErr.message : ''));
       }
@@ -57,13 +57,13 @@ async function applyHistory() {
 }
 async function undo() {
   if (!state.edit || !state.authed) return;
-  if (history.idx <= 0) { setStatus(t('nothing_undo')); setTimeout(() => setStatus(''), 1000); return; }
-  history.idx--; await applyHistory(); setStatus(t('undo')); setTimeout(() => setStatus(''), 800);
+  if (history.idx <= 0) { flashStatus(t('nothing_undo'), 1000); return; }
+  history.idx--; await applyHistory(); flashStatus(t('undo'), 800);
 }
 async function redo() {
   if (!state.edit || !state.authed) return;
-  if (history.idx >= history.stack.length - 1) { setStatus(t('nothing_redo')); setTimeout(() => setStatus(''), 1000); return; }
-  history.idx++; await applyHistory(); setStatus(t('redo')); setTimeout(() => setStatus(''), 800);
+  if (history.idx >= history.stack.length - 1) { flashStatus(t('nothing_redo'), 1000); return; }
+  history.idx++; await applyHistory(); flashStatus(t('redo'), 800);
 }
 
 export { saveLayout, initHistory, pushHistory, applyHistory, undo, redo };

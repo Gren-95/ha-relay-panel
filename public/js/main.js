@@ -1,4 +1,4 @@
-import { $, state, api, setStatus } from './core.js';
+import { $, state, api, setStatus, flashStatus } from './core.js';
 import { t, setLang, LANG } from './i18n.js';
 import { fillSelects, reflowDeviceOutputs, fitAreaToContents, packArea } from './layout.js';
 import { render, isMobile, addArea, addPhysicalRelay } from './board.js';
@@ -96,7 +96,7 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault(); toggleMode();
   } else if (k === 's') {                          // Ctrl+S: save layout
     e.preventDefault();
-    if (state.edit && state.authed) saveLayout(); else { setStatus(t('sign_in_to_save')); setTimeout(() => setStatus(''), 1200); }
+    if (state.edit && state.authed) saveLayout(); else { flashStatus(t('sign_in_to_save'), 1200); }
   } else if (k === 'z' && !typing) {               // Ctrl+Z / Ctrl+Shift+Z: undo/redo
     e.preventDefault(); e.shiftKey ? redo() : undo();
   } else if (k === 'y' && !typing) {               // Ctrl+Y: redo (alt)
