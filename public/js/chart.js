@@ -30,7 +30,7 @@ async function loadHistory(r) {
 }
 
 async function exportHistory() {
-  const r = selected(); if (!r || !r.sensor) return;
+  const r = modalRelay || selected(); if (!r || !r.sensor) return;
   try {
     const hours = $('#chart-modal').classList.contains('hidden') ? historyRange : modalRange;
     const params = new URLSearchParams({ sensor: r.sensor, hours: String(hours) });
@@ -133,9 +133,11 @@ function drawChart(svg, rows, target) {
 
 // ---- expandable history chart ----
 let modalRange = 24;
+let modalRelay = null; // track which relay the chart modal is showing (#62 — 7d/30d fix)
 
 function openChartModal(r) {
   if (!r) { r = selected(); } if (!r || !r.sensor) return;
+  modalRelay = r;
   // sync range to sidebar
   document.querySelectorAll('#chart-modal-range .range-btn').forEach((b) => {
     setRangeActive(b, parseInt(b.dataset.range) === historyRange);
@@ -230,7 +232,7 @@ document.querySelectorAll('#chart-modal-range .range-btn').forEach((b) => b.addE
   modalRange = parseInt(b.dataset.range);
   document.querySelectorAll('#chart-modal-range .range-btn').forEach((x) => setRangeActive(x, false));
   setRangeActive(b, true);
-  loadChartModal(selected());
+  loadChartModal(modalRelay || selected());
 }));
 
 $('#ed-csv').addEventListener('click', exportHistory);

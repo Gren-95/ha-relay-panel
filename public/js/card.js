@@ -4,6 +4,7 @@ import { areaColor, areaName, boxFor, clampToBox, num } from './layout.js';
 import { toggleRelay, showWarnPop, adjustTemp } from './relay-actions.js';
 import { openLogin } from './auth.js';
 import { openEditor } from './editor.js';
+import { openChartModal } from './chart.js';
 import { dragMove } from './board.js';
 import { saveLayout } from './history-undo.js';
 
@@ -85,7 +86,7 @@ function card(r, mobile) {
     </div>
     ${warnIcon}${limitIcon}${maint ? '<span class="text-[.68rem] font-extrabold px-[7px] py-[2px] rounded-md whitespace-nowrap flex-none bg-[var(--maint-bg)] text-[var(--maint-fg)]"><i class="bi bi-pause-fill"></i> ' + t('maint_badge') + '</span>' : ''}
     <div class="r-metric text-right flex-none flex flex-col items-end gap-1">
-      <div class="${curColor} text-[2rem] [.kiosk_&]:text-[2.4rem] font-extrabold leading-none tabular-nums">${temp}${temp === '—' ? '' : '<span class="text-[1.1rem] font-bold opacity-50 ml-px">°</span>'}</div>
+      <div class="r-temp cursor-pointer ${curColor} text-[2rem] [.kiosk_&]:text-[2.4rem] font-extrabold leading-none tabular-nums">${temp}${temp === '—' ? '' : '<span class="text-[1.1rem] font-bold opacity-50 ml-px">°</span>'}</div>
       ${ago ? `<div class="text-[.68rem] text-muted leading-none -mt-[3px]">${ago}</div>` : ''}
       <div class="inline-flex items-center text-[.85rem] font-semibold text-fg border-[1.5px] border-border rounded-full px-2.5 py-0.5 tabular-nums whitespace-nowrap cursor-pointer hover:border-primary">${modeIcon}${modeIcon ? '&nbsp;' : ''}<span class="tgt-text">${r.temp != null ? r.temp + '°' : '—'}</span><input class="tgt-input hidden min-h-0 w-[52px] bg-transparent text-center text-inherit font-semibold text-[.85rem] border-0 outline-none p-0" type="number" step="0.5" value="${r.temp || 20}" />${r.deadband ? `<span class="text-muted ml-1">±${r.deadband}</span>` : ''}</div>
     </div>`;
@@ -94,6 +95,12 @@ function card(r, mobile) {
   const tog = el.querySelector('.r-toggle');
   tog.addEventListener('pointerdown', (e) => e.stopPropagation()); // don't start a drag
   tog.addEventListener('click', (e) => { e.stopPropagation(); if (!state.authed) { openLogin(); return; } toggleRelay(r); });
+
+  // Click temperature reading to open history chart
+  const tempEl = el.querySelector('.r-temp');
+  if (tempEl) {
+    tempEl.addEventListener('click', (e) => { e.stopPropagation(); openChartModal(r); });
+  }
 
   const wi = el.querySelector('.warn-icon');
   if (wi) {
