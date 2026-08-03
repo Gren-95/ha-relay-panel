@@ -1,4 +1,4 @@
-import { state, $, canvas, setStatus, api } from './core.js';
+import { state, $, canvas, setStatus, flashStatus, api } from './core.js';
 import { t } from './i18n.js';
 import { render } from './board.js';
 import { saveLayout } from './history-undo.js';
@@ -35,7 +35,7 @@ async function allOff() {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ entity_id: r.relay, action: 'off' }),
   }).then((res) => { state.live[r.relay] = { ...(state.live[r.relay] || {}), state: res.state }; }).catch(() => {})));
-  setStatus(t('all_off_done')); setTimeout(() => setStatus(''), 1500);
+  flashStatus(t('all_off_done'), 1500);
   render();
 }
 

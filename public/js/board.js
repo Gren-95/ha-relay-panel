@@ -1,4 +1,4 @@
-import { state, canvas, CANVAS_DESKTOP, CANVAS_MOBILE, esc, setStatus, api } from './core.js';
+import { state, canvas, CANVAS_DESKTOP, CANVAS_MOBILE, esc, setStatus, flashStatus, api } from './core.js';
 import { t } from './i18n.js';
 import { refreshAreaPicker, normalizeLayout, areaColor, headColor, boxTint, headTint, opaque, bodyFill, dashedSides, areaName,
   pinDeviceToArea, containArea, fitAreaToContents, minAreaSize, reflowDeviceOutputs,
@@ -264,7 +264,7 @@ function dragMove(handle, el, onMove, getA, getB, onEnd) {
 
 function addArea(areaId) {
   if (!areaId) return;
-  if (state.layout.areas.some((a) => a.areaId === areaId)) { setStatus('“' + areaName(areaId) + '”' + t('already_on_board')); setTimeout(() => setStatus(''), 1800); return; }
+  if (state.layout.areas.some((a) => a.areaId === areaId)) { flashStatus('”' + areaName(areaId) + '”' + t('already_on_board'), 1800); return; }
   const id = 'a' + Date.now().toString(36);
   // starts at its minimum (one device box wide) and grows as things are put in it;
   // `packed` marks it as already tidy so the one-time migration skips it

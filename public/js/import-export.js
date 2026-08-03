@@ -1,4 +1,4 @@
-import { state, $, setStatus } from './core.js';
+import { state, $, setStatus, flashStatus } from './core.js';
 import { t } from './i18n.js';
 import { reflowDeviceOutputs, fitAreaToContents, packArea, fillSelects } from './layout.js';
 import { closeEditor } from './editor.js';
@@ -17,7 +17,7 @@ function exportLayout() {
   a.download = 'relay-panel-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.json';
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   $('#advanced-menu').classList.add('hidden');
-  setStatus(t('exported')); setTimeout(() => setStatus(''), 1500);
+  flashStatus(t('exported'), 1500);
 }
 
 async function importLayout(file) {
@@ -33,7 +33,7 @@ async function importLayout(file) {
   closeEditor(); closeDeviceEditor();
   await saveLayout();
   fillSelects(); render(); refreshLive();
-  setStatus(t('imported')); setTimeout(() => setStatus(''), 1500);
+  flashStatus(t('imported'), 1500);
 }
 
 export { exportLayout, importLayout };
