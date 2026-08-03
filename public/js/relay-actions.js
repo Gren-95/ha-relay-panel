@@ -1,5 +1,6 @@
 import { state, $, canvas, setStatus, flashStatus, api } from './core.js';
 import { t } from './i18n.js';
+import { openLogin } from './auth.js';
 import { render } from './board.js';
 import { saveLayout } from './history-undo.js';
 
@@ -27,6 +28,7 @@ async function adjustTemp(rid, dir) {
 
 // ---- global all-off ----
 async function allOff() {
+  if (!state.authed) { openLogin(); return; } // #62
   const relays = state.layout.relays.filter((r) => r.relay);
   if (!relays.length) return;
   if (!confirm(t('all_off_confirm'))) return;
@@ -41,6 +43,7 @@ async function allOff() {
 
 // Master control: turn every relay in an area on/off at once.
 async function setAreaRelays(areaId, on) {
+  if (!state.authed) { openLogin(); return; } // #62
   const relays = state.layout.relays.filter((r) => r.area === areaId && r.relay);
   if (!relays.length) return;
   setStatus(on ? t('turning_area_on') : t('turning_area_off'));
@@ -92,6 +95,8 @@ async function refreshLive() {
     if (state.kiosk) {
       try {
         const layout = await api('/api/layout');
+        state.layoutVersion = layout.updated_at || null; // #62
+        delete layout.updated_at;
         state.layout = layout;
       } catch {}
     }

@@ -110,15 +110,20 @@ function card(r, mobile) {
     tgtWrap.addEventListener('click', (e) => {
       e.stopPropagation();
       if (!state.authed) { openLogin(); return; }
+      committed = false;
       tgtPill.classList.add('hidden');
       tgtInput.classList.remove('hidden');
       tgtInput.focus();
     });
+    let committed = false;
     const commit = () => {
+      if (committed) return; // #62 — Enter hides input → blur fires commit again
+      committed = true;
       const v = parseFloat(tgtInput.value);
       tgtInput.classList.add('hidden');
       tgtPill.classList.remove('hidden');
       if (!state.authed) { tgtPill.textContent = (r.temp != null ? r.temp : 20) + '°'; openLogin(); return; }
+      if (!r.bound) { tgtPill.textContent = (r.temp != null ? r.temp : 20) + '°'; return; } // #62 — don't show stale value
       if (isFinite(v) && v >= 1) {
         tgtPill.textContent = v + '°';
         adjustTemp(r.id, v);
@@ -127,7 +132,7 @@ function card(r, mobile) {
       }
     };
     tgtInput.addEventListener('blur', commit);
-    tgtInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') commit(); });
+    tgtInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { committed = false; commit(); } });
   }
 
   // Card body click → open editor sidebar (except when clicking toggle / warn / target-temp)

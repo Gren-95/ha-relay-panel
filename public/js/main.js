@@ -47,7 +47,7 @@ async function boot() {
   render();
   initHistory();
   if (state.loaded && state.layout.devices.length) saveLayout();
-  refreshLive();
+  // #62 — first poll fires immediately; no need for a separate eager refreshLive()
   (function poll() { refreshLive().finally(() => setTimeout(poll, 10000)); })();
 
   // Kiosk mode: ?kiosk=1 — fullscreen read-only, no toolbar, no edit

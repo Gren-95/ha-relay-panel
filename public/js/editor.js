@@ -207,6 +207,9 @@ function duplicateRelay() {
     mode: src.mode || 'below',
     temp: src.temp != null ? src.temp : 20,
     deadband: src.deadband != null ? src.deadband : 0,
+    min_on: src.min_on || 0, min_off: src.min_off || 0,
+    notify: !!src.notify, notify_deviation: src.notify_deviation != null ? src.notify_deviation : 5,
+    device: src.device || '', // #62 — preserve fields that were dropped
     bound: false,
     schedule,
   };
@@ -227,10 +230,10 @@ async function bind() {
     notify: $('#ed-notify').checked, notify_deviation: Number($('#ed-notify-deviation').value) || 5,
     schedule: readScheduleUI(),
   };
-  Object.assign(r, body);
   try {
     edMsg('binding…');
     const res = await api(`/api/relays/${r.id}/bind`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    Object.assign(r, body); // #62 — only mutate after API success
     r.bound = true; r.automationId = res.automationId;
     // swapped into a (different) area -> teleport to the middle of that area
     // (device outputs stay put inside their physical-relay box)
