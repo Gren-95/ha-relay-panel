@@ -92,6 +92,14 @@ const TR = {
     maint_badge: 'hooldus', relay_offline_short: 'relee ühenduseta', no_relay: 'releed pole',
     click_turn_on: 'Klõpsa, et lülitada SISSE', click_turn_off: 'Klõpsa, et lülitada VÄLJA',
     already_on_board: ' on juba tahvlil', all_on: 'Kõik sisse', all_off: 'Kõik välja',
+    // activity log actions (act_*)
+    act_login: 'Sisselogimine', act_login_fail: 'Ebaõnnestunud sisselogimine', act_logout: 'Väljalogimine',
+    act_relay_bind: 'Relee seotud', act_relay_unbind: 'Relee seos eemaldatud', act_relay_delete: 'Relee kustutatud',
+    act_device_rename: 'Ümbernimetamine', act_device_delete: 'Seade eemaldatud', act_area_delete: 'Ala eemaldatud',
+    act_switch_toggle: 'Käsitsi lülitus',
+    act_automation_pause: 'Automaatika peatatud', act_automation_resume: 'Automaatika jätkatud',
+    act_automation_reapply: 'Automaatika uuesti rakendatud',
+    act_layout_save: 'Paigutus salvestatud', act_layout_restore: 'Paigutus taastatud',
   },
 };
 const EN = {  // English fallbacks for dynamic (non-HTML) strings
@@ -114,7 +122,7 @@ const EN = {  // English fallbacks for dynamic (non-HTML) strings
   click_turn_on: 'Click to turn ON', click_turn_off: 'Click to turn OFF',
   already_on_board: ' is already on the board', all_on: 'All on', all_off: 'All off',
   activity_log: 'Activity log', newer: 'Newer', older: 'Older',
-  act_login: 'Login', act_logout: 'Logout',
+  act_login: 'Login', act_login_fail: 'Failed login', act_logout: 'Logout',
   act_relay_bind: 'Bind relay', act_relay_unbind: 'Unbind relay',
   act_device_rename: 'Rename', act_switch_toggle: 'Manual switch',
   act_automation_pause: 'Automation paused', act_automation_resume: 'Automation resumed',
