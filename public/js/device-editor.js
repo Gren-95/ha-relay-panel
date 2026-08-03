@@ -11,6 +11,7 @@ import { positionResizeHandles } from './resize.js';
 
 // ---- device (physical relay) editor ----
 function openDeviceEditor(g) {
+  if (!state.authed) return; // #63
   closeEditor(); closeActivityLog(); closeBulkEdit(); closePresets();
   state.selectedDev = g.id;
   $('#de-name').value = g.name || '';

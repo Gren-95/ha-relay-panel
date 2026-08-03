@@ -114,9 +114,16 @@ $('#btn-lang').addEventListener('click', () => setLang(LANG === 'et' ? 'en' : 'e
 })();
 
 // mobile hamburger: toggle the toolbar dropdown; close on outside tap
-$('#btn-menu').addEventListener('click', (e) => { e.stopPropagation(); $('#toolbar').classList.toggle('!flex'); });
+$('#btn-menu').addEventListener('click', (e) => {
+  e.stopPropagation();
+  const open = $('#toolbar').classList.toggle('!flex');
+  $('#btn-menu').setAttribute('aria-expanded', String(open)); // #63
+});
 document.addEventListener('click', (e) => {
-  if (!e.target.closest('#toolbar') && !e.target.closest('#btn-menu')) $('#toolbar').classList.remove('!flex');
+  if (!e.target.closest('#toolbar') && !e.target.closest('#btn-menu')) {
+    $('#toolbar').classList.remove('!flex');
+    $('#btn-menu').setAttribute('aria-expanded', 'false');
+  }
 });
 
 // re-render when crossing the mobile/desktop breakpoint
