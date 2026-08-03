@@ -31,7 +31,7 @@ router.get('/api/live', wrap(async (req, res) => {
 router.get('/api/history', wrap(async (req, res) => {
   const entity = String(req.query.entity || '');
   if (!/^sensor\./.test(entity)) return res.status(400).json({ ok: false, error: 'sensor entity required' });
-  res.json({ ok: true, points: await ha.getHistory(entity, Number(req.query.hours) || 24) });
+  res.json({ ok: true, points: await ha.getHistory(entity, Math.min(Number(req.query.hours) || 24, 720)) });
 }));
 
 // --- merged sensor + relay history for CSV export ---
@@ -39,7 +39,7 @@ router.get('/api/history/export', wrap(async (req, res) => {
   const sensor = String(req.query.sensor || '');
   const relay = String(req.query.relay || '');
   if (!/^sensor\./.test(sensor)) return res.status(400).json({ ok: false, error: 'sensor entity required' });
-  const hours = Number(req.query.hours) || 24;
+  const hours = Math.min(Number(req.query.hours) || 24, 720);
   const target = parseFloat(req.query.target);
   const rows = await ha.getHistoryExport(sensor, relay || null, hours);
   res.json({ ok: true, rows, target: isFinite(target) ? target : null });

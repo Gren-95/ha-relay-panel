@@ -5,14 +5,20 @@ const ha = require('./ha');
 const { startNotifyWatcher } = require('./lib/notify');
 
 const app = express();
-app.set('trust proxy', 1); // behind Caddy reverse proxy — req.secure / req.ip reflect the client
+// Only trust X-Forwarded-For when behind a reverse proxy (Caddy/nginx).
+// Default compose port-mapping exposes the app directly — trusting the header
+// would let clients spoof their IP to bypass the login rate limiter (#61).
+if (process.env.TRUST_PROXY === '1') app.set('trust proxy', 1);
 app.use(express.json({ limit: '2mb' }));
 
-// Security headers (#50 / OWASP A05)
+// Security headers (#50 / OWASP A05, #61)
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('X-Frame-Options', 'DENY');
+  // CSP: default-src 'self' locks down external resources; script-src 'unsafe-inline'
+  // allows the inline theme script in index.html. Upgrade to nonce/hash later.
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'");
   next();
 });
 

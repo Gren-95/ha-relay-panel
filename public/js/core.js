@@ -50,6 +50,6 @@ async function api(path, opts) {
 }
 function setStatus(m) { $('#status').textContent = m || ''; }
 function flashStatus(msg, ms = 1200) { setStatus(msg); setTimeout(() => setStatus(''), ms); }
-function esc(v) { const d = document.createElement('div'); d.textContent = v == null ? '' : String(v); return d.innerHTML; }
+function esc(v) { const d = document.createElement('div'); d.textContent = v == null ? '' : String(v); return d.innerHTML.replace(/"/g, '&quot;'); }
 
 export { state, $, canvas, BTN, TINY, FIELD, MSG, CANVAS_DESKTOP, CANVAS_MOBILE, setMsg, setRangeActive, api, setStatus, flashStatus, esc };

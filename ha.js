@@ -362,6 +362,9 @@ function scheduleTargetSetup(schedule, fixedTarget) {
 }
 
 function buildAutomation({ id, alias, sensor, relay, mode, temp, deadband = 0, schedule = null, min_on = 0, min_off = 0 }) {
+  // #61 — block Jinja injection through stored entity strings from layout/reapply
+  if (!/^[a-z_]+\.[a-z0-9_]+$/.test(String(sensor || ''))) throw new Error('invalid sensor entity');
+  if (!/^[a-z_]+\.[a-z0-9_]+$/.test(String(relay || ''))) throw new Error('invalid relay entity');
   const isAuto = mode === 'auto';
   const heat = !isAuto && mode !== 'above'; // below = heat, above = cool, auto = both
   const target = Number(temp);

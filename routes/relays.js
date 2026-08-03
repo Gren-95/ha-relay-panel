@@ -61,6 +61,7 @@ router.post('/api/rename', requireAuth, wrap(async (req, res) => {
   const { entity_id, name, parent } = req.body || {};
   const nm = (name || '').trim().replace(/\s+/g, '_'); // spaces -> _ (safe for Z2M topics)
   if (!entity_id || !nm) return res.status(400).json({ ok: false, error: 'entity_id and name required' });
+  if (!validEntity(entity_id)) return res.status(400).json({ ok: false, error: 'invalid entity_id' }); // #61 — block Jinja injection
   const info = await ha.getDeviceInfo(entity_id);
   if (!info || !info.device_id) return res.status(400).json({ ok: false, error: 'no HA device for that entity' });
   // Zigbee (on the entity's own device or its parent) -> rename in Z2M.

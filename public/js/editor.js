@@ -96,7 +96,7 @@ function showStaleWarning(r) {
   const relMissing = r.relay && !state.entities.switches.some((s) => s.entity_id === r.relay);
   const senMissing = r.sensor && !state.entities.sensors.some((s) => s.entity_id === r.sensor);
   if (!relMissing && !senMissing) { box.classList.add('hidden'); return; }
-  const which = [relMissing && `relay (${r.relay})`, senMissing && `sensor (${r.sensor})`].filter(Boolean).join(' and ');
+  const which = [relMissing && `relay (${esc(r.relay)})`, senMissing && `sensor (${esc(r.sensor)})`].filter(Boolean).join(' and ');
   box.innerHTML = `<i class="bi bi-exclamation-triangle-fill"></i> The ${which} no longer exists in Home Assistant (renamed or removed). Pick it again and Save.`;
   box.classList.remove('hidden');
 }
