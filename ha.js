@@ -11,13 +11,22 @@ function headers() {
 }
 
 async function haFetch(path, opts = {}) {
-  const res = await fetch(`${HA_URL}${path}`, { ...opts, headers: headers() });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`HA ${opts.method || 'GET'} ${path} -> ${res.status} ${body.slice(0, 200)}`);
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 15000); // #63 — don't hang forever if HA is down
+  try {
+    const res = await fetch(`${HA_URL}${path}`, { ...opts, headers: headers(), signal: ac.signal });
+    clearTimeout(to);
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`HA ${opts.method || 'GET'} ${path} -> ${res.status} ${body.slice(0, 200)}`);
+    }
+    const txt = await res.text();
+    return txt ? JSON.parse(txt) : null;
+  } catch (e) {
+    clearTimeout(to);
+    if (e.name === 'AbortError') throw new Error(`HA ${opts.method || 'GET'} ${path} -> timed out after 15s`);
+    throw e;
   }
-  const txt = await res.text();
-  return txt ? JSON.parse(txt) : null;
 }
 
 // All states, split into switches (relays) and temperature sensors.
@@ -34,7 +43,7 @@ async function getEntities() {
     } else if (
       domain === 'sensor' &&
       (attr.device_class === 'temperature' ||
-        /^°?[CF]$|^°[CF]$/.test((attr.unit_of_measurement || '').trim()))
+        /^°?[CF]$/.test((attr.unit_of_measurement || '').trim()))
     ) {
       sensors.push({
         entity_id: s.entity_id,

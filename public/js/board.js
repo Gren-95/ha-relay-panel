@@ -239,12 +239,12 @@ function groupHeaderDrag(head, el, g, isMember, isDev) {
       for (const m of movers) { m.obj.x = Math.max(0, m.x0 + adx); m.obj.y = Math.max(0, m.y0 + ady); if (m.el) { m.el.style.left = m.obj.x + 'px'; m.el.style.top = m.obj.y + 'px'; } }
     };
     const up = () => {
-      head.removeEventListener('pointermove', mv); head.removeEventListener('pointerup', up);
+      head.removeEventListener('pointermove', mv); head.removeEventListener('pointerup', up); head.removeEventListener('pointercancel', up);
       if (!moved) { if (isDev) openDeviceEditor(g); return; } // click (no drag) -> open editor
       if (isDev && pinDeviceToArea(g)) { const a = state.layout.areas.find((x) => x.areaId === g.area); if (a) fitAreaToContents(a); }
       render(); saveLayout();
     };
-    head.addEventListener('pointermove', mv); head.addEventListener('pointerup', up);
+    head.addEventListener('pointermove', mv); head.addEventListener('pointerup', up); head.addEventListener('pointercancel', up);
   });
 }
 
@@ -256,9 +256,10 @@ function dragMove(handle, el, onMove, getA, getB, onEnd) {
     const sx = e.clientX, sy = e.clientY, a0 = getA(), b0 = getB();
     handle.setPointerCapture(e.pointerId);
     const mv = (ev) => onMove(ev.clientX - sx, ev.clientY - sy, a0, b0);
-    const up = () => { handle.removeEventListener('pointermove', mv); handle.removeEventListener('pointerup', up); onEnd && onEnd(); };
+    const up = () => { handle.removeEventListener('pointermove', mv); handle.removeEventListener('pointerup', up); handle.removeEventListener('pointercancel', up); onEnd && onEnd(); };
     handle.addEventListener('pointermove', mv);
     handle.addEventListener('pointerup', up);
+    handle.addEventListener('pointercancel', up); // #63 — cleanup on gesture/scroll cancel
   });
 }
 
