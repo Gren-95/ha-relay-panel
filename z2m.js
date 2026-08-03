@@ -57,6 +57,7 @@ async function renameZigbee(ieee, newName) {
       client.subscribe(respTopic);
       client.publish(`${dev.base}/bridge/request/device/rename`, JSON.stringify({ from: dev.name, to: newName }));
       client.on('message', (t, p) => {
+        if (t !== respTopic) return; // #62 — ignore stray retained messages from phase 1
         let m; try { m = JSON.parse(p.toString()); } catch { return; }
         clearTimeout(to);
         if (m.status === 'ok') fin(dev.base); else fin(null, new Error((m.error && m.error.message) || m.error || 'z2m rename failed'));
