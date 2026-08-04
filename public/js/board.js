@@ -142,7 +142,6 @@ function renderBox(g, kind) {
   const line = `hsl(${hue},50%,55%)`;
   // a pinned device names its area inline — the titlebar stays one fixed-height row
   // so HDR in layout.js keeps matching what is actually rendered.
-  const gear = '';
   // area boxes get a master on/off for all their relays (works in Live mode too)
   const master = !isDev ? areaMaster() : '';
   const delBtn = `<button class="area-del bg-transparent border-0 text-inherit text-[1.15rem] cursor-pointer leading-none${state.edit ? ' opacity-60' : ' hidden'}" title="Remove group">&times;</button>`;
@@ -157,7 +156,6 @@ function renderBox(g, kind) {
   const head = `<div class="area-head h-[44px] px-2.5 flex items-center gap-1.5 font-bold select-none touch-none border-2 border-solid rounded-t-2xl${state.edit ? ' cursor-grab active:cursor-grabbing' : ''}" style="color:${headColor(hue)};border-color:${line};background:${opaque(headTint(hue))}">
       <i class="bi ${isDev ? 'bi-gear area-gear cursor-pointer' : 'bi-grid-3x3-gap'} text-[.95rem] flex-none"></i>
       <span class="text-[.95rem] min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">${esc(g.name || refId)}</span>
-      ${gear}
       <span class="ml-auto flex items-center gap-1.5 flex-none">${master}${delBtn}</span>
     </div>`;
   // A device box keeps a plain solid CSS border; an area's body is outlined with the
@@ -172,7 +170,7 @@ function renderBox(g, kind) {
     const dots = bodyFill(boxTint(hue)).replace(' 0 0 /', ` ${ox}px ${oy}px /`);
     return isDev ? dots : `${dashedSides(num(g.w, MIN_AREA_W), num(g.h, MIN_AREA_H) - HDR, line)} 0 0 / 100% 100% no-repeat, ${dots}`;
   };
-  const body = `<div class="area-body absolute inset-x-0 bottom-0 rounded-b-2xl pointer-events-none ${isDev ? 'border-2 border-t-0 border-solid' : ''}" style="top:${HDR}px;border-color:${line};background:${bodyBg()}"></div>`;
+  const body = `<div class="area-body absolute inset-x-0 bottom-0 rounded-b-2xl pointer-events-none opacity-75 ${isDev ? 'border-2 border-t-0 border-solid' : ''}" style="top:${HDR}px;border-color:${line};background:${bodyBg()}"></div>`;
   el.innerHTML = head + body + resize;
 
   // capture phase: the header drag and the master buttons both stopPropagation,
@@ -183,7 +181,7 @@ function renderBox(g, kind) {
   const gearBtn = el.querySelector('.area-gear');
   if (gearBtn) {
     gearBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
-    gearBtn.addEventListener('click', (e) => { e.stopPropagation(); openDeviceEditor(g); });
+    gearBtn.addEventListener('click', (e) => { e.stopPropagation(); if (isDev) openDeviceEditor(g); });
   }
   el.querySelectorAll('.am-btn').forEach((b) => {
     b.addEventListener('pointerdown', (e) => e.stopPropagation());
@@ -302,7 +300,8 @@ function addArea(areaId) {
   const id = 'a' + Date.now().toString(36);
   // starts at its minimum (one device box wide) and grows as things are put in it;
   // `packed` marks it as already tidy so the one-time migration skips it
-  state.layout.areas.push({ id, areaId, name: areaName(areaId), x: 24, y: 24, w: MIN_AREA_W, h: MIN_AREA_H, packed: 1 });
+  const maxZ = [...state.layout.areas, ...state.layout.devices, ...state.layout.relays].reduce((m, o) => Math.max(m, num(o.z, 0)), 0);
+  state.layout.areas.push({ id, areaId, name: areaName(areaId), x: 24, y: 24, z: maxZ + 1, w: MIN_AREA_W, h: MIN_AREA_H, packed: 1 });
   render(); saveLayout();
 }
 
@@ -312,7 +311,8 @@ function addPhysicalRelay(deviceId) {
   const dev = state.relayDevices.find((d) => d.device_id === deviceId);
   if (!dev) return;
   const id = 'd' + Date.now().toString(36);
-  const box = { id, deviceId, name: dev.name, x: 40, y: 40, w: DEV_W, h: MIN_AREA_H };
+  const maxZ = [...state.layout.areas, ...state.layout.devices, ...state.layout.relays].reduce((m, o) => Math.max(m, num(o.z, 0)), 0);
+  const box = { id, deviceId, name: dev.name, x: 40, y: 40, z: maxZ + 1, w: DEV_W, h: MIN_AREA_H };
   state.layout.devices.push(box);
   dev.outputs.forEach((o, i) => {
     state.layout.relays.push({

@@ -37,9 +37,7 @@ function headTint(hue) {
   const dark = document.documentElement.getAttribute('data-theme') === 'dark';
   return `hsla(${hue},55%,45%,${dark ? 0.16 : 0.18})`;
 }
-// A box paints its own dot grid in its body, so it must be opaque — otherwise the
-// canvas grid bleeds through and the two misaligned grids moiré against each other.
-// Flattens a translucent tint onto the surface colour.
+// Semi-transparent area body so relays underneath remain visible
 const opaque = (tint) => `linear-gradient(0deg, ${tint}, ${tint}), var(--surface-2)`;
 // the body of a group box is its own little canvas: dot grid over the opaque tint
 const bodyFill = (tint) => `radial-gradient(var(--dot) 1.4px, transparent 1.4px) 0 0 / 26px 26px, ${opaque(tint)}`;
