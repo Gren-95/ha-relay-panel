@@ -42,7 +42,7 @@ function updateBulkList() {
     const newTemp = isFinite(temp) ? temp : curTemp;
     return `<div class="flex items-center gap-2 px-2.5 py-2 bg-surface-2 border-[1.5px] border-border rounded-[10px] text-[.85rem]">
       <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-semibold">${esc(r.name || r.relay)}</span>
-      <span class="text-muted">${curMode} ${curTemp}° → ${newTemp}° @ ${mode === 'above' ? 'cool' : 'heat'}</span>
+      <span class="text-muted">${curMode} ${curTemp}° → ${newTemp}° @ ${mode === 'above' ? 'cool' : r.mode === 'above' ? 'cool' : 'heat'}</span>
     </div>`;
   }).join('') || `<div style="text-align:center;padding:20px;color:var(--muted)">${t('no_bound_relays_match')}</div>`;
   $('#bk-count').textContent = matches.length ? `${matches.length} relay${matches.length === 1 ? '' : 's'}` : '';

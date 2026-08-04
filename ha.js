@@ -407,7 +407,7 @@ function buildAutomation({ id, alias, sensor, relay, mode, temp, deadband = 0, s
   }
 
   let offCond;
-  if (isAuto) offCond = `<= ${tgt} + ${band}`;
+  if (isAuto) offCond = `>= ${tgt}`;
   else if (heat) offCond = `>= ${tgt}`;
   else offCond = `<= ${tgt}`;
 
@@ -420,9 +420,9 @@ function buildAutomation({ id, alias, sensor, relay, mode, temp, deadband = 0, s
   ];
 
   if (isAuto) {
-    // Auto mode: turn ON if too cold OR too hot
+    // Auto mode: heating-only — turn ON when too cold, OFF when at/above target
     chooseBranches.push({
-      conditions: makeOnCond(`< ${tgt} - ${band} or states('${sensor}')|float > ${tgt} + ${band}`),
+      conditions: makeOnCond(`< ${tgt} - ${band}`),
       sequence: [{ action: 'switch.turn_on', target: { entity_id: relay } }],
     });
   } else {

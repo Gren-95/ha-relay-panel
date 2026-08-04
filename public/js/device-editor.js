@@ -2,7 +2,7 @@ import { state, $, esc, setMsg, api } from './core.js';
 import { t } from './i18n.js';
 import { reflowDeviceOutputs, fitAreaToContents, growToInclude, assignDeviceArea } from './layout.js';
 import { render } from './board.js';
-import { openEditor, closeEditor } from './editor.js';
+import { openEditor, closeEditor, clearBlur, applyBlur } from './editor.js';
 import { closeActivityLog } from './activity.js';
 import { closeBulkEdit } from './bulk.js';
 import { closePresets } from './presets.js';
@@ -13,6 +13,9 @@ import { positionResizeHandles } from './resize.js';
 function openDeviceEditor(g) {
   if (!state.authed) return; // #63
   closeEditor(); closeActivityLog(); closeBulkEdit(); closePresets();
+  $('#backdrop').classList.remove('hidden');
+  document.body.classList.add('editor-open');
+  applyBlur();
   state.selectedDev = g.id;
   $('#de-name').value = g.name || '';
   $('#de-area').innerHTML = '<option value="">— none —</option>' +
@@ -62,7 +65,7 @@ function addOutputToDevice(entityId) {
   render(); saveLayout();
   openDeviceEditor(g); // refresh the list + dropdown
 }
-function closeDeviceEditor() { state.selectedDev = null; $('#dev-editor').classList.add('hidden'); }
+function closeDeviceEditor() { state.selectedDev = null; $('#dev-editor').classList.add('hidden'); $('#backdrop').classList.add('hidden'); document.body.classList.remove('editor-open'); clearBlur(); }
 function deMsg(m, cls) { setMsg($('#de-msg'), m, cls); }
 function selectedDev() { return state.layout.devices.find((x) => x.id === state.selectedDev); }
 

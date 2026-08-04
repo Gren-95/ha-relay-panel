@@ -142,7 +142,7 @@ function renderBox(g, kind) {
   const line = `hsl(${hue},50%,55%)`;
   // a pinned device names its area inline — the titlebar stays one fixed-height row
   // so HDR in layout.js keeps matching what is actually rendered.
-  const pin = isDev && g.area ? `<span class="area-pin text-[.8rem] font-medium opacity-80 whitespace-nowrap flex-none"><i class="bi bi-geo-alt-fill"></i> ${esc(areaName(g.area))}</span>` : '';
+  const gear = '';
   // area boxes get a master on/off for all their relays (works in Live mode too)
   const master = !isDev ? areaMaster() : '';
   const delBtn = `<button class="area-del bg-transparent border-0 text-inherit text-[1.15rem] cursor-pointer leading-none${state.edit ? ' opacity-60' : ' hidden'}" title="Remove group">&times;</button>`;
@@ -155,9 +155,9 @@ function renderBox(g, kind) {
   // h-[44px] = 2px border + 40px row + 2px border, i.e. exactly HDR, so the body
   // starts where layout.js says content begins.
   const head = `<div class="area-head h-[44px] px-2.5 flex items-center gap-1.5 font-bold select-none touch-none border-2 border-solid rounded-t-2xl${state.edit ? ' cursor-grab active:cursor-grabbing' : ''}" style="color:${headColor(hue)};border-color:${line};background:${opaque(headTint(hue))}">
-      <i class="bi ${isDev ? 'bi-hdd-stack' : 'bi-grid-3x3-gap'} text-[.95rem] flex-none"></i>
+      <i class="bi ${isDev ? 'bi-gear area-gear cursor-pointer' : 'bi-grid-3x3-gap'} text-[.95rem] flex-none"></i>
       <span class="text-[.95rem] min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">${esc(g.name || refId)}</span>
-      ${pin}
+      ${gear}
       <span class="ml-auto flex items-center gap-1.5 flex-none">${master}${delBtn}</span>
     </div>`;
   // A device box keeps a plain solid CSS border; an area's body is outlined with the
@@ -180,6 +180,11 @@ function renderBox(g, kind) {
   el.addEventListener('pointerdown', () => raise(g, kind), true);
 
   const isMember = memberFilter(g, kind);
+  const gearBtn = el.querySelector('.area-gear');
+  if (gearBtn) {
+    gearBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+    gearBtn.addEventListener('click', (e) => { e.stopPropagation(); openDeviceEditor(g); });
+  }
   el.querySelectorAll('.am-btn').forEach((b) => {
     b.addEventListener('pointerdown', (e) => e.stopPropagation());
     b.addEventListener('click', (e) => { e.stopPropagation(); setAreaRelays(g.areaId, b.dataset.act === 'on'); });
@@ -268,7 +273,7 @@ function groupHeaderDrag(head, el, g, isMember, isDev) {
     };
     const up = () => {
       head.removeEventListener('pointermove', mv); head.removeEventListener('pointerup', up); head.removeEventListener('pointercancel', up);
-      if (!moved) { if (isDev) openDeviceEditor(g); return; } // click (no drag) -> open editor
+      if (!moved) return; // click (no drag) — gear icon handles device editor
       if (isDev && pinDeviceToArea(g)) { const a = state.layout.areas.find((x) => x.areaId === g.area); if (a) fitAreaToContents(a); }
       render(); saveLayout();
     };

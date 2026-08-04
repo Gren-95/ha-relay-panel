@@ -154,15 +154,22 @@ function closeEditor() { state.selected = null; $('#editor').classList.add('hidd
 // Apply .blurred to everything except the relay being edited and its containing
 // area / device group.  Called on editor open + re-applied after every render().
 function applyBlur() {
-  if ($('#editor').classList.contains('hidden')) return; // not open
-  const selId = state.selected;
-  const r = state.layout.relays.find(x => x.id === selId);
-  if (!r) return;
+  const relayOpen = !$('#editor').classList.contains('hidden');
+  const devOpen = !$('#dev-editor').classList.contains('hidden');
+  if (!relayOpen && !devOpen) return;
 
-  // Container boxes (class="area") that contain the selected relay
-  const selArea = state.layout.areas.find(a => a.areaId === r.area);
-  const selAreaGid = selArea ? selArea.id : null;
-  const selDevGid = r.device || null;
+  let selAreaGid = null, selDevGid = null, selId = null;
+  if (relayOpen) {
+    const r = state.layout.relays.find(x => x.id === state.selected);
+    if (r) {
+      selId = r.id;
+      const selArea = state.layout.areas.find(a => a.areaId === r.area);
+      selAreaGid = selArea ? selArea.id : null;
+      selDevGid = r.device || null;
+    }
+  } else if (devOpen) {
+    selDevGid = state.selectedDev || null;
+  }
 
   // Blur every area/device box EXCEPT the ones wrapping the selected relay
   document.querySelectorAll('#canvas .area').forEach(el => {
@@ -170,8 +177,9 @@ function applyBlur() {
     el.classList.toggle('blurred', gid !== selAreaGid && gid !== selDevGid);
   });
 
-  // Blur every relay card EXCEPT the selected one
+  // Blur relay cards — selected relay stays sharp, or blur all if device editor is open
   document.querySelectorAll('#canvas .relay').forEach(el => {
+    if (devOpen) { el.classList.add('blurred'); return; }
     el.classList.toggle('blurred', el.dataset.id !== selId);
   });
 }
@@ -284,7 +292,7 @@ async function deleteRelay() {
 // wiring for the relay editor panel
 export function initEditor() {
 $('#ed-close').addEventListener('click', closeEditor);
-$('#backdrop').addEventListener('click', closeEditor);
+$('#backdrop').addEventListener('click', () => { closeEditor(); closeDeviceEditor(); });
 // Re-apply blur synchronously after every render() rebuilds the canvas DOM.
 // Using a custom event dispatched at the end of render() — no debounce, no flash.
 $('#canvas').addEventListener('render', applyBlur);
@@ -306,6 +314,6 @@ $('#ed-notify').addEventListener('change', (e) => {
 });
 }
 
-export { openEditor, closeEditor, edMsg, selected, addRelay, duplicateRelay, bind,
+export { openEditor, closeEditor, edMsg, selected, clearBlur, applyBlur, addRelay, duplicateRelay, bind,
   unbind, deleteRelay, renameDevice, loadScheduleUI, readScheduleUI, schedBlockRow,
   loadAutomationState };

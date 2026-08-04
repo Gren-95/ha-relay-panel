@@ -66,21 +66,17 @@ function card(r, mobile) {
   const curNum = temp !== '—' ? +temp : null;
   let curColor = 'text-fg';
   if (curNum != null && r.temp != null) {
-    if (r.mode === 'above') curColor = curNum > r.temp ? 'text-cool' : 'text-ok';
-    else curColor = curNum < r.temp ? 'text-heat' : 'text-ok';
+    curColor = curNum < r.temp ? 'text-heat' : 'text-ok';
     // Visual alert: pulse border when temp deviates beyond notify threshold
     const threshold = Number(r.notify_deviation) || 5;
     if (r.notify && Math.abs(curNum - r.temp) >= threshold) {
       el.classList.add('border-danger', 'animate-mode-pulse');
     }
   }
-  // Determine effective direction when relay is ON
-  const effDir = r.mode === 'auto' && curNum != null && r.temp != null
-    ? (curNum > r.temp ? 'cool' : 'heat')
-    : (r.mode === 'above' ? 'cool' : 'heat');
-  const isHeat = effDir === 'heat';
-  const modeIcon = on
-    ? `<i class="bi bi-arrow-${isHeat ? 'up text-heat' : 'down text-cool'} animate-mode-pulse"></i>`
+  // Show heating arrow when relay is ON — disappears when target is reached
+  const atTarget = curNum != null && r.temp != null && curNum >= r.temp;
+  const modeIcon = (on && !atTarget)
+    ? '<i class="bi bi-arrow-up text-heat animate-mode-pulse"></i>'
     : '';
   const limitIcon = (r.min_on || r.min_off) ? '<i class="bi bi-shield-lock text-[.8rem] text-muted mx-[2px]" title="Cycle protection active"></i>' : '';
 
@@ -129,17 +125,18 @@ function card(r, mobile) {
       tgtInput.focus();
     });
     let committed = false;
-    const commit = () => {
-      if (committed) return; // #62 — Enter hides input → blur fires commit again
+    const commit = async () => {
+      if (committed) return;
       committed = true;
       const v = parseFloat(tgtInput.value);
       tgtInput.classList.add('hidden');
       tgtPill.classList.remove('hidden');
       if (!state.authed) { tgtPill.textContent = (r.temp != null ? r.temp : 20) + '°'; openLogin(); return; }
-      if (!r.bound) { tgtPill.textContent = (r.temp != null ? r.temp : 20) + '°'; return; } // #62 — don't show stale value
+      if (!r.bound) { tgtPill.textContent = (r.temp != null ? r.temp : 20) + '°'; return; }
       if (isFinite(v) && v >= 1) {
+        const prev = r.temp;
         tgtPill.textContent = v + '°';
-        adjustTemp(r.id, v);
+        if (!await adjustTemp(r.id, v)) { r.temp = prev; tgtPill.textContent = (prev != null ? prev : 20) + '°'; }
       } else {
         tgtPill.textContent = (r.temp != null ? r.temp : 20) + '°';
       }

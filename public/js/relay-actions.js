@@ -10,6 +10,7 @@ async function adjustTemp(rid, dir) {
   if (!r || !r.bound || !r.relay || !r.sensor) return;
   // if dir is a number > 0.5, treat it as an absolute target temp, not a direction
   const newTemp = Math.abs(dir) > 1 ? Math.max(1, dir) : Math.max(1, (r.temp || 20) + dir * 0.5);
+  r.temp = newTemp; // set immediately so mid-edit renders don't revert
   try {
     await api(`/api/relays/${r.id}/bind`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -21,9 +22,10 @@ async function adjustTemp(rid, dir) {
         notify: !!r.notify, notify_deviation: Number(r.notify_deviation) || 5,
       }),
     });
-    r.temp = newTemp; r.bound = true;
+    r.bound = true;
     render(); saveLayout();
-  } catch {}
+    return true;
+  } catch { return false; }
 }
 
 // ---- global all-off ----
