@@ -1,4 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <rect width="32" height="32" rx="6" fill="#1b232a"/>
-  <path d="M18 2 8 18h5l-1 12 12-16h-5z" fill="#eab308"/>
+  <!-- relay switch body -->
+  <rect x="7" y="9" width="18" height="14" rx="2" fill="none" stroke="#eab308" stroke-width="2"/>
+  <!-- toggle knob -->
+  <circle cx="21" cy="16" r="4" fill="#eab308"/>
+  <!-- left contact -->
+  <line x1="3" y1="11" x2="7" y2="11" stroke="#eab308" stroke-width="1.5"/>
+  <line x1="3" y1="21" x2="7" y2="21" stroke="#eab308" stroke-width="1.5"/>
 </svg>

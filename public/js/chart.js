@@ -155,7 +155,8 @@ async function loadChartModal(r) {
   try {
     const data = await api('/api/history/export?' + params);
     if (data.rows) {
-      $('#chart-modal-title').textContent = `${r.name || r.sensor} — ${modalRange}h`;
+      const sensorName = (state.entities.sensors.find(s => s.entity_id === r.sensor) || {}).name || r.sensor;
+      $('#chart-modal-title').textContent = `${sensorName} — ${modalRange}h`;
       drawChart(svg, data.rows, data.target);
       addChartTooltip(svg, data.rows, '#chart-tooltip');
     }
@@ -232,14 +233,23 @@ document.querySelectorAll('#chart-modal-range .range-btn').forEach((b) => b.addE
   modalRange = parseInt(b.dataset.range);
   document.querySelectorAll('#chart-modal-range .range-btn').forEach((x) => setRangeActive(x, false));
   setRangeActive(b, true);
+  updateHistoryLabel(modalRange);
   loadChartModal(modalRelay || selected());
 }));
+
+function updateHistoryLabel(range) {
+  const label = document.querySelector('[data-i18n="last_24h"]');
+  if (!label) return;
+  const h = range >= 720 ? '30d' : range >= 168 ? '7d' : '24h';
+  label.textContent = label.dataset.i18nEn === 'History' ? `Last ${h}` : `Viimased ${h}`;
+}
 
 $('#ed-csv').addEventListener('click', exportHistory);
 document.querySelectorAll('.range-btn').forEach((b) => b.addEventListener('click', () => {
   historyRange = parseInt(b.dataset.range);
   document.querySelectorAll('.range-btn').forEach((x) => setRangeActive(x, false));
   setRangeActive(b, true);
+  updateHistoryLabel(historyRange);
   const r = selected(); if (r) loadHistory(r);
 }));
 }
