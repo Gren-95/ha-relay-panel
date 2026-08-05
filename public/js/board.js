@@ -39,6 +39,7 @@ function render() {
   updateSummary();
   if (isMobile()) return renderMobile();
   canvas.className = CANVAS_DESKTOP + (state.edit ? ' edit cursor-default' : '');
+  canvas.style.zoom = state.canvasScale !== 1 ? String(state.canvasScale) : '';
   canvas.innerHTML = '';
   for (const a of state.layout.areas) canvas.appendChild(renderBox(a, 'area'));
   for (const d of state.layout.devices) canvas.appendChild(renderBox(d, 'device'));
@@ -54,8 +55,8 @@ function render() {
     maxX = Math.max(maxX, num(g.x) + num(g.w, MIN_AREA_W) + 2 * PAD);
     maxY = Math.max(maxY, num(g.y) + num(g.h, MIN_AREA_H) + 2 * PAD);
   }
-  canvas.style.minWidth = Math.max(maxX, window.innerWidth - 40) + 'px';
-  canvas.style.minHeight = Math.max(maxY, window.innerHeight - 130) + 'px';
+  canvas.style.minWidth = Math.round(Math.max(maxX, (window.innerWidth - 40) / state.canvasScale)) + 'px';
+  canvas.style.minHeight = Math.round(Math.max(maxY, (window.innerHeight - 130) / state.canvasScale)) + 'px';
   // Signal that the canvas DOM has been rebuilt (editor blur re-apply, etc.)
   canvas.dispatchEvent(new CustomEvent('render'));
 }

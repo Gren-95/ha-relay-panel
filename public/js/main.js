@@ -81,6 +81,17 @@ $('#import-file').addEventListener('change', (e) => { const f = e.target.files[0
 $('#area-picker').addEventListener('change', (e) => { closeAdd(); addArea(e.target.value); e.target.value = ''; });
 $('#device-picker').addEventListener('change', (e) => { closeAdd(); addPhysicalRelay(e.target.value); e.target.value = ''; });
 
+// Canvas zoom buttons
+const ZOOM_STEPS = [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.75, 2];
+$('#btn-zoom-in').addEventListener('click', () => {
+  const idx = ZOOM_STEPS.indexOf(state.canvasScale);
+  if (idx < ZOOM_STEPS.length - 1) { state.canvasScale = ZOOM_STEPS[idx + 1]; render(); }
+});
+$('#btn-zoom-out').addEventListener('click', () => {
+  const idx = ZOOM_STEPS.indexOf(state.canvasScale);
+  if (idx > 0) { state.canvasScale = ZOOM_STEPS[idx - 1]; render(); }
+});
+
 // keyboard shortcuts
 document.addEventListener('keydown', (e) => {
   const typing = /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName || '');

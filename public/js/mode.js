@@ -2,7 +2,7 @@ import { $, state } from './core.js';
 import { t } from './i18n.js';
 import { closeEditor } from './editor.js';
 import { closeDeviceEditor } from './device-editor.js';
-import { openLogin, closeLogin } from './auth.js';
+import { openLogin, closeLogin, updateAuthUI } from './auth.js';
 import { closeActivityLog } from './activity.js';
 import { closePresets } from './presets.js';
 import { closeBulkEdit } from './bulk.js';
@@ -13,6 +13,7 @@ function applyMode() {
   const i = $('#btn-mode i'); if (i) i.className = state.edit ? 'bi bi-pencil-square' : 'bi bi-eye';
   document.body.classList.toggle('live-mode', !state.edit);
   if (!state.edit) { closeEditor(); closeDeviceEditor(); }
+  updateAuthUI();
 }
 function toggleMode() {
   if (state.kiosk) return; // kiosk: view-only, no edit toggle
