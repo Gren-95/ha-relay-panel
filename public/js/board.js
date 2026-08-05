@@ -154,7 +154,7 @@ function renderBox(g, kind) {
   // h-[44px] = 2px border + 40px row + 2px border, i.e. exactly HDR, so the body
   // starts where layout.js says content begins.
   const head = `<div class="area-head h-[44px] px-2.5 flex items-center gap-1.5 font-bold select-none touch-none border-2 border-solid rounded-t-2xl${state.edit ? ' cursor-grab active:cursor-grabbing' : ''}" style="color:${headColor(hue)};border-color:${line};background:${opaque(headTint(hue))}">
-      <i class="bi ${isDev ? 'bi-gear area-gear cursor-pointer' : 'bi-grid-3x3-gap'} text-[.95rem] flex-none"></i>
+      <i class="bi ${isDev ? (state.edit ? 'bi-gear area-gear cursor-pointer' : 'bi-hdd-stack') : 'bi-grid-3x3-gap'} text-[.95rem] flex-none"></i>
       <span class="text-[.95rem] min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">${esc(g.name || refId)}</span>
       <span class="ml-auto flex items-center gap-1.5 flex-none">${master}${delBtn}</span>
     </div>`;
