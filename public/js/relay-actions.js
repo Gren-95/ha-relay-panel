@@ -35,11 +35,12 @@ async function allOff() {
   if (!relays.length) return;
   if (!confirm(t('all_off_confirm'))) return;
   setStatus('turning all off…');
+  let failed = 0;
   await Promise.all(relays.map((r) => api('/api/switch', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ entity_id: r.relay, action: 'off' }),
-  }).then((res) => { state.live[r.relay] = { ...(state.live[r.relay] || {}), state: res.state }; }).catch(() => {})));
-  flashStatus(t('all_off_done'), 1500);
+  }).then((res) => { state.live[r.relay] = { ...(state.live[r.relay] || {}), state: res.state }; }).catch(() => { failed++; })));
+  flashStatus(failed ? `${t('all_off_done')} (${failed} failed)` : t('all_off_done'), 2000); // #64
   render();
 }
 
@@ -49,10 +50,11 @@ async function setAreaRelays(areaId, on) {
   const relays = state.layout.relays.filter((r) => r.area === areaId && r.relay);
   if (!relays.length) return;
   setStatus(on ? t('turning_area_on') : t('turning_area_off'));
+  let failed = 0;
   await Promise.all(relays.map((r) => api('/api/switch', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity_id: r.relay, action: on ? 'on' : 'off' }),
-  }).then((res) => { state.live[r.relay] = { ...(state.live[r.relay] || {}), state: res.state }; }).catch(() => {})));
-  setStatus(''); render();
+  }).then((res) => { state.live[r.relay] = { ...(state.live[r.relay] || {}), state: res.state }; }).catch(() => { failed++; })));
+  setStatus(failed ? `${failed}/${relays.length} failed` : ''); render(); // #64
 }
 
 // Warning "!" popover: click the icon to see the plain-language reason.
