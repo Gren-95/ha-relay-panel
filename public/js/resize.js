@@ -1,8 +1,9 @@
 import { $ } from './core.js';
 
-// ---- resizable sidebar ----
+// ---- resizable sidebar (only #editor — modal editors don't need resize) ----
 function initResizeHandles() {
   document.querySelectorAll('.editor').forEach((el) => {
+    if (el.id !== 'editor') return; // #65 — skip modal editors (dev, activity, bulk, presets)
     if (el.querySelector('.editor-resize')) return;
     const h = document.createElement('div');
     h.className = 'editor-resize fixed w-[6px] cursor-ew-resize z-[5] pointer-events-auto active:bg-[rgba(59,110,245,.15)]';
