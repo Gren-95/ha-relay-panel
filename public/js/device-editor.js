@@ -13,10 +13,8 @@ import { positionResizeHandles } from './resize.js';
 function openDeviceEditor(g) {
   if (!state.authed) return; // #63
   closeEditor(); closeActivityLog(); closeBulkEdit(); closePresets();
-  $('#backdrop').classList.remove('hidden');
-  document.body.classList.add('editor-open');
-  applyBlur();
   state.selectedDev = g.id;
+  // Populate fields first (like the relay editor does) so the blur paints instantly
   $('#de-name').value = g.name || '';
   $('#de-area').innerHTML = '<option value="">— none —</option>' +
     state.haAreas.map((a) => `<option value="${esc(a.id)}"${g.area === a.id ? ' selected' : ''}>${esc(a.name)}</option>`).join('');
@@ -29,11 +27,9 @@ function openDeviceEditor(g) {
       <span class="text-muted text-[.8rem]">${r.bound ? '<i class="bi bi-record-fill"></i> bound' : '<i class="bi bi-circle"></i>'}</span>
     </div>`;
   }).join('') || '<div class="text-muted text-[.9rem]">no outputs</div>';
-  // clicking an output row opens that output's relay editor
   $('#de-outputs').querySelectorAll('.de-out').forEach((row) => {
     row.addEventListener('click', () => { const r = state.layout.relays.find((x) => x.id === row.dataset.id); if (r) openEditor(r); });
   });
-  // "+ Add output": only this physical device's own outputs that aren't placed yet
   const dev = state.relayDevices.find((d) => d.device_id === g.deviceId);
   const used = new Set(outs.map((r) => r.relay));
   const avail = dev ? dev.outputs.filter((o) => !used.has(o.entity_id)) : [];
@@ -42,7 +38,11 @@ function openDeviceEditor(g) {
     avail.map((o) => `<option value="${esc(o.entity_id)}">${esc(o.name)}</option>`).join('');
   sel.classList.toggle('hidden', avail.length === 0);
   deMsg('');
+  // Show the modal + blur all at once (fields already populated)
   $('#dev-editor').classList.remove('hidden');
+  $('#backdrop').classList.remove('hidden');
+  document.body.classList.add('editor-open');
+  applyBlur();
   requestAnimationFrame(positionResizeHandles);
 }
 

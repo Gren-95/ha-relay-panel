@@ -177,9 +177,13 @@ function applyBlur() {
     el.classList.toggle('blurred', gid !== selAreaGid && gid !== selDevGid);
   });
 
-  // Blur relay cards — selected relay stays sharp, or blur all if device editor is open
+  // Blur relay cards — selected relay stays sharp; device editor blurs non-members
   document.querySelectorAll('#canvas .relay').forEach(el => {
-    if (devOpen) { el.classList.add('blurred'); return; }
+    if (devOpen) {
+      const rr = state.layout.relays.find(x => x.id === el.dataset.id);
+      el.classList.toggle('blurred', !rr || rr.device !== selDevGid);
+      return;
+    }
     el.classList.toggle('blurred', el.dataset.id !== selId);
   });
 }

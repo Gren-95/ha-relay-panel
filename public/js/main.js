@@ -15,7 +15,6 @@ import { initResize } from './resize.js';
 import { initTheme } from './theme.js';
 import { initChart } from './chart.js';
 import { initDeviceEditor } from './device-editor.js';
-import { initZoomLock } from './zoom-lock.js';
 
 async function boot() {
   try {
@@ -131,7 +130,6 @@ let _wasMobile = isMobile();
 window.addEventListener('resize', () => { const m = isMobile(); if (m !== _wasMobile) { _wasMobile = m; render(); } });
 
 // ---- init sequence ----
-initZoomLock();   // first: publishes --header-h, which the canvas/editor sizing reads
 initTheme();
 initResize();
 initMode();
