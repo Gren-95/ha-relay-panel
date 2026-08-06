@@ -109,14 +109,20 @@ function drawChart(svg, rows, target) {
   // X-axis time labels — tick count scales with span (#69)
   const spanH = (t1 - t0) / 3600000;
   const xTicks = spanH <= 36 ? 6 : spanH <= 168 ? 7 : spanH <= 720 ? 6 : 8;
+  const prevDate = new Date(t0).toLocaleDateString(undefined, { month:'short', day:'numeric' });
   for (let i = 0; i <= xTicks; i++) {
     const mt = t0 + (i / xTicks) * (t1 - t0);
     const xx = x(mt);
     const d = new Date(mt);
     const label = spanH <= 36 ? d.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' })
       : d.toLocaleDateString(undefined, { month:'short', day:'numeric' });
+    const curDate = d.toLocaleDateString(undefined, { month:'short', day:'numeric' });
     out += `<line x1="${xx.toFixed(1)}" y1="${padT}" x2="${xx.toFixed(1)}" y2="${H - padB}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4 4"/>`;
     out += `<text x="${xx.toFixed(1)}" y="${H - 4}" class="[fill:var(--muted)] [font-size:9px]" text-anchor="middle">${label}</text>`;
+    // Show date row on 24h view when it differs from the start or between ticks
+    if (spanH <= 36 && (i === 0 || curDate !== prevDate)) {
+      out += `<text x="${xx.toFixed(1)}" y="${H - 16}" class="[fill:var(--muted)] [font-size:8px]" text-anchor="middle">${curDate}</text>`;
+    }
   }
 
   // Target line
