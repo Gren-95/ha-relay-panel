@@ -70,7 +70,7 @@ function render() {
 
 // shared area master on/off buttons (keeps .area-master hook for live-mode hide + .am-btn hooks)
 const AM_BTN = 'am-btn text-[.72rem] font-bold px-[9px] py-[3px] rounded-lg cursor-pointer border-[1.5px] border-border-strong bg-surface text-fg';
-const areaMaster = () => `<span class="area-master inline-flex gap-1 [.live-mode_&]:hidden"><button class="${AM_BTN}" data-act="on">${t('all_on')}</button><button class="${AM_BTN}" data-act="off">${t('all_off')}</button></span>`;
+const areaMaster = () => `<span class="area-master inline-flex gap-1"><button class="${AM_BTN} [.live-mode_&]:opacity-40 [.live-mode_&]:pointer-events-none" data-act="on">${t('all_on')}</button><button class="${AM_BTN} [.live-mode_&]:opacity-40 [.live-mode_&]:pointer-events-none" data-act="off">${t('all_off')}</button></span>`;
 
 // Mobile: ignore x/y positions, render a nested flex list (area -> device -> outputs).
 function renderMobile() {

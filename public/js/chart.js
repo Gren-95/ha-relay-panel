@@ -25,7 +25,11 @@ async function loadHistory(r) {
     drawChart(spark, data.rows, data.target);
     addChartTooltip(spark, data.rows, '#ed-tooltip');
     const temps = data.rows.map((p) => p.temp);
-    info.textContent = `${dur}min ${Math.min(...temps).toFixed(1)}° · max ${Math.max(...temps).toFixed(1)}° · now ${temps[temps.length - 1].toFixed(1)}°`;
+    const fmt = (ts) => { const d = new Date(ts); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} ${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}`; };
+    const t0 = data.rows[0].t, t1 = data.rows[data.rows.length - 1].t;
+    const daySpan = Math.round((t1 - t0) / 86400000) || 1;
+    const rangeStr = `${fmt(t0)}–${fmt(t1)} (${daySpan}d)`;
+    info.textContent = `${dur}${rangeStr} · min ${Math.min(...temps).toFixed(1)}° · max ${Math.max(...temps).toFixed(1)}° · now ${temps[temps.length - 1].toFixed(1)}°`;
   } catch { info.textContent = dur + t('history_unavailable'); }
 }
 
@@ -169,10 +173,8 @@ function openChartModal(r) {
     mapBtn.dataset.url = url;
     mapBtn.classList.toggle('hidden', !url);
   }
-  // sync range to sidebar
-  document.querySelectorAll('#chart-modal-range .range-btn').forEach((b) => {
-    setRangeActive(b, parseInt(b.dataset.range) === historyRange);
-  });
+  // sync range dropdown to sidebar
+  $('#chart-modal-range').value = String(historyRange);
   modalRange = historyRange;
   loadChartModal(r);
   $('#chart-modal').classList.remove('hidden');
@@ -188,7 +190,10 @@ async function loadChartModal(r) {
     if (data.rows) {
       const sensorName = (state.entities.sensors.find(s => s.entity_id === r.sensor) || {}).name || r.sensor;
       const title = r.name ? `${r.name} (${sensorName})` : sensorName;
-      $('#chart-modal-title').textContent = `${title} — ${modalRange}h`;
+      const fmt = (ts) => { const d = new Date(ts); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} ${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}`; };
+      const t0 = data.rows[0].t, t1 = data.rows[data.rows.length - 1].t;
+      const daySpan = Math.round((t1 - t0) / 86400000) || 1;
+      $('#chart-modal-title').innerHTML = `${title}<br><span style="font-size:.82rem;font-weight:400;color:var(--muted)">${fmt(t0)} – ${fmt(t1)} (${daySpan}d)</span>`;
       drawChart(svg, data.rows, data.target);
       addChartTooltip(svg, data.rows, '#chart-tooltip');
     }
@@ -266,13 +271,11 @@ $('#chart-modal').addEventListener('click', (e) => { if (e.target === $('#chart-
 $('#ed-spark').addEventListener('click', () => openChartModal());
 
 // Modal range buttons
-document.querySelectorAll('#chart-modal-range .range-btn').forEach((b) => b.addEventListener('click', () => {
-  modalRange = parseInt(b.dataset.range);
-  document.querySelectorAll('#chart-modal-range .range-btn').forEach((x) => setRangeActive(x, false));
-  setRangeActive(b, true);
+$('#chart-modal-range').addEventListener('change', () => {
+  modalRange = parseInt($('#chart-modal-range').value);
   updateHistoryLabel(modalRange);
   loadChartModal(modalRelay || selected());
-}));
+});
 
 function updateHistoryLabel(range) {
   const label = document.querySelector('[data-i18n="last_24h"]');

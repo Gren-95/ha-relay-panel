@@ -7,7 +7,7 @@ import { render } from './board.js';
 function updateAuthUI() {
   $('#btn-logout').classList.toggle('hidden', !state.authed);
   $('#btn-logout').title = state.user ? 'Sign out (' + state.user + ')' : 'Sign out';
-  $('#btn-alloff').classList.toggle('hidden', !state.authed || !state.edit);
+  const alloff = $('#btn-alloff'); alloff.classList.toggle('hidden', !state.authed); alloff.classList.toggle('opacity-40', !state.edit); alloff.disabled = !state.edit;
 }
 async function checkSession() {
   try { const s = await api('/api/session'); state.authed = !!s.authed; state.user = s.user || null; }

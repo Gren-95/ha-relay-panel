@@ -30,7 +30,8 @@ async function adjustTemp(rid, dir) {
 
 // ---- global all-off ----
 async function allOff() {
-  if (!state.authed) { openLogin(); return; } // #62
+  if (!state.authed) { openLogin(); return; }
+  if (!state.edit) return; // greyed out in live mode
   const relays = state.layout.relays.filter((r) => r.relay);
   if (!relays.length) return;
   if (!confirm(t('all_off_confirm'))) return;
