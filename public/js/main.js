@@ -19,13 +19,15 @@ import { initDeviceEditor } from './device-editor.js';
 async function boot() {
   try {
     const layout = await api('/api/layout');   // must succeed before we ever save
-    const [entities, areas, devices] = await Promise.all([
+    const [entities, areas, devices, config] = await Promise.all([
       api('/api/entities').catch(() => state.entities), api('/api/areas').catch(() => []), api('/api/relay-devices').catch(() => []),
+      api('/api/config').catch(() => ({})),
     ]);
     state.layoutVersion = layout.updated_at || null;  // for optimistic concurrency (#46)
     delete layout.updated_at;
     state.layout = layout; state.loaded = true;   // only now is it safe to persist
     state.entities = entities;
+    state.config = config && typeof config === 'object' ? config : {};
     state.haAreas = Array.isArray(areas) ? areas : [];
     state.relayDevices = Array.isArray(devices) ? devices : [];
   } catch (e) {

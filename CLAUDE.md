@@ -40,6 +40,19 @@ Instructions for Claude Code in this project.
 - Actions logged: login, logout, relay.bind, relay.unbind, relay.delete, device.rename, switch.toggle, automation.pause, automation.resume, layout.save, layout.restore, automation.reapply, device.delete, area.delete
 - CSV export available via download button in the panel footer
 
+## Facility-map button (combo sensors)
+
+- A sensor with both `sensor.<base>_temperature` and `sensor.<base>_humidity` is a **combo**
+  sensor. `getEntities()` (ha.js) tags those with `combo: '<base>'`; temperature-only sensors
+  are left untagged and get no button.
+- `GET /api/config` (server.js) hands the client `kwsMapUrl` from the `KWS_MAP_URL` env var —
+  the one place client-visible config is exposed. **No internal addresses in the repo**: every
+  host lives in `.env`, and `.env.example` uses placeholders only.
+- The button lives in the **history chart modal** (`#chart-modal-map`, next to CSV), not on the
+  card — the card header is already crowded. `chart.js` builds `<KWS_MAP_URL>?sensor=HA%20<base>`
+  in `openChartModal` and opens it in a new tab. Non-combo sensor or unset env → the button stays
+  `hidden`. The map end (kws2, a separate app) resolves that identifier to its marker and flashes it.
+
 ## Notifications (issue #4)
 
 - Server-side watcher polls HA every 60s via `runNotifyCheck()`

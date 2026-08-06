@@ -133,11 +133,34 @@ function drawChart(svg, rows, target) {
 
 // ---- expandable history chart ----
 let modalRange = 24;
+// --- facility-map link (combo sensors only) --------------------------------------
+// The map plots a combo sensor (temperature + humidity on one device) as a single
+// marker, bound to the identifier "HA <base>". Server-side `getEntities` tags such
+// sensors with `combo: '<base>'`; a temperature-only sensor gets no link.
+function comboBase(sensorId) {
+  if (!sensorId) return '';
+  const e = (state.entities.sensors || []).find((s) => s.entity_id === sensorId);
+  return (e && e.combo) || '';
+}
+
+function sensorMapUrl(base) {
+  const root = (state.config && state.config.kwsMapUrl) || '';   // unset -> no button
+  if (!root || !base) return '';
+  return root + (root.includes('?') ? '&' : '?') + 'sensor=' + encodeURIComponent('HA ' + base);
+}
+
 let modalRelay = null; // track which relay the chart modal is showing (#62 — 7d/30d fix)
 
 function openChartModal(r) {
   if (!r) { r = selected(); } if (!r || !r.sensor) return;
   modalRelay = r;
+  // map button: shown only for a combo sensor with KWS_MAP_URL configured
+  const mapBtn = $('#chart-modal-map');
+  if (mapBtn) {
+    const url = sensorMapUrl(comboBase(r.sensor));
+    mapBtn.dataset.url = url;
+    mapBtn.classList.toggle('hidden', !url);
+  }
   // sync range to sidebar
   document.querySelectorAll('#chart-modal-range .range-btn').forEach((b) => {
     setRangeActive(b, parseInt(b.dataset.range) === historyRange);
@@ -224,6 +247,11 @@ function addChartTooltip(svg, data, tipSel) {
 export function initChart() {
 $('#chart-modal-close').addEventListener('click', () => $('#chart-modal').classList.add('hidden'));
 $('#chart-modal-csv').addEventListener('click', exportHistory);
+// open this sensor's marker on the facility map, in a new tab
+$('#chart-modal-map').addEventListener('click', () => {
+  const url = $('#chart-modal-map').dataset.url;
+  if (url) window.open(url, '_blank', 'noopener');
+});
 $('#chart-modal').addEventListener('click', (e) => { if (e.target === $('#chart-modal')) $('#chart-modal').classList.add('hidden'); });
 
 $('#ed-spark').addEventListener('click', () => openChartModal());

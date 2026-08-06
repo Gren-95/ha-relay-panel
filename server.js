@@ -37,6 +37,10 @@ app.use(require('./routes/activity'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
+// Client-visible configuration — no secrets. KWS_MAP_URL is the facility-map page that
+// plots the HA combo sensors; leave it unset and the cards' map button stays hidden.
+app.get('/api/config', (req, res) => res.json({ kwsMapUrl: process.env.KWS_MAP_URL || '' }));
+
 const PORT = process.env.PORT || 3000;
 
 let server;

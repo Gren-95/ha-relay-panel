@@ -80,6 +80,16 @@ Tags: `latest`, the branch name, `sha-<commit>`, and `vX.Y.Z` on releases.
 | `HA_TOKEN` | A Home Assistant long-lived access token |
 | `MQTT_URL` | MQTT broker URL (optional; for Zigbee2MQTT renames) |
 | `DB_PASSWORD` / `DB_ROOT_PASSWORD` | Credentials for the bundled MariaDB container |
+| `KWS_MAP_URL` | Optional facility-map page for the cards' map button (see below) |
+
+### Map button
+
+A climate sensor that reports both temperature and humidity (`sensor.<base>_temperature`
++ `sensor.<base>_humidity`) is a *combo* sensor. Point `KWS_MAP_URL` at a floor-plan page
+that plots those, and the history chart (click a card's temperature reading) gains a 🗺 **Map**
+button opening `<KWS_MAP_URL>?sensor=HA%20<base>` in a new tab — the map is expected to locate
+the marker carrying that identifier and highlight it. Temperature-only sensors get no button,
+and with `KWS_MAP_URL` unset the feature disappears entirely.
 
 ## How it works
 

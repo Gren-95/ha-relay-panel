@@ -6,6 +6,7 @@ const state = {
   layout: { relays: [], areas: [], devices: [] },
   layoutVersion: null,  // updated_at from DB — sent back on PUT for optimistic concurrency (#46)
   entities: { switches: [], sensors: [] },
+  config: {},       // server-provided, non-secret settings (see GET /api/config)
   haAreas: [],
   relayDevices: [],
   edit: false,      // start in view (Live) mode; editing requires sign-in

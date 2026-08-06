@@ -32,6 +32,15 @@ async function haFetch(path, opts = {}) {
 // All states, split into switches (relays) and temperature sensors.
 async function getEntities() {
   const states = await haFetch('/api/states');
+  // A climate sensor reports temperature and humidity as two entities,
+  // sensor.<base>_temperature and sensor.<base>_humidity. A base with both is a
+  // "combo" sensor — the facility map plots those as a single marker, so the card
+  // can offer a link to it. Collected up-front: humidity may come after its partner.
+  const humidityBases = new Set();
+  for (const s of states) {
+    const m = /^sensor\.(.+)_humidity$/.exec(s.entity_id);
+    if (m) humidityBases.add(m[1]);
+  }
   const switches = [];
   const sensors = [];
   for (const s of states) {
@@ -45,11 +54,14 @@ async function getEntities() {
       (attr.device_class === 'temperature' ||
         /^°?[CF]$/.test((attr.unit_of_measurement || '').trim()))
     ) {
+      const base = (/^sensor\.(.+)_temperature$/.exec(s.entity_id) || [])[1];
       sensors.push({
         entity_id: s.entity_id,
         name,
         state: s.state,
         unit: attr.unit_of_measurement || '°C',
+        // the map identifier, absent for temperature-only sensors
+        ...(base && humidityBases.has(base) ? { combo: base } : {}),
       });
     }
   }
