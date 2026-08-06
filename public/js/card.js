@@ -70,7 +70,7 @@ function card(r, mobile) {
   const togBase = 'r-toggle p-0 border-0 cursor-pointer flex-none self-stretch w-[26px] -ml-[14px] rounded-l-[13px] disabled:cursor-default [.kiosk_&]:w-[38px]';
   // bg-off, not var(--toggle-off): that variable is defined nowhere, so the OFF state
   // used to compute to transparent
-  const togState = togDead ? 'bg-danger' : on ? 'bg-on' : 'bg-off';
+  const togState = togDead ? 'bg-danger' : maint ? 'bg-[#f59e0b]' : on ? 'bg-on' : 'bg-off';
   // temperature styling: colour the current reading by demand vs satisfied
   const curNum = temp !== '—' ? +temp : null;
   let curColor = 'text-fg';
@@ -92,20 +92,21 @@ function card(r, mobile) {
   el.innerHTML = `
     <button class="${togBase} ${togState}" title="${!r.relay ? t('no_relay') : relayBad ? t('relay_offline_short') : (on ? t('click_turn_off') : t('click_turn_on'))}"${r.relay && !relayBad && state.authed ? '' : ' disabled'}></button>
     <div class="r-info flex-auto min-w-0">
-      <div class="r-name font-bold text-[1.1rem] overflow-hidden text-ellipsis whitespace-nowrap">${esc(r.name || 'Relay')}${r.bound ? '' : ' <span class="text-heat text-[.9rem]"><i class="bi bi-circle"></i></span>'}${(r.schedule && r.schedule.blocks && r.schedule.blocks.length) ? ' <i class="bi bi-clock text-cool text-base ml-1" title="scheduled"></i>' : ''}</div>
-      <div class="r-relay text-[.82rem] text-muted overflow-hidden text-ellipsis whitespace-nowrap">${(() => { const m = (r.relay || '').match(/_output_(\d+)$/); return m ? `Output ${m[1]}` : esc(r.relay || 'no relay'); })()}</div>
+      <div class="r-name font-bold text-[1rem] leading-[1.2]" style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${esc(r.name || 'Relay')}${r.bound ? '' : ' <span class="text-heat text-[.9rem]"><i class="bi bi-circle"></i></span>'}${(r.schedule && r.schedule.blocks && r.schedule.blocks.length) ? ' <i class="bi bi-clock text-cool text-base ml-1" title="scheduled"></i>' : ''}</div>
+      <div class="r-relay text-[.82rem] text-muted overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-1.5">${(() => { const m = (r.relay || '').match(/_output_(\d+)$/); return m ? `Output ${m[1]}` : esc(r.relay || 'no relay'); })()}${maint ? '<span class="text-[.68rem] font-extrabold px-[5px] py-px rounded-md whitespace-nowrap flex-none bg-[var(--maint-bg)] text-[var(--maint-fg)]"><i class="bi bi-pause-fill"></i> ' + t('maint_badge') + '</span>' : ''}</div>
     </div>
-    ${warnIcon}${limitIcon}${maint ? '<span class="text-[.68rem] font-extrabold px-[7px] py-[2px] rounded-md whitespace-nowrap flex-none bg-[var(--maint-bg)] text-[var(--maint-fg)]"><i class="bi bi-pause-fill"></i> ' + t('maint_badge') + '</span>' : ''}
+    ${warnIcon}${limitIcon}
     <div class="r-metric text-right flex-none flex flex-col items-end gap-1">
       <div class="r-temp cursor-pointer ${curColor} text-[2rem] [.kiosk_&]:text-[2.4rem] font-extrabold leading-none tabular-nums">${temp}${temp === '—' ? '' : '<span class="text-[1.1rem] font-bold opacity-50 ml-px">°</span>'}</div>
       ${ago ? `<div class="text-[.68rem] text-muted leading-none -mt-[3px]">${ago}</div>` : ''}
       <div class="inline-flex items-center text-[.85rem] font-semibold text-fg border-[1.5px] border-border rounded-full px-2.5 py-0.5 tabular-nums whitespace-nowrap cursor-pointer hover:border-primary">${modeIcon}${modeIcon ? '&nbsp;' : ''}<span class="tgt-text">${r.temp != null ? r.temp + '°' : '—'}</span><input class="tgt-input hidden min-h-0 w-[52px] bg-transparent text-center text-inherit font-semibold text-[.85rem] border-0 outline-none p-0" type="number" step="0.5" value="${r.temp || 20}" />${r.deadband ? `<span class="text-muted ml-1">±${r.deadband}</span>` : ''}</div>
     </div>`;
 
-  // manual on/off toggle (works in both edit & live modes)
+  // manual on/off toggle (disabled in maintenance mode)
   const tog = el.querySelector('.r-toggle');
+  if (maint) tog.disabled = true;
   tog.addEventListener('pointerdown', (e) => e.stopPropagation()); // don't start a drag
-  tog.addEventListener('click', (e) => { e.stopPropagation(); if (!state.authed) { openLogin(); return; } toggleRelay(r); });
+  tog.addEventListener('click', (e) => { e.stopPropagation(); if (!state.authed) { openLogin(); return; } if (maint) return; toggleRelay(r); });
 
   // Click temperature reading to open history chart
   const tempEl = el.querySelector('.r-temp');
@@ -119,39 +120,63 @@ function card(r, mobile) {
     wi.addEventListener('click', (e) => { e.stopPropagation(); showWarnPop(wi, wi.dataset.msg); });
   }
 
-  // Click target temp to edit inline
+  // Click target temp to edit inline.
+  // Rules: Enter saves; Esc cancels; blur saves only if the value actually changed,
+  // otherwise it just closes. While the input is open, state.tgtEditing holds off the
+  // 10s live re-render — render() rebuilds every card, which would eat the edit.
   const tgtPill = el.querySelector('.tgt-text');
   const tgtInput = el.querySelector('.tgt-input');
   if (tgtPill && tgtInput) {
     const tgtWrap = tgtPill.parentNode;
+    const shown = () => (r.temp != null ? r.temp : 20);
+    let editing = false;
+    let openVal = '';       // input value at the moment editing started
+    const close = () => {
+      editing = false;
+      state.tgtEditing = false;
+      tgtInput.classList.add('hidden');
+      tgtPill.classList.remove('hidden');
+    };
     tgtWrap.addEventListener('pointerdown', (e) => e.stopPropagation());
     tgtWrap.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (editing) return;
       if (!state.authed) { openLogin(); return; }
-      committed = false;
+      editing = true;
+      state.tgtEditing = true;
+      openVal = tgtInput.value;
       tgtPill.classList.add('hidden');
       tgtInput.classList.remove('hidden');
       tgtInput.focus();
+      tgtInput.select();
     });
-    let committed = false;
+    const cancel = () => {
+      if (!editing) return;
+      tgtInput.value = openVal;
+      close();
+    };
     const commit = async () => {
-      if (committed) return;
-      committed = true;
+      if (!editing) return;
       const v = parseFloat(tgtInput.value);
-      tgtInput.classList.add('hidden');
-      tgtPill.classList.remove('hidden');
-      if (!state.authed) { tgtPill.textContent = (r.temp != null ? r.temp : 20) + '°'; openLogin(); return; }
-      if (!r.bound) { tgtPill.textContent = (r.temp != null ? r.temp : 20) + '°'; return; }
-      if (isFinite(v) && v >= 1) {
-        const prev = r.temp;
-        tgtPill.textContent = v + '°';
-        if (!await adjustTemp(r.id, v)) { r.temp = prev; tgtPill.textContent = (prev != null ? prev : 20) + '°'; }
-      } else {
-        tgtPill.textContent = (r.temp != null ? r.temp : 20) + '°';
+      close();
+      if (!state.authed) { tgtInput.value = openVal; tgtPill.textContent = shown() + '°'; openLogin(); return; }
+      if (!r.bound || !isFinite(v) || v < 1) { tgtInput.value = openVal; tgtPill.textContent = shown() + '°'; return; }
+      const prev = r.temp;
+      tgtPill.textContent = v + '°';
+      tgtInput.value = v;
+      if (!await adjustTemp(r.id, v)) {
+        r.temp = prev;
+        tgtPill.textContent = (prev != null ? prev : 20) + '°';
+        tgtInput.value = prev != null ? prev : 20;
       }
     };
-    tgtInput.addEventListener('blur', commit);
-    tgtInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { committed = false; commit(); } });
+    // blur: unchanged → just close, changed → save
+    tgtInput.addEventListener('blur', () => { if (tgtInput.value === openVal) cancel(); else commit(); });
+    tgtInput.addEventListener('keydown', (e) => {
+      e.stopPropagation();
+      if (e.key === 'Enter') { e.preventDefault(); commit(); }       // blur that follows is a no-op
+      else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+    });
   }
 
   // Card body click → open editor sidebar (except when clicking toggle / warn / target-temp)

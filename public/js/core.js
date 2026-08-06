@@ -19,6 +19,7 @@ const state = {
   canvasScale: 0.8,     // relay board zoom level — default 2 clicks below 1.0
   live: {},
   autoStates: {},
+  tgtEditing: false, // an inline target-temp input is open — render() holds off the redraw
 };
 
 const $ = (s) => document.querySelector(s);

@@ -37,6 +37,13 @@ function render() {
   refreshAreaPicker();
   normalizeLayout();
   updateSummary();
+  // An inline target-temp input is open: rebuilding the canvas would destroy it
+  // mid-keystroke (the live poll calls render() every 10s). Hold off the redraw —
+  // the header summary above still updates. Self-heal if the input vanished anyway.
+  if (state.tgtEditing) {
+    if (canvas.querySelector('.tgt-input:not(.hidden)')) return;
+    state.tgtEditing = false;
+  }
   if (isMobile()) return renderMobile();
   canvas.className = CANVAS_DESKTOP + (state.edit ? ' edit cursor-default' : '');
   canvas.style.zoom = state.canvasScale !== 1 ? String(state.canvasScale) : '';

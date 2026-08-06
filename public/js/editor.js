@@ -147,6 +147,7 @@ async function toggleAutomation() {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled: enable }),
     }));
     edMsg(enable ? t('automation_enabled') : t('automation_disabled_maint'), 'ok');
+    await bind(); // auto-save thermostat settings when toggling maintenance
   } catch (e) { edMsg('error: ' + e.message, 'err'); loadAutomationState(r); }
 }
 function closeEditor() { state.selected = null; $('#editor').classList.add('hidden'); $('#backdrop').classList.add('hidden'); document.body.classList.remove('editor-open'); clearBlur(); }
