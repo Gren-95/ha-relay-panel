@@ -106,13 +106,15 @@ function drawChart(svg, rows, target) {
     out += `<text x="${padL - 6}" y="${(yy + 3).toFixed(1)}" class="[fill:var(--muted)] [font-size:9px]" text-anchor="end">${val.toFixed(1)}°</text>`;
   }
 
-  // X-axis time labels
-  const xTicks = 4;
+  // X-axis time labels — tick count scales with span (#69)
+  const spanH = (t1 - t0) / 3600000;
+  const xTicks = spanH <= 36 ? 6 : spanH <= 168 ? 7 : spanH <= 720 ? 6 : 8;
   for (let i = 0; i <= xTicks; i++) {
     const mt = t0 + (i / xTicks) * (t1 - t0);
     const xx = x(mt);
     const d = new Date(mt);
-    const label = d.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
+    const label = spanH <= 36 ? d.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' })
+      : d.toLocaleDateString(undefined, { month:'short', day:'numeric' });
     out += `<line x1="${xx.toFixed(1)}" y1="${padT}" x2="${xx.toFixed(1)}" y2="${H - padB}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4 4"/>`;
     out += `<text x="${xx.toFixed(1)}" y="${H - 4}" class="[fill:var(--muted)] [font-size:9px]" text-anchor="middle">${label}</text>`;
   }
