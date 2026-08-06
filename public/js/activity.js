@@ -63,7 +63,7 @@ function renderActivity(entries, total, page) {
   $('#act-next').classList.toggle('hidden', page >= totalPages);
 
   if (!entries || !entries.length) {
-    list.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--muted)">No events recorded yet.</div>`;
+    list.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--muted)">${t('no_events')}</div>`;
     return;
   }
   entries.forEach((e) => {
