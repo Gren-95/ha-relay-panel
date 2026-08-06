@@ -119,8 +119,8 @@ function drawChart(svg, rows, target) {
     const curDate = d.toLocaleDateString(undefined, { month:'short', day:'numeric' });
     out += `<line x1="${xx.toFixed(1)}" y1="${padT}" x2="${xx.toFixed(1)}" y2="${H - padB}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4 4"/>`;
     out += `<text x="${xx.toFixed(1)}" y="${H - 4}" class="[fill:var(--muted)] [font-size:9px]" text-anchor="middle">${label}</text>`;
-    // Show date row on 24h view when it differs from the start or between ticks
-    if (spanH <= 36 && (i === 0 || curDate !== prevDate)) {
+    // Show date row under every tick on 24h view
+    if (spanH <= 36) {
       out += `<text x="${xx.toFixed(1)}" y="${H - 16}" class="[fill:var(--muted)] [font-size:8px]" text-anchor="middle">${curDate}</text>`;
     }
   }
