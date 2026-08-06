@@ -187,7 +187,8 @@ async function loadChartModal(r) {
     const data = await api('/api/history/export?' + params);
     if (data.rows) {
       const sensorName = (state.entities.sensors.find(s => s.entity_id === r.sensor) || {}).name || r.sensor;
-      $('#chart-modal-title').textContent = `${sensorName} — ${modalRange}h`;
+      const title = r.name ? `${r.name} (${sensorName})` : sensorName;
+      $('#chart-modal-title').textContent = `${title} — ${modalRange}h`;
       drawChart(svg, data.rows, data.target);
       addChartTooltip(svg, data.rows, '#chart-tooltip');
     }
