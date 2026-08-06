@@ -60,14 +60,17 @@ function card(r, mobile) {
   // Signed-out visitors get the same colours, just dimmed by disabled:opacity-40 —
   // red stays at full strength so a dead relay never reads as "just logged out".
   const togDead = !r.relay || relayBad;
-  // flex-none: the lamp keeps its size, a long relay name squeezes the text instead
-  const togBase = 'r-toggle p-0 cursor-pointer flex-none w-[46px] h-[30px] rounded-lg border-2 disabled:cursor-default [.kiosk_&]:w-[72px] [.kiosk_&]:h-[46px]'
-    + (togDead ? '' : ' disabled:opacity-40');
-  // bg-off, not var(--toggle-off): that variable is defined nowhere, so the OFF lamp
-  // used to compute to transparent and only the ring showed
-  const togState = togDead ? 'bg-danger border-danger'
-    : on ? 'bg-on border-on shadow-[0_0_0_3px_rgba(21,128,61,.2)]'
-    : 'bg-off border-border-strong';
+  // The toggle IS the card's left edge: a full-height bar where the thin area-colour
+  // accent used to be, just thick enough to hit. -ml cancels the card's px-[14px] so
+  // it sits flush against the border; rounded-l matches the card's 14px corner minus
+  // its 1px border. flex-none + self-stretch: full height, never squeezed by a long name.
+  // NO disabled:opacity-40 here (the dot used to have it): the bar is the board's
+  // state readout and signed-out visitors are the common case in Live mode — dimming
+  // it to 40% made ON vs OFF unreadable for them. Not-clickable shows in the cursor.
+  const togBase = 'r-toggle p-0 border-0 cursor-pointer flex-none self-stretch w-[26px] -ml-[14px] rounded-l-[13px] disabled:cursor-default [.kiosk_&]:w-[38px]';
+  // bg-off, not var(--toggle-off): that variable is defined nowhere, so the OFF state
+  // used to compute to transparent
+  const togState = togDead ? 'bg-danger' : on ? 'bg-on' : 'bg-off';
   // temperature styling: colour the current reading by demand vs satisfied
   const curNum = temp !== '—' ? +temp : null;
   let curColor = 'text-fg';
