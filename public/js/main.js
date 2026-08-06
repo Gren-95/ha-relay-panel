@@ -78,7 +78,7 @@ $('#btn-import').addEventListener('click', () => { $('#advanced-menu').classList
 $('#btn-activity').addEventListener('click', () => { closeAdvanced(); openActivityLog(); });
 $('#btn-bulk').addEventListener('click', () => { closeAdvanced(); openBulkEdit(); });
 $('#btn-presets').addEventListener('click', () => { closeAdvanced(); openPresets(); });
-$('#btn-alloff').addEventListener('click', allOff);
+$('#btn-alloff').addEventListener('click', () => { closeAdvanced(); allOff(); });
 $('#import-file').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) importLayout(f); e.target.value = ''; });
 $('#area-picker').addEventListener('change', (e) => { closeAdd(); addArea(e.target.value); e.target.value = ''; });
 $('#device-picker').addEventListener('change', (e) => { closeAdd(); addPhysicalRelay(e.target.value); e.target.value = ''; });

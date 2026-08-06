@@ -7,8 +7,7 @@ const savedTheme = () => { try { return localStorage.getItem('relaypanel-theme')
 const systemTheme = () => { try { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } catch { return 'light'; } };
 function applyTheme(t) {
   document.documentElement.setAttribute('data-theme', t);
-  $('#btn-theme').innerHTML = t === 'dark' ? '<i class="bi bi-sun"></i>' : '<i class="bi bi-moon-stars"></i>';
-  $('#btn-theme').title = t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+  const icon = $('#btn-theme i'); if (icon) icon.className = t === 'dark' ? 'bi bi-sun' : 'bi bi-moon-stars';
 }
 
 // wiring: theme toggle button + follow-OS listener

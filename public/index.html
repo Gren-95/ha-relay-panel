@@ -25,11 +25,9 @@
         </div>
       </div>
       <div class="flex items-center gap-2 mobile:grid mobile:grid-cols-2 mobile:gap-2.5">
-        <button id="btn-alloff" data-ui="btn btnTb" data-i18n-title="all_off_title" title="Turn all relays off"><i class="bi bi-power"></i></button>
         <button id="btn-mode" data-ui="btn btnTb"><i class="bi bi-pencil-square"></i> <span id="mode-label">Edit</span></button>
         <button id="btn-logout" data-ui="btn btnTb" class="hidden" data-i18n-title="sign_out" title="Sign out"><i class="bi bi-box-arrow-right"></i></button>
         <button id="btn-lang" data-ui="btn btnTb" title="Keel / Language">🇪🇪</button>
-        <button id="btn-theme" data-ui="btn btnTb" data-i18n-title="toggle_dark" title="Toggle dark mode"><i class="bi bi-moon-stars"></i></button>
       </div>
       <span class="w-0.5 h-[30px] bg-border mobile:hidden"></span>
       <div class="flex items-center gap-1 mobile:hidden">
@@ -47,6 +45,10 @@
           <button id="btn-bulk" data-ui="btn btnMenu"><i class="bi bi-collection"></i> <span data-i18n="bulk_edit">Bulk edit</span></button>
           <span class="h-0.5 bg-border my-[3px] rounded-[2px] mobile:hidden"></span>
           <button id="btn-presets" data-ui="btn btnMenu"><i class="bi bi-bookmark"></i> <span data-i18n="presets">Presets</span></button>
+          <span class="h-0.5 bg-border my-[3px] rounded-[2px] mobile:hidden"></span>
+          <button id="btn-theme" data-ui="btn btnMenu"><i class="bi bi-moon-stars"></i> <span data-i18n="toggle_dark">Toggle dark mode</span></button>
+          <span class="h-0.5 bg-border my-[3px] rounded-[2px] mobile:hidden"></span>
+          <button id="btn-alloff" data-ui="btn btnMenu"><i class="bi bi-power"></i> <span data-i18n="all_off">All off</span></button>
         </div>
         <input id="import-file" type="file" accept="application/json,.json" hidden />
       </div>
@@ -218,16 +220,16 @@
   <!-- Expanded chart modal -->
   <div id="chart-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
     <div class="bg-surface rounded-[14px] p-5 w-[min(95vw,1000px)] shadow-panel flex flex-col gap-2.5">
-      <div class="flex items-center justify-between font-bold">
-        <span id="chart-modal-title"></span>
-        <div class="flex gap-1" id="chart-modal-range">
-          <button data-ui="rangeBtn" class="range-btn bg-primary border-primary text-white" data-range="24">24h</button>
-          <button data-ui="rangeBtn" class="range-btn" data-range="168">7d</button>
-          <button data-ui="rangeBtn" class="range-btn" data-range="720">30d</button>
-        </div>
-        <button id="chart-modal-map" class="hidden self-start min-h-0 px-3 py-[7px] text-[.82rem] font-semibold rounded-lg bg-surface-2 text-muted border-[1.5px] border-border inline-flex items-center gap-[5px] cursor-pointer active:translate-y-px" data-i18n-title="show_on_map" title="Show on map"><i class="bi bi-map"></i> <span data-i18n="map_word">Map</span></button>
-        <button id="chart-modal-csv" class="self-start min-h-0 px-3 py-[7px] text-[.82rem] font-semibold rounded-lg bg-ok text-white border-[1.5px] border-ok inline-flex items-center gap-[5px] cursor-pointer active:translate-y-px" data-i18n-title="download_csv" title="Download CSV"><i class="bi bi-download"></i> CSV</button>
-        <button id="chart-modal-close" data-ui="closeBtn" aria-label="Close">&times;</button>
+      <div class="flex items-center gap-2 font-bold">
+        <span id="chart-modal-title" class="flex-1"></span>
+        <select id="chart-modal-range" class="min-h-0 px-2 py-[7px] text-[.78rem] font-semibold rounded-[7px] border-[1.5px] border-border bg-surface-2 text-muted cursor-pointer">
+          <option value="24">24h</option>
+          <option value="168">7d</option>
+          <option value="720">30d</option>
+        </select>
+        <button id="chart-modal-map" class="hidden min-h-0 px-3 py-[7px] text-[.82rem] font-semibold rounded-lg bg-surface-2 text-muted border-[1.5px] border-border inline-flex items-center gap-[5px] cursor-pointer active:translate-y-px" data-i18n-title="show_on_map" title="Show on map"><i class="bi bi-map"></i> <span data-i18n="map_word">Map</span></button>
+        <button id="chart-modal-csv" class="min-h-0 px-3 py-[7px] text-[.82rem] font-semibold rounded-lg bg-surface-2 text-muted border-[1.5px] border-border inline-flex items-center gap-[5px] cursor-pointer active:translate-y-px" data-i18n-title="download_csv" title="Download CSV"><i class="bi bi-download"></i></button>
+        <button id="chart-modal-close" class="bg-transparent border-0 text-muted text-[1.4rem] cursor-pointer leading-none" aria-label="Close">&times;</button>
       </div>
       <div class="relative">
         <svg id="chart-modal-svg" viewBox="0 0 900 400" preserveAspectRatio="xMidYMid meet"></svg>
