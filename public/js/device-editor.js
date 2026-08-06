@@ -22,7 +22,7 @@ function openDeviceEditor(g) {
   $('#de-outputs').innerHTML = outs.map((r) => {
     const on = (state.live[r.relay] || {}).state === 'on';
     return `<div class="de-out flex items-center gap-2.5 px-3 py-2.5 bg-surface-2 border-2 border-border rounded-[10px] cursor-pointer text-base" data-id="${esc(r.id)}">
-      <span class="w-3 h-3 rounded-full flex-none ${r.relay ? (on ? 'bg-on' : 'bg-off') : 'bg-off'}"></span>
+      <span class="w-[46px] h-[30px] rounded-lg flex-none border-2 ${r.relay ? (on ? 'bg-on border-on' : 'bg-off border-border-strong') : 'bg-danger border-danger'}"></span>
       <span class="flex-auto overflow-hidden text-ellipsis whitespace-nowrap">${esc(r.name || r.relay || 'output')}</span>
       <span class="text-muted text-[.8rem]">${r.bound ? '<i class="bi bi-record-fill"></i> bound' : '<i class="bi bi-circle"></i>'}</span>
     </div>`;

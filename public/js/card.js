@@ -1,6 +1,6 @@
 import { state, esc } from './core.js';
 import { t } from './i18n.js';
-import { areaColor, areaName, boxFor, clampToBox, num, zIndexOf } from './layout.js';
+import { boxFor, clampToBox, num, zIndexOf } from './layout.js';
 import { toggleRelay, showWarnPop, adjustTemp } from './relay-actions.js';
 import { openLogin } from './auth.js';
 import { openEditor } from './editor.js';
@@ -26,8 +26,6 @@ function card(r, mobile) {
     // on pointerdown, and the card still has to come forward when they are hit
     el.addEventListener('pointerdown', () => raise(r, 'relay'), true);
   }
-  if (r.area) { const hue = areaColor(r.area); el.style.borderLeft = `4px solid hsl(${hue},60%,50%)`; }
-
   const live = state.live[r.sensor] || {};
   const relLive = state.live[r.relay] || {};
   const temp = live.state != null && live.state !== '' && !isNaN(+live.state) ? (+live.state).toFixed(1) : '—';
@@ -57,11 +55,19 @@ function card(r, mobile) {
   else if (senOffline) { warnMsg = t('warn_sensor_offline'); warnLevel = 'warn'; }
   const warnColor = warnLevel === 'error' ? 'text-danger' : 'text-[#d97706]';
   const warnIcon = warnMsg ? `<button class="warn-icon p-0 border-0 bg-transparent cursor-pointer leading-none text-[1.35rem] flex-none align-[-.12em] ${warnColor}" title="${esc(warnMsg)}" data-msg="${esc(warnMsg)}" aria-label="warning"><i class="bi bi-exclamation-triangle-fill"></i></button>` : '';
-  // the on/off toggle is the coloured dot: emit exactly one bg + border per state
-  const togBase = 'r-toggle p-0 cursor-pointer w-[34px] h-[34px] rounded-full border-2 disabled:cursor-default disabled:opacity-40 [.kiosk_&]:w-14 [.kiosk_&]:h-14';
-  const togState = !r.relay ? 'bg-off border-border-strong'
+  // the on/off toggle is a rectangular state lamp: green = ON, grey = OFF,
+  // red = cannot be switched (no relay bound, or the relay is offline/missing).
+  // Signed-out visitors get the same colours, just dimmed by disabled:opacity-40 —
+  // red stays at full strength so a dead relay never reads as "just logged out".
+  const togDead = !r.relay || relayBad;
+  // flex-none: the lamp keeps its size, a long relay name squeezes the text instead
+  const togBase = 'r-toggle p-0 cursor-pointer flex-none w-[46px] h-[30px] rounded-lg border-2 disabled:cursor-default [.kiosk_&]:w-[72px] [.kiosk_&]:h-[46px]'
+    + (togDead ? '' : ' disabled:opacity-40');
+  // bg-off, not var(--toggle-off): that variable is defined nowhere, so the OFF lamp
+  // used to compute to transparent and only the ring showed
+  const togState = togDead ? 'bg-danger border-danger'
     : on ? 'bg-on border-on shadow-[0_0_0_3px_rgba(21,128,61,.2)]'
-    : 'bg-[var(--toggle-off)] border-border-strong';
+    : 'bg-off border-border-strong';
   // temperature styling: colour the current reading by demand vs satisfied
   const curNum = temp !== '—' ? +temp : null;
   let curColor = 'text-fg';
@@ -84,7 +90,7 @@ function card(r, mobile) {
     <button class="${togBase} ${togState}" title="${!r.relay ? t('no_relay') : relayBad ? t('relay_offline_short') : (on ? t('click_turn_off') : t('click_turn_on'))}"${r.relay && !relayBad && state.authed ? '' : ' disabled'}></button>
     <div class="r-info flex-auto min-w-0">
       <div class="r-name font-bold text-[1.1rem] overflow-hidden text-ellipsis whitespace-nowrap">${esc(r.name || 'Relay')}${r.bound ? '' : ' <span class="text-heat text-[.9rem]"><i class="bi bi-circle"></i></span>'}${(r.schedule && r.schedule.blocks && r.schedule.blocks.length) ? ' <i class="bi bi-clock text-cool text-base ml-1" title="scheduled"></i>' : ''}</div>
-      <div class="r-relay text-[.82rem] text-muted overflow-hidden text-ellipsis whitespace-nowrap">${esc(r.relay || 'no relay')}${r.area ? ' · ' + esc(areaName(r.area)) : ''}</div>
+      <div class="r-relay text-[.82rem] text-muted overflow-hidden text-ellipsis whitespace-nowrap">${(() => { const m = (r.relay || '').match(/_output_(\d+)$/); return m ? `Output ${m[1]}` : esc(r.relay || 'no relay'); })()}</div>
     </div>
     ${warnIcon}${limitIcon}${maint ? '<span class="text-[.68rem] font-extrabold px-[7px] py-[2px] rounded-md whitespace-nowrap flex-none bg-[var(--maint-bg)] text-[var(--maint-fg)]"><i class="bi bi-pause-fill"></i> ' + t('maint_badge') + '</span>' : ''}
     <div class="r-metric text-right flex-none flex flex-col items-end gap-1">
