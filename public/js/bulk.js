@@ -46,7 +46,7 @@ function updateBulkList() {
     </div>`;
   }).join('') || `<div style="text-align:center;padding:20px;color:var(--muted)">${t('no_bound_relays_match')}</div>`;
   $('#bk-count').textContent = matches.length ? `${matches.length} relay${matches.length === 1 ? '' : 's'}` : '';
-  $('#bk-apply').innerHTML = `<i class="bi bi-check-lg"></i> <span data-i18n="apply_to_n">Apply to ${matches.length || 0} relays</span>`;
+  $('#bk-apply').innerHTML = `<i class="bi bi-check-lg"></i> ${t('apply_to_n', { n: matches.length || 0 })}`;
 }
 
 async function applyBulk() {
@@ -78,7 +78,7 @@ async function applyBulk() {
     } catch { fail++; }
   }
   $('#bk-apply').disabled = false;
-  setMsg($('#bk-msg'), t('applied_to_n').replace('{n}', ok) + (fail ? ', ' + t('n_failed').replace('{n}', fail) : ''), fail ? 'err' : 'ok');
+  setMsg($('#bk-msg'), t('applied_to_n', { n: ok }) + (fail ? ', ' + t('n_failed', { n: fail }) : ''), fail ? 'err' : 'ok');
   render(); saveLayout(); refreshLive();
   updateBulkList();
 }

@@ -102,6 +102,18 @@ const TR = {
     act_automation_pause: 'Automaatika peatatud', act_automation_resume: 'Automaatika jätkatud',
     act_automation_reapply: 'Automaatika uuesti rakendatud',
     act_layout_save: 'Paigutus salvestatud', act_layout_restore: 'Paigutus taastatud',
+    // JS-built strings (#71)
+    add: 'Lisa', all_relays: 'Kõik releed', apply_to_n: 'Rakenda {n} releele',
+    binding: 'sidumine…', bound: 'seotud', pick_device_first: 'vali enne seade',
+    renaming: 'ümbernimetamine…', renamed_in: 'ümbernimetatud: {where}',
+    automation_removed: 'automaatika eemaldatud',
+    error_label: 'viga', rename_error_label: 'ümbernimetamise viga',
+    turning_all_off: 'kõik välja lülitamine…',
+    not_valid_json: 'pole kehtiv JSON', not_relaypanel_layout: 'pole relay-panel paigutus',
+    csv_downloaded: 'CSV alla laaditud',
+    just_now: 'just nüüd', m_ago: '{n} min tagasi', h_ago: '{n} h tagasi', d_ago: '{n} p tagasi',
+    zoom_in: 'Suurenda', zoom_out: 'Vähenda',
+    load_error_retrying: 'laadimise viga — uuesti proovimine…',
   },
 };
 const EN = {  // English fallbacks for dynamic (non-HTML) strings
@@ -164,9 +176,31 @@ const EN = {  // English fallbacks for dynamic (non-HTML) strings
   switching: 'switching…', switch_error: 'switch error',
   no_presets: 'No presets saved yet',
   no_output_to_rename: 'no output entity to rename',
+  // JS-built strings (#71)
+  add: 'Add', all_relays: 'All relays', apply_to_n: 'Apply to {n} relays',
+  binding: 'binding…', bound: 'bound', pick_device_first: 'pick a device first',
+  renaming: 'renaming…', renamed_in: 'renamed in {where}',
+  automation_removed: 'automation removed',
+  error_label: 'error', rename_error_label: 'rename error',
+  turning_all_off: 'turning all off…',
+  not_valid_json: 'not valid JSON', not_relaypanel_layout: 'not a relay-panel layout',
+  csv_downloaded: 'CSV downloaded',
+  just_now: 'just now', m_ago: '{n}m ago', h_ago: '{n}h ago', d_ago: '{n}d ago',
+  zoom_in: 'Zoom in', zoom_out: 'Zoom out',
+  load_error_retrying: 'load error — retrying…',
 };
 let LANG = 'en';
-function t(key) { return (LANG === 'et' && TR.et[key] != null) ? TR.et[key] : (EN[key] != null ? EN[key] : key); }
+function t(key, params) {
+  let s = (LANG === 'et' && TR.et[key] != null) ? TR.et[key] : (EN[key] != null ? EN[key] : key);
+  if (params) { for (const [k, v] of Object.entries(params)) s = s.replace(`{${k}}`, v); }
+  return s;
+}
+function fmtAgo(ms) {
+  if (ms < 60000) return t('just_now');
+  if (ms < 3600000) return t('m_ago', { n: Math.round(ms / 60000) });
+  if (ms < 86400000) return t('h_ago', { n: Math.round(ms / 3600000) });
+  return t('d_ago', { n: Math.round(ms / 86400000) });
+}
 function applyI18n() {
   document.querySelectorAll('[data-i18n]').forEach((el) => {
     if (el.children.length) return; // never overwrite an element that wraps other elements
@@ -186,4 +220,4 @@ function setLang(l) {
   if (typeof render === 'function') { applyMode(); render(); }
 }
 
-export { t, applyI18n, setLang, LANG };
+export { t, fmtAgo, applyI18n, setLang, LANG };

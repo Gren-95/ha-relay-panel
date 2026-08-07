@@ -33,7 +33,7 @@ async function boot() {
   } catch (e) {
     // DATA-SAFETY: layout failed to load — do NOT mark loaded, so no save can
     // overwrite the real DB layout with this empty fallback. Retry shortly.
-    setStatus('load error — retrying…'); setTimeout(boot, 4000); return;
+    setStatus(t('load_error_retrying')); setTimeout(boot, 4000); return;
   }
   state.layout.relays = state.layout.relays || [];
   state.layout.areas = state.layout.areas || [];

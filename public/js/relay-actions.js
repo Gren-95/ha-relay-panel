@@ -35,7 +35,7 @@ async function allOff() {
   const relays = state.layout.relays.filter((r) => r.relay);
   if (!relays.length) return;
   if (!confirm(t('all_off_confirm'))) return;
-  setStatus('turning all off…');
+  setStatus(t('turning_all_off'));
   let failed = 0;
   await Promise.all(relays.map((r) => api('/api/switch', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },

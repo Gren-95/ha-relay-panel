@@ -1,5 +1,5 @@
 import { state, esc } from './core.js';
-import { t } from './i18n.js';
+import { t, fmtAgo } from './i18n.js';
 import { boxFor, clampToBox, num, zIndexOf } from './layout.js';
 import { toggleRelay, showWarnPop, adjustTemp } from './relay-actions.js';
 import { openLogin } from './auth.js';
@@ -33,11 +33,7 @@ function card(r, mobile) {
   // Last-seen timestamp
   let ago = '';
   if (r.sensor && live.last_changed) {
-    const ms = Date.now() - Date.parse(live.last_changed);
-    if (ms < 60000) ago = 'just now';
-    else if (ms < 3600000) ago = Math.round(ms / 60000) + 'm ago';
-    else if (ms < 86400000) ago = Math.round(ms / 3600000) + 'h ago';
-    else ago = Math.round(ms / 86400000) + 'd ago';
+    ago = fmtAgo(Date.now() - Date.parse(live.last_changed));
   }
   const on = relLive.state === 'on';
   // offline / stale-binding detection — distinguish the RELAY from its SENSOR.

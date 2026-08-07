@@ -22,9 +22,9 @@ function exportLayout() {
 
 async function importLayout(file) {
   let data;
-  try { data = JSON.parse(await file.text()); } catch { setStatus('not valid JSON'); return; }
+  try { data = JSON.parse(await file.text()); } catch { setStatus(t('not_valid_json')); return; }
   const l = data && data.layout ? data.layout : data; // accept wrapped export or a raw layout
-  if (!l || !Array.isArray(l.relays)) { setStatus('not a relay-panel layout'); return; }
+  if (!l || !Array.isArray(l.relays)) { setStatus(t('not_relaypanel_layout')); return; }
   const counts = `${(l.relays || []).length} relays, ${(l.devices || []).length} devices, ${(l.areas || []).length} areas`;
   if (!confirm(t('confirm_import_layout') + '\n' + counts + '\n\n' + t('confirm_continue'))) return;
   state.layout = { relays: l.relays || [], areas: l.areas || [], devices: l.devices || [] };

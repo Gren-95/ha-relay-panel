@@ -54,7 +54,7 @@ async function exportHistory() {
     const span = hours >= 720 ? '30d' : hours >= 168 ? '7d' : '24h';
     a.download = `${r.sensor.replace(/\./g,'_')}_${span}.csv`;
     document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    edMsg('CSV downloaded', 'ok');
+    edMsg(t('csv_downloaded'), 'ok');
   } catch (e) { edMsg(t('export_error') + ': ' + e.message, 'err'); }
 }
 

@@ -1,5 +1,5 @@
 import { $, esc, setMsg, api } from './core.js';
-import { t } from './i18n.js';
+import { t, fmtAgo } from './i18n.js';
 import { closeEditor } from './editor.js';
 import { closeDeviceEditor } from './device-editor.js';
 import { closeBulkEdit } from './bulk.js';
@@ -131,9 +131,7 @@ function fmtTime(ts) {
   const d = new Date(ts + (ts.endsWith('Z') ? '' : 'Z'));
   const now = Date.now();
   const diff = now - d.getTime();
-  if (diff < 60000) return 'just now';
-  if (diff < 3600000) return Math.round(diff / 60000) + 'm ago';
-  if (diff < 86400000) return Math.round(diff / 3600000) + 'h ago';
+  if (diff < 86400000) return fmtAgo(diff);
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) +
     ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 }

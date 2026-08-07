@@ -148,7 +148,7 @@ async function toggleAutomation() {
     }));
     edMsg(enable ? t('automation_enabled') : t('automation_disabled_maint'), 'ok');
     await bind(); // auto-save thermostat settings when toggling maintenance
-  } catch (e) { edMsg('error: ' + e.message, 'err'); loadAutomationState(r); }
+  } catch (e) { edMsg(t('error_label') + ': ' + e.message, 'err'); loadAutomationState(r); }
 }
 function closeEditor() { state.selected = null; $('#editor').classList.add('hidden'); $('#backdrop').classList.add('hidden'); document.body.classList.remove('editor-open'); clearBlur(); }
 
@@ -244,28 +244,28 @@ async function bind() {
     schedule: readScheduleUI(),
   };
   try {
-    edMsg('binding…');
+    edMsg(t('binding'));
     const res = await api(`/api/relays/${r.id}/bind`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     Object.assign(r, body); // #62 — only mutate after API success
     r.bound = true; r.automationId = res.automationId;
     // swapped into a (different) area -> teleport to the middle of that area
     // (device outputs stay put inside their physical-relay box)
     if (!r.device && r.area && r.area !== oldArea) { const box = boxFor(r); if (box) centerInBox(r, box); }
-    edMsg('bound ✓ ' + res.automationId, 'ok');
+    edMsg(t('bound') + ' ' + res.automationId, 'ok');
     loadAutomationState(r);
     render(); saveLayout(); refreshLive();
-  } catch (e) { edMsg('error: ' + e.message, 'err'); }
+  } catch (e) { edMsg(t('error_label') + ': ' + e.message, 'err'); }
 }
 
 // rename the HA device behind an entity (and Z2M too if it's zigbee)
 async function renameDevice(entityId) {
-  if (!entityId) { edMsg('pick a device first', 'err'); return; }
+  if (!entityId) { edMsg(t('pick_device_first'), 'err'); return; }
   const nm = prompt(t('new_name_for') + ' ' + entityId + ':');
   if (nm == null || !nm.trim()) return;
   try {
-    edMsg('renaming…');
+    edMsg(t('renaming'));
     const res = await api('/api/rename', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity_id: entityId, name: nm.trim() }) });
-    edMsg('renamed in ' + res.where, 'ok');
+    edMsg(t('renamed_in', { where: res.where }), 'ok');
     // reload the device lists to show the new name (keep current selections)
     setTimeout(async () => {
       try {
@@ -274,13 +274,13 @@ async function renameDevice(entityId) {
         $('#ed-relay').value = rv; $('#ed-sensor').value = sv; $('#ed-area').value = av;
       } catch {}
     }, 1600);
-  } catch (e) { edMsg('rename error: ' + e.message, 'err'); }
+  } catch (e) { edMsg(t('rename_error_label') + ': ' + e.message, 'err'); }
 }
 
 async function unbind() {
   const r = selected(); if (!r) return;
-  try { await api(`/api/relays/${r.id}/unbind`, { method: 'POST' }); r.bound = false; delete r.automationId; loadAutomationState(r); edMsg('automation removed', 'ok'); render(); }
-  catch (e) { edMsg('error: ' + e.message, 'err'); }
+  try { await api(`/api/relays/${r.id}/unbind`, { method: 'POST' }); r.bound = false; delete r.automationId; loadAutomationState(r); edMsg(t('automation_removed'), 'ok'); render(); }
+  catch (e) { edMsg(t('error_label') + ': ' + e.message, 'err'); }
 }
 
 async function deleteRelay() {
