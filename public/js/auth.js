@@ -5,8 +5,10 @@ import { render } from './board.js';
 
 // --- auth (validates against Home Assistant) ---
 function updateAuthUI() {
+  // Sign in/out — exactly one visible at a time (#72)
+  $('#btn-login').classList.toggle('hidden', state.authed);
   $('#btn-logout').classList.toggle('hidden', !state.authed);
-  $('#btn-logout').title = state.user ? 'Sign out (' + state.user + ')' : 'Sign out';
+  if (state.user) $('#btn-logout').title = 'Sign out (' + state.user + ')';
   const alloff = $('#btn-alloff'); alloff.classList.toggle('hidden', !state.authed); alloff.classList.toggle('opacity-40', !state.edit); alloff.disabled = !state.edit;
 }
 async function checkSession() {
@@ -56,6 +58,7 @@ $('#login-cancel').addEventListener('click', closeLogin);
 $('#login-pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
 $('#login-user').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#login-pass').focus(); });
 $('#btn-logout').addEventListener('click', doLogout);
+$('#btn-login').addEventListener('click', openLogin);
 checkSession();
 }
 

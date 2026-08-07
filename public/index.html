@@ -26,7 +26,6 @@
       </div>
       <div class="flex items-center gap-2 mobile:grid mobile:grid-cols-2 mobile:gap-2.5">
         <button id="btn-mode" data-ui="btn btnTb"><i class="bi bi-pencil-square"></i> <span id="mode-label">Edit</span></button>
-        <button id="btn-logout" data-ui="btn btnTb" class="hidden" data-i18n-title="sign_out" title="Sign out"><i class="bi bi-box-arrow-right"></i></button>
         <button id="btn-lang" data-ui="btn btnTb" title="Keel / Language">🇪🇪</button>
       </div>
       <span class="w-0.5 h-[30px] bg-border mobile:hidden"></span>
@@ -36,6 +35,8 @@
       </div>
       <div class="flex items-center gap-2 mobile:block mobile:w-full tb-advanced relative">
         <button id="btn-advanced" data-ui="btn" class="mobile:hidden" data-i18n-title="advanced" title="More"><i class="bi bi-gear"></i></button>
+        <button id="btn-login" data-ui="btn" class="hidden border-ok text-ok" data-i18n-title="sign_in" title="Sign in"><i class="bi bi-box-arrow-in-right"></i> <span data-i18n="sign_in">Sign in</span></button>
+        <button id="btn-logout" data-ui="btn" class="hidden border-danger text-danger" data-i18n-title="sign_out" title="Sign out"><i class="bi bi-box-arrow-right"></i> <span data-i18n="sign_out">Sign out</span></button>
         <div id="advanced-menu" class="hidden flex flex-col gap-1.5 absolute top-full right-0 mt-2 min-w-[200px] bg-surface border-2 border-border rounded-xl p-2 shadow-panel z-20 mobile:static mobile:grid mobile:grid-cols-2 mobile:w-full mobile:bg-transparent mobile:border-0 mobile:shadow-none mobile:p-0 mobile:m-0 mobile:min-w-0 mobile:gap-2.5">
           <button id="btn-export" data-ui="btn btnMenu"><i class="bi bi-download"></i> <span data-i18n="export_layout">Export layout</span></button>
           <button id="btn-import" data-ui="btn btnMenu"><i class="bi bi-upload"></i> <span data-i18n="import_layout">Import layout</span></button>
