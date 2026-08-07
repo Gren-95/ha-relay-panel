@@ -39,7 +39,14 @@ app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 // Client-visible configuration — no secrets. KWS_MAP_URL is the facility-map page that
 // plots the HA combo sensors; leave it unset and the cards' map button stays hidden.
-app.get('/api/config', (req, res) => res.json({ kwsMapUrl: process.env.KWS_MAP_URL || '' }));
+app.get('/api/config', (req, res) => res.json({
+  kwsMapUrl: process.env.KWS_MAP_URL || '',
+  version: process.env.GIT_SHA || 'dev',
+  buildDate: process.env.BUILD_DATE || '',
+  description: 'Wall-mounted relay control panel for Home Assistant',
+  repo: 'https://github.com/Gren-95/ha-relay-panel',
+  license: 'MIT',
+}));
 
 const PORT = process.env.PORT || 3000;
 
