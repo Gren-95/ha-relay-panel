@@ -18,7 +18,7 @@
       <span id="status" class="text-base text-ok font-bold min-w-0 transition-opacity duration-200 empty:opacity-0 mobile:w-full mobile:m-0 mobile:text-center"></span>
       <div class="flex items-center gap-2 mobile:w-full [.live-mode_&]:hidden tb-add relative">
         <button id="btn-add-menu" data-ui="btn btnTb"><i class="bi bi-plus-lg"></i> <span data-i18n="add">Add</span> <i class="bi bi-caret-down-fill"></i></button>
-        <div id="add-menu" class="hidden flex flex-col gap-1.5 absolute top-full left-0 mt-2 min-w-[220px] bg-surface border-2 border-border rounded-xl p-2 shadow-panel z-20 mobile:static mobile:grid mobile:grid-cols-2 mobile:w-full mobile:bg-transparent mobile:border-0 mobile:shadow-none mobile:p-0 mobile:m-0 mobile:min-w-0 mobile:gap-2.5">
+        <div id="add-menu" class="hidden flex flex-col gap-1.5 absolute top-full left-0 mt-2 w-max min-w-[220px] max-w-[min(360px,calc(100vw-24px))] bg-surface border-2 border-border rounded-xl p-2 shadow-panel z-20 mobile:static mobile:grid mobile:grid-cols-2 mobile:w-full mobile:bg-transparent mobile:border-0 mobile:shadow-none mobile:p-0 mobile:m-0 mobile:min-w-0 mobile:gap-2.5">
           <button id="btn-add-single" data-ui="btn btnMenu"><i class="bi bi-plus-lg"></i> <span data-i18n="add_single_relay">Add single relay</span></button>
           <select id="device-picker" data-ui="btn btnMenu mobile:min-h-[54px]"><option value="" data-i18n="physical_relay_ph">+ Physical relay…</option></select>
           <select id="area-picker" data-ui="btn btnMenu mobile:min-h-[54px]"><option value="" data-i18n="area_ph">+ Area…</option></select>
@@ -37,7 +37,7 @@
         <button id="btn-advanced" data-ui="btn" class="mobile:hidden" data-i18n-title="advanced" title="More"><i class="bi bi-gear"></i></button>
         <button id="btn-login" data-ui="btn" class="hidden border-ok text-ok" data-i18n-title="sign_in" title="Sign in"><i class="bi bi-box-arrow-in-right"></i> <span data-i18n="sign_in">Sign in</span></button>
         <button id="btn-logout" data-ui="btn" class="hidden border-danger text-danger" data-i18n-title="sign_out" title="Sign out"><i class="bi bi-box-arrow-right"></i> <span data-i18n="sign_out">Sign out</span></button>
-        <div id="advanced-menu" class="hidden flex flex-col gap-1.5 absolute top-full right-0 mt-2 min-w-[200px] bg-surface border-2 border-border rounded-xl p-2 shadow-panel z-20 mobile:static mobile:grid mobile:grid-cols-2 mobile:w-full mobile:bg-transparent mobile:border-0 mobile:shadow-none mobile:p-0 mobile:m-0 mobile:min-w-0 mobile:gap-2.5">
+        <div id="advanced-menu" class="hidden flex flex-col gap-1.5 absolute top-full right-0 mt-2 w-max min-w-[200px] max-w-[min(360px,calc(100vw-24px))] bg-surface border-2 border-border rounded-xl p-2 shadow-panel z-20 mobile:static mobile:grid mobile:grid-cols-2 mobile:w-full mobile:bg-transparent mobile:border-0 mobile:shadow-none mobile:p-0 mobile:m-0 mobile:min-w-0 mobile:gap-2.5">
           <button id="btn-export" data-ui="btn btnMenu"><i class="bi bi-download"></i> <span data-i18n="export_layout">Export layout</span></button>
           <button id="btn-import" data-ui="btn btnMenu"><i class="bi bi-upload"></i> <span data-i18n="import_layout">Import layout</span></button>
           <span class="h-0.5 bg-border my-[3px] rounded-[2px] mobile:hidden"></span>
