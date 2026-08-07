@@ -16,7 +16,7 @@
     btnPrimary: 'border border-primary bg-primary text-white ' + btnCore,
     btnDanger: 'border border-danger bg-danger text-white ' + btnCore,
     btnTb: 'mobile:basis-[calc(50%_-_5px)] mobile:grow mobile:min-h-[54px]',
-    btnMenu: 'w-full text-left mobile:text-center mobile:border-2 mobile:min-h-[54px] mobile:basis-[calc(50%_-_5px)] mobile:grow',
+    btnMenu: 'w-full text-left whitespace-nowrap mobile:text-center mobile:border-2 mobile:min-h-[54px] mobile:basis-[calc(50%_-_5px)] mobile:grow mobile:whitespace-normal',
     tiny: 'self-start min-h-0 -mt-[3px] px-3 py-[7px] text-[.82rem] font-semibold rounded-lg bg-surface-2 text-muted border-[1.5px] border-border inline-flex items-center gap-[5px] cursor-pointer active:translate-y-px',
     closeBtn: 'bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none',
     rangeBtn: 'min-h-[30px] px-2.5 py-1 text-[.78rem] rounded-[7px] font-semibold border-[1.5px] border-border bg-surface-2 text-muted cursor-pointer',
