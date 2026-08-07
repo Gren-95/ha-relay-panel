@@ -114,6 +114,10 @@ const TR = {
     just_now: 'just nüüd', m_ago: '{n} min tagasi', h_ago: '{n} h tagasi', d_ago: '{n} p tagasi',
     zoom_in: 'Suurenda', zoom_out: 'Vähenda',
     load_error_retrying: 'laadimise viga — uuesti proovimine…',
+    about_title: 'Relay Panel', about_version: 'Versioon', about_built: 'Ehitatud',
+    about_ha_status: 'Home Assistant', about_ha_reachable: 'ühendatud', about_ha_checking: 'kontrollin…',
+    about_view_repo: 'Vaata GitHubis',
+    about_report_issue: 'Teata veast', about_license: 'Litsents',
   },
 };
 const EN = {  // English fallbacks for dynamic (non-HTML) strings
@@ -188,6 +192,10 @@ const EN = {  // English fallbacks for dynamic (non-HTML) strings
   just_now: 'just now', m_ago: '{n}m ago', h_ago: '{n}h ago', d_ago: '{n}d ago',
   zoom_in: 'Zoom in', zoom_out: 'Zoom out',
   load_error_retrying: 'load error — retrying…',
+  about_title: 'Relay Panel', about_version: 'Version', about_built: 'Built',
+  about_ha_status: 'Home Assistant', about_ha_reachable: 'reachable', about_ha_checking: 'checking…',
+  about_view_repo: 'View on GitHub',
+  about_report_issue: 'Report a problem', about_license: 'License',
 };
 let LANG = 'en';
 function t(key, params) {

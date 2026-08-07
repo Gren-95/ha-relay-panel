@@ -79,6 +79,26 @@ $('#btn-activity').addEventListener('click', () => { closeAdvanced(); openActivi
 $('#btn-bulk').addEventListener('click', () => { closeAdvanced(); openBulkEdit(); });
 $('#btn-presets').addEventListener('click', () => { closeAdvanced(); openPresets(); });
 $('#btn-alloff').addEventListener('click', () => { closeAdvanced(); allOff(); });
+// About modal (#78)
+function openAbout() {
+  closeAdvanced();
+  const c = state.config || {};
+  $('#about-version').textContent = (c.version && c.version !== 'unknown') ? c.version : 'dev';
+  if (c.buildDate) { $('#about-build').classList.remove('hidden'); $('#about-build-date').textContent = c.buildDate; }
+  else $('#about-build').classList.add('hidden');
+  $('#about-desc').textContent = c.description || '';
+  updateAboutHAStatus();
+  $('#about-modal').classList.remove('hidden');
+}
+function closeAbout() { $('#about-modal').classList.add('hidden'); }
+function updateAboutHAStatus() {
+  const el = $('#about-ha-reachable'); if (!el) return;
+  el.textContent = state.live && Object.keys(state.live).length ? t('about_ha_reachable') : t('about_ha_checking');
+  el.className = state.live && Object.keys(state.live).length ? 'text-ok' : 'text-muted';
+}
+$('#btn-about').addEventListener('click', openAbout);
+$('#about-close').addEventListener('click', closeAbout);
+$('#about-dismiss').addEventListener('click', closeAbout);
 $('#import-file').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) importLayout(f); e.target.value = ''; });
 $('#area-picker').addEventListener('change', (e) => { closeAdd(); addArea(e.target.value); e.target.value = ''; });
 $('#device-picker').addEventListener('change', (e) => { closeAdd(); addPhysicalRelay(e.target.value); e.target.value = ''; });

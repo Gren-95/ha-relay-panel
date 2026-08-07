@@ -13,6 +13,12 @@ FROM node:20-alpine
 ENV NODE_ENV=production
 WORKDIR /app
 
+# Bake version info into the image (#78)
+ARG GIT_SHA
+ARG BUILD_DATE
+ENV GIT_SHA=${GIT_SHA}
+ENV BUILD_DATE=${BUILD_DATE}
+
 # install production deps first (better layer caching), reproducibly from the lockfile
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force

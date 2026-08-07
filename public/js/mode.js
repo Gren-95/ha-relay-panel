@@ -24,6 +24,7 @@ function toggleMode() {
 // Esc closes the top-most open thing (in priority order)
 function closeTopmost() {
   if (!$('#chart-modal').classList.contains('hidden')) { $('#chart-modal').classList.add('hidden'); return true; }
+  if (!$('#about-modal').classList.contains('hidden')) { $('#about-modal').classList.add('hidden'); return true; }
   if (!$('#login-modal').classList.contains('hidden')) { closeLogin(); return true; }
   if (!$('#advanced-menu').classList.contains('hidden')) { $('#advanced-menu').classList.add('hidden'); return true; }
   if (!$('#activity-editor').classList.contains('hidden')) { closeActivityLog(); return true; }
