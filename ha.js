@@ -175,9 +175,9 @@ async function getHistory(entity, hours = 24) {
 }
 
 // Merged sensor + relay history for CSV export. Returns [{t, temp, state}].
-async function getHistoryExport(sensor, relay, hours = 24) {
-  const end = new Date();
-  const start = new Date(end.getTime() - hours * 3600 * 1000);
+async function getHistoryExport(sensor, relay, hours = 24, startDate, endDate) {
+  const end = endDate ? new Date(endDate) : new Date();
+  const start = startDate ? new Date(startDate) : new Date(end.getTime() - hours * 3600 * 1000);
   const base = `/api/history/period/${start.toISOString()}?minimal_response&significant_changes_only&end_time=${encodeURIComponent(end.toISOString())}`;
   const [sData, rData] = await Promise.all([
     haFetch(`${base}&filter_entity_id=${encodeURIComponent(sensor)}`),

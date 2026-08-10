@@ -261,6 +261,53 @@ function addChartTooltip(svg, data, tipSel) {
 export function initChart() {
 $('#chart-modal-close').addEventListener('click', () => $('#chart-modal').classList.add('hidden'));
 $('#chart-modal-csv').addEventListener('click', exportHistory);
+
+// Custom date range picker (#68)
+function toggleDatePicker(prefix) {
+  const picker = $(`#${prefix}-date-picker`);
+  if (picker) picker.classList.toggle('hidden');
+}
+async function loadCustomDateRange(r, prefix) {
+  const start = $(`#${prefix}-date-start`).value;
+  const end = $(`#${prefix}-date-end`).value;
+  if (!start || !end) return;
+  const params = `sensor=${encodeURIComponent(r.sensor)}&start=${encodeURIComponent(new Date(start).toISOString())}&end=${encodeURIComponent(new Date(end + 'T23:59:59').toISOString())}` +
+    (r.relay ? `&relay=${encodeURIComponent(r.relay)}` : '') +
+    (r.temp != null ? `&target=${r.temp}` : '');
+  try {
+    const data = await api('/api/history/export?' + params);
+    if (data.rows) {
+      if (prefix === 'chart-modal') {
+        drawChart($('#chart-modal-svg'), data.rows, data.target);
+        addChartTooltip($('#chart-modal-svg'), data.rows, '#chart-tooltip');
+        const sensorName = (state.entities.sensors.find(s => s.entity_id === r.sensor) || {}).name || r.sensor;
+        const title = r.name ? `${r.name} (${sensorName})` : sensorName;
+        const fmt = (ts) => { const d = new Date(ts); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} ${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}`; };
+        const t0 = data.rows[0].t, t1 = data.rows[data.rows.length - 1].t;
+        const daySpan = Math.round((t1 - t0) / 86400000) || 1;
+        $('#chart-modal-title').innerHTML = `${title}<br><span style="font-size:.82rem;font-weight:400;color:var(--muted)">${fmt(t0)} – ${fmt(t1)} (${daySpan}d)</span>`;
+        $('#chart-modal-range').value = '0'; // deselect preset ranges
+      } else {
+        drawChart($('#ed-spark'), data.rows, data.target);
+        addChartTooltip($('#ed-spark'), data.rows, '#ed-tooltip');
+        const temps = data.rows.map((p) => p.temp);
+        const dur = state.live[r.relay] ? `Relay ${(state.live[r.relay] || {}).state?.toUpperCase() || '?'} for — ` : '';
+        const fmt = (ts) => { const d = new Date(ts); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} ${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}`; };
+        const t0 = data.rows[0].t, t1 = data.rows[data.rows.length - 1].t;
+        const daySpan = Math.round((t1 - t0) / 86400000) || 1;
+        $('#ed-history-info').textContent = `${dur}${fmt(t0)}–${fmt(t1)} (${daySpan}d) · min ${Math.min(...temps).toFixed(1)}° · max ${Math.max(...temps).toFixed(1)}° · now ${temps[temps.length - 1].toFixed(1)}°`;
+      }
+    }
+  } catch {}
+  $(`#${prefix}-date-picker`).classList.add('hidden');
+}
+// Sidebar calendar
+$('#ed-calendar').addEventListener('click', () => { const r = selected(); if (r) toggleDatePicker('ed'); });
+$('#ed-date-apply').addEventListener('click', () => { const r = selected(); if (r) loadCustomDateRange(r, 'ed'); });
+// Modal calendar
+$('#chart-modal-calendar').addEventListener('click', () => { toggleDatePicker('chart-modal'); });
+$('#chart-modal-date-apply').addEventListener('click', () => { const r = modalRelay || selected(); if (r) loadCustomDateRange(r, 'chart-modal'); });
+
 // open this sensor's marker on the facility map, in a new tab
 $('#chart-modal-map').addEventListener('click', () => {
   const url = $('#chart-modal-map').dataset.url;
