@@ -40,8 +40,10 @@ router.get('/api/history/export', wrap(async (req, res) => {
   const relay = String(req.query.relay || '');
   if (!/^sensor\./.test(sensor)) return res.status(400).json({ ok: false, error: 'sensor entity required' });
   const hours = Math.min(Number(req.query.hours) || 24, 720);
+  const start = String(req.query.start || '');
+  const end = String(req.query.end || '');
   const target = parseFloat(req.query.target);
-  const rows = await ha.getHistoryExport(sensor, relay || null, hours);
+  const rows = await ha.getHistoryExport(sensor, relay || null, hours, start, end);
   res.json({ ok: true, rows, target: isFinite(target) ? target : null });
 }));
 
