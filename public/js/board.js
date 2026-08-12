@@ -1,6 +1,6 @@
 import { state, canvas, CANVAS_DESKTOP, CANVAS_MOBILE, esc, setStatus, flashStatus, api } from './core.js';
 import { t } from './i18n.js';
-import { refreshAreaPicker, normalizeLayout, areaColor, headColor, boxTint, headTint, opaque, bodyFill, dashedSides, areaName,
+import { refreshAreaPicker, normalizeLayout, areaColor, headColor, boxTint, headTint, opaque, bodyFill, dashedSides, areaName, hueToHex, hexToHue,
   pinDeviceToArea, containArea, fitAreaToContents, minAreaSize, reflowDeviceOutputs,
   num, CARD_W, CARD_H, PAD, HDR, DEV_W, MIN_AREA_W, MIN_AREA_H,
   zIndexOf, bringToFront } from './layout.js';
@@ -80,7 +80,7 @@ function renderMobile() {
 
   const deviceBlock = (d) => {
     doneDev.add(d.id);
-    const hue = areaColor(d.deviceId);
+    const hue = areaColor(d.deviceId, d);
     const box = document.createElement('div');
     box.className = 'border-2 border-border rounded-[14px] p-2.5 bg-surface-2 flex flex-col gap-2.5';
     box.style.borderColor = `hsl(${hue},45%,55%)`;
@@ -96,7 +96,7 @@ function renderMobile() {
 
   // areas with their nested devices + loose cards
   for (const a of state.layout.areas) {
-    const hue = areaColor(a.areaId);
+    const hue = areaColor(a.areaId, a);
     const box = document.createElement('div');
     box.className = 'border-[3px] border-solid border-border-strong rounded-[14px] p-2.5 flex flex-col gap-2.5';
     box.style.borderColor = `hsl(${hue},50%,55%)`;
@@ -112,6 +112,27 @@ function renderMobile() {
   // loose relays (no device, not already shown)
   for (const r of state.layout.relays) if (!r.device && !doneRel.has(r.id)) canvas.appendChild(card(r, true));
   canvas.dispatchEvent(new CustomEvent('render'));
+}
+
+// Update box border/background colours from a hue instantly (#73)
+function updateBoxColors(el, hue, isDev, g) {
+  const line = `hsl(${hue},50%,55%)`;
+  const head = el.querySelector('.area-head');
+  if (head) {
+    head.style.color = headColor(hue);
+    head.style.borderColor = line;
+    head.style.background = opaque(headTint(hue));
+  }
+  const body = el.querySelector('.area-body');
+  if (body) {
+    body.style.borderColor = line;
+    body.style.background = (() => {
+      const ox = Math.round(-num(g.x) % 26);
+      const oy = Math.round(-(num(g.y) + HDR) % 26);
+      const dots = bodyFill(boxTint(hue)).replace(' 0 0 /', ` ${ox}px ${oy}px /`);
+      return isDev ? dots : `${dashedSides(num(g.w, MIN_AREA_W), num(g.h, MIN_AREA_H) - HDR, line)} 0 0 / 100% 100% no-repeat, ${dots}`;
+    })();
+  }
 }
 
 // ---- group boxes: HA areas ('area') and physical relay devices ('device') ----
@@ -135,7 +156,7 @@ function syncMemberEls(a) {
 function renderBox(g, kind) {
   const isDev = kind === 'device';
   const refId = isDev ? g.deviceId : g.areaId;
-  const hue = areaColor(refId);
+  const hue = areaColor(refId, g);
   const el = document.createElement('div');
   // border-color + background come from inline style (dynamic per-area hue)
   // The box carries no border of its own: the titlebar and the body each draw their
@@ -152,6 +173,7 @@ function renderBox(g, kind) {
   // so HDR in layout.js keeps matching what is actually rendered.
   // area boxes get a master on/off for all their relays (works in Live mode too)
   const master = !isDev ? areaMaster() : '';
+  const colorBtn = state.edit ? `<span class="area-color-picker inline-block w-[16px] h-[16px] rounded-full border border-border-strong cursor-pointer flex-none opacity-60 hover:opacity-100" style="background:${hueToHex(hue)}" data-gid="${g.id}" title="Pick colour"><input type="color" class="hidden" value="${hueToHex(hue)}" /></span>` : '';
   const delBtn = `<button class="area-del bg-transparent border-0 text-inherit text-[1.15rem] cursor-pointer leading-none${state.edit ? ' opacity-60' : ' hidden'}" title="Remove group">&times;</button>`;
   // only areas are resizable — a device box is always sized to its outputs
   const resize = state.edit && !isDev
@@ -164,6 +186,7 @@ function renderBox(g, kind) {
   const head = `<div class="area-head h-[44px] px-2.5 flex items-center gap-1.5 font-bold select-none touch-none border-2 border-solid rounded-t-2xl${state.edit ? ' cursor-grab active:cursor-grabbing' : ''}" style="color:${headColor(hue)};border-color:${line};background:${opaque(headTint(hue))}">
       <i class="bi ${isDev ? (state.edit ? 'bi-gear area-gear cursor-pointer' : 'bi-hdd-stack') : 'bi-grid-3x3-gap'} text-[.95rem] flex-none"></i>
       <span class="text-[.95rem] min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">${esc(g.name || refId)}</span>
+      ${colorBtn}
       <span class="ml-auto flex items-center gap-1.5 flex-none">${master}${delBtn}</span>
     </div>`;
   // A device box keeps a plain solid CSS border; an area's body is outlined with the
@@ -190,6 +213,23 @@ function renderBox(g, kind) {
   if (gearBtn) {
     gearBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
     gearBtn.addEventListener('click', (e) => { e.stopPropagation(); if (isDev) openDeviceEditor(g); });
+  }
+  // Inline colour picker (#73) — hidden input inside a coloured circle span
+  const swatch = el.querySelector('.area-color-picker');
+  if (swatch) {
+    const cp = swatch.querySelector('input');
+    swatch.addEventListener('pointerdown', (e) => e.stopPropagation());
+    swatch.addEventListener('click', () => { cp.click(); });
+    cp.addEventListener('input', () => {
+      const h = hexToHue(cp.value);
+      g.hue = h;
+      swatch.style.background = hueToHex(h);
+      updateBoxColors(el, h, isDev, g);
+    });
+    cp.addEventListener('change', () => {
+      g.hue = hexToHue(cp.value);
+      saveLayout();
+    });
   }
   el.querySelectorAll('.am-btn').forEach((b) => {
     b.addEventListener('pointerdown', (e) => e.stopPropagation());

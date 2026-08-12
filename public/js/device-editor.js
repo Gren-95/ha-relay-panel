@@ -1,6 +1,6 @@
 import { state, $, esc, setMsg, api } from './core.js';
 import { t } from './i18n.js';
-import { reflowDeviceOutputs, fitAreaToContents, growToInclude, assignDeviceArea } from './layout.js';
+import { reflowDeviceOutputs, fitAreaToContents, growToInclude, assignDeviceArea, areaColor, hueToHex, hexToHue } from './layout.js';
 import { render } from './board.js';
 import { openEditor, closeEditor, clearBlur, applyBlur } from './editor.js';
 import { closeActivityLog } from './activity.js';
@@ -16,6 +16,9 @@ function openDeviceEditor(g) {
   state.selectedDev = g.id;
   // Populate fields first (like the relay editor does) so the blur paints instantly
   $('#de-name').value = g.name || '';
+  // Colour picker (#73) — convert stored hue to hex for <input type="color">
+  if (g.hue != null) $('#de-color').value = hueToHex(g.hue);
+  else $('#de-color').value = hueToHex(areaColor(g.deviceId)); // show hashed colour
   $('#de-area').innerHTML = '<option value="">— none —</option>' +
     state.haAreas.map((a) => `<option value="${esc(a.id)}"${g.area === a.id ? ' selected' : ''}>${esc(a.name)}</option>`).join('');
   const outs = state.layout.relays.filter((r) => r.device === g.id);
@@ -71,12 +74,18 @@ function selectedDev() { return state.layout.devices.find((x) => x.id === state.
 
 function saveDevice() {
   const g = selectedDev(); if (!g) return;
+  const scrollTop = $('#dev-editor').scrollTop;
   g.name = $('#de-name').value.trim() || g.name;
+  // Save colour override (#73) — store hue, not hex
+  const hex = $('#de-color').value;
+  if (hex) g.hue = hexToHue(hex);
   const area = $('#de-area').value;
   assignDeviceArea(g, area);
   const a = area && state.layout.areas.find((x) => x.areaId === area); if (a) fitAreaToContents(a);
   deMsg('saved', 'ok');
   render(); saveLayout();
+  // Restore scroll position after render
+  requestAnimationFrame(() => { $('#dev-editor').scrollTop = scrollTop; });
 }
 
 async function renameDeviceHa() {
@@ -117,6 +126,13 @@ async function deleteDevice() {
 export function initDeviceEditor() {
 $('#de-close').addEventListener('click', closeDeviceEditor);
 $('#de-save').addEventListener('click', saveDevice);
+// Reset colour to auto (hashed) — #73
+$('#de-color-reset').addEventListener('click', () => {
+  const g = selectedDev(); if (!g) return;
+  delete g.hue;
+  $('#de-color').value = hueToHex(areaColor(g.deviceId));
+  deMsg('colour reset to auto', 'ok');
+});
 $('#de-add-output').addEventListener('change', (e) => { addOutputToDevice(e.target.value); e.target.value = ''; });
 $('#de-rename-ha').addEventListener('click', renameDeviceHa);
 $('#de-delete').addEventListener('click', deleteDevice);

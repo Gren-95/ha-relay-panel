@@ -17,10 +17,20 @@ function refreshAreaPicker() {
     state.haAreas.map((a) => `<option value="${esc(a.id)}"${placed.has(a.id) ? ' disabled' : ''}>${esc(a.name)}${placed.has(a.id) ? ' ✓' : ''}</option>`).join('');
 }
 
-function areaColor(id) {
+function areaColor(id, obj) {
+  if (obj && obj.hue != null) return obj.hue; // #73 — user-picked override
   let h = 0; const s = String(id || '');
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) & 0xffffffff;
   return Math.abs(h) % 360;
+}
+function hueToHex(h) { return `hsl(${h},55%,45%)`; } // approximate hex for color input
+function hexToHue(hex) {
+  // Parse hex to RGB, then to HSL, return the hue
+  const r = parseInt(hex.slice(1,3),16)/255, g = parseInt(hex.slice(3,5),16)/255, b = parseInt(hex.slice(5,7),16)/255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b), d = max - min;
+  let h = 0;
+  if (d) { if (max === r) h = ((g-b)/d)%6; else if (max === g) h = (b-r)/d+2; else h = (r-g)/d+4; }
+  return Math.round(h*60)%360;
 }
 function areaName(id) { const a = state.haAreas.find((x) => x.id === id); return a ? a.name : id; }
 // readable header colour for area/device boxes: dark on light theme, light on dark
@@ -319,7 +329,7 @@ function pinDeviceToArea(g) {
   return true;
 }
 
-export { fillSelects, refreshAreaPicker, areaColor, areaName, headColor, boxTint, headTint, opaque, bodyFill, dashedSides,
+export { fillSelects, refreshAreaPicker, areaColor, areaName, headColor, boxTint, headTint, opaque, bodyFill, dashedSides, hueToHex, hexToHue,
   num, CARD_W, CARD_H, GAP, PAD, HDR, DEV_W, MIN_AREA_W, MIN_AREA_H, innerX, innerY,
   boxFor, clampToBox, clampBoxToArea, centerInBox, reflowDeviceOutputs, minAreaSize,
   slotInArea, growToInclude, containArea, fitAreaToContents, packArea, normalizeLayout,

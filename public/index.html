@@ -168,6 +168,12 @@
     <label data-ui="label"><span data-i18n="label_shown">Label (shown on the box)</span>
       <input id="de-name" type="text" maxlength="190" data-ui="field" />
     </label>
+    <label data-ui="label" class="flex flex-col gap-1"><span data-i18n="box_color">Box colour</span>
+      <div class="flex items-center gap-2">
+        <input type="color" id="de-color" class="min-h-0 w-[40px] h-[34px] border-2 border-border rounded-[7px] cursor-pointer bg-transparent p-0" />
+        <button id="de-color-reset" data-ui="tiny" type="button" data-i18n="reset_to_auto">Reset to auto</button>
+      </div>
+    </label>
     <button id="de-rename-ha" data-ui="tiny" type="button"><i class="bi bi-pencil"></i> <span data-i18n="rename_device_ha">Rename device in Home Assistant</span></button>
     <label data-ui="label"><span data-i18n="group_area">Group / area</span>
       <select id="de-area" data-ui="field"><option value="" data-i18n="none_opt">— none —</option></select>
