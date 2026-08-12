@@ -124,11 +124,13 @@ function updateSummary() {
     if (lv.state === 'on') { on++; (r.mode === 'above' ? cool++ : heat++); }
     if (r.bound && r.automationId && state.autoStates[r.automationId] === false) maint++;
   }
-  const bits = [`${relays.length} ${t('relays')}`];
-  if (on) bits.push(`${on} ${t('on_word')}`);
-  if (maint) bits.push(`${maint} ${t('in_maintenance')}`);
-  if (offline) bits.push(`<i class="bi bi-exclamation-triangle-fill"></i> ${offline} ${t('offline_word')}`);
-  $('#summary').innerHTML = relays.length ? bits.join(' · ') : '';
+  const chip = (count, label, bg, fg, icon) =>
+    `<span class="inline-flex items-center gap-1 px-[6px] py-px rounded-md text-[.72rem] font-bold" style="background:${bg};color:${fg}">${icon || ''}${count} ${label}</span>`;
+  const bits = [`<span class="text-muted">${relays.length} ${t('relays')}</span>`];
+  if (on) bits.push(chip(on, t('on_word'), 'var(--on)', '#fff', ''));
+  if (maint) bits.push(chip(maint, t('in_maintenance'), 'var(--maint-bg)', 'var(--maint-fg)', '<i class="bi bi-pause-fill"></i> '));
+  if (offline) bits.push(chip(offline, t('offline_word'), 'var(--danger)', '#fff', '<i class="bi bi-exclamation-triangle-fill"></i> '));
+  $('#summary').innerHTML = relays.length ? bits.join(' ') : ''; // #75
 }
 
 // wiring: canvas quick-adjust buttons + warning-popover dismissal
