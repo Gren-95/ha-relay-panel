@@ -40,6 +40,7 @@
   --dot: #aeb6c4;
   --caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath fill='%23626b7a' d='M0 0l6 7 6-7z'/%3E%3C/svg%3E");
   --stale-bg: #fee2e2; --stale-fg: #7f1d1d; --stale-border: #fca5a5;
+  --maint-bg: #fef3c7; --maint-fg: #92400e;  /* amber — automation paused (#75) */
   /* layout tokens, kept live by js/zoom-lock.js (#52); these are the 100%-zoom values */
   --header-zoom: 1;
   --header-h: 72px;
@@ -65,6 +66,7 @@ html[data-theme="dark"] {
   --dot: #333b49;
   --caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath fill='%239aa0a6' d='M0 0l6 7 6-7z'/%3E%3C/svg%3E");
   --stale-bg: #3f1414; --stale-fg: #fca5a5; --stale-border: #7f1d1d;
+  --maint-bg: #422006; --maint-fg: #fcd34d;  /* amber — automation paused (#75) */
 }
 
 /* ---- 3. Minimal base ---- */
