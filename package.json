@@ -28,9 +28,10 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"**/*.{js,mjs,json}\"",
     "format:check": "prettier --check \"**/*.{js,mjs,json}\"",
-    "test:unit": "node --test tests/unit",
+    "test:unit": "node --test \"tests/unit/**/*.test.js\"",
     "test:e2e": "playwright test",
-    "screenshots": "node scripts/screenshots.mjs"
+    "screenshots": "node scripts/screenshots.mjs",
+    "test": "bash scripts/test.sh"
   },
   "dependencies": {
     "express": "^4.19.2",

@@ -19,6 +19,24 @@ Instructions for Claude Code in this project.
 - Health check: `curl -s http://localhost:8090/api/health`
 - Verify frontend changes: `curl -s http://localhost:8090/ | grep <element>`
 
+## Testing
+
+- **Run everything with `./scripts/test.sh`** (unit + lint + e2e), or one suite:
+  `./scripts/test.sh unit|lint|e2e`. Extra args after `e2e` are passed to Playwright.
+- It all runs **in containers on purpose**: this host has Ubuntu's Node 18 and
+  Playwright needs >= 20, so `npm run test:e2e` on the host fails before it starts.
+  Unit/lint use `node:24-alpine`; e2e uses the matching
+  `mcr.microsoft.com/playwright:v<version>-noble` image — the tag is read out of
+  package.json, so bumping `@playwright/test` moves the image with it.
+- e2e runs against the **deployed panel** (`BASE_URL`, default `http://localhost:8090`),
+  so build and deploy before running it. The specs mock every HA-backed endpoint in
+  the browser, so a run touches neither Home Assistant nor the database.
+- `node --test <dir>` stopped scanning directories in Node 24 — it resolves the path
+  as a module and dies with MODULE_NOT_FOUND. Unit tests are passed as a glob instead.
+- **The e2e suite is flaky** (#87): a clean tree can still show one red test, and it is
+  a different one each run. `retries` is set under CI so those report as *flaky* rather
+  than *failed*. Treat a **consistently** failing test as a real regression.
+
 ## Architecture
 
 - **Backend**: Node/Express (`server.js`) → Home Assistant REST + WebSocket (`ha.js`), optional MQTT (`z2m.js`)
