@@ -206,6 +206,10 @@
     <label data-ui="label"><span data-i18n="label_shown">Label (shown on the box)</span>
       <input id="de-name" type="text" maxlength="190" data-ui="field" />
     </label>
+    <div id="de-addr-row" class="hidden flex items-center gap-2 text-[.9rem] text-muted">
+      <i class="bi bi-hdd-network"></i><span data-i18n="device_address">Address</span>
+      <a id="de-addr" target="_blank" rel="noopener noreferrer" class="font-semibold text-primary tabular-nums"></a>
+    </div>
     <label data-ui="label" class="flex flex-col gap-1"><span data-i18n="box_color">Box colour</span>
       <div class="flex items-center gap-2">
         <input type="color" id="de-color" class="min-h-0 w-[40px] h-[34px] border-2 border-border rounded-[7px] cursor-pointer bg-transparent p-0" />
