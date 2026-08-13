@@ -51,6 +51,9 @@ run_lint() {
   step "lint ($NODE_IMAGE)"
   docker run --rm -v "$PWD":/app -v "$MODS_VOLUME":/app/node_modules -w /app "$NODE_IMAGE" \
     sh -c "$INSTALL && npx eslint ." || fail lint
+  # A class glued to a ${...} is invisible to Tailwind v4 and fails silently (#94).
+  docker run --rm -v "$PWD":/app -w /app "$NODE_IMAGE" \
+    node scripts/check-glued-classes.mjs || fail "glued-class check"
 }
 
 run_e2e() {
