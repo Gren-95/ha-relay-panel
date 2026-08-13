@@ -241,8 +241,10 @@ function renderBox(g, kind) {
       saveLayout();
     });
   }
-  el.querySelectorAll('.am-btn').forEach((b) => {
+  el.querySelectorAll('.am-btn, .area-temp').forEach((b) => {
     b.addEventListener('pointerdown', (e) => e.stopPropagation());
+  });
+  el.querySelectorAll('.am-btn').forEach((b) => {
     b.addEventListener('click', (e) => { e.stopPropagation(); setAreaRelays(g.areaId, b.dataset.act === 'on'); });
   });
   if (state.edit) {
