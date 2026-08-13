@@ -4,7 +4,7 @@ const db = require('../db');
 const ha = require('../ha');
 const z2m = require('../z2m');
 const { wrap, requireAuth, currentUser } = require('../lib/middleware');
-const { slug, sanitizeSchedule, validEntity } = require('../lib/util');
+const { sanitizeSchedule, validEntity, automationIdFor, boundAutomationIds } = require('../lib/util');
 const { notifyAlerts, notifyKey } = require('../lib/notify');
 
 const router = express.Router();
@@ -21,7 +21,7 @@ router.post('/api/relays/:rid/bind', requireAuth, wrap(async (req, res) => {
   const md = mode === 'above' || mode === 'auto' ? mode : 'below';
   const sched = sanitizeSchedule(schedule);
 
-  const automationId = `relaypanel_${slug(rid)}`;
+  const automationId = automationIdFor(rid);
   const alias = `RelayPanel: ${name || relay}`;
   const config = ha.buildAutomation({ id: automationId, alias, sensor, relay, mode: md, temp: t, deadband: band, schedule: sched, min_on: Number(min_on) || 0, min_off: Number(min_off) || 0 });
   await ha.upsertAutomation(automationId, config);
@@ -44,7 +44,7 @@ router.post('/api/relays/:rid/unbind', requireAuth, wrap(async (req, res) => {
   const { rid } = req.params;
   const layout = await db.getLayout();
   const r = (layout.relays || []).find((x) => x.id === rid);
-  const automationId = (r && r.automationId) || `relaypanel_${slug(rid)}`;
+  const automationId = (r && r.automationId) || automationIdFor(rid);
   await ha.deleteAutomation(automationId);
   if (r) { r.bound = false; delete r.automationId; await db.saveLayout(layout); }
   // Clean up any stale notify alert keys for this relay
@@ -93,7 +93,7 @@ router.post('/api/reapply', requireAuth, wrap(async (req, res) => {
   const bound = (layout.relays || []).filter((r) => r.bound && r.relay && r.sensor);
   let n = 0;
   for (const r of bound) {
-    const automationId = `relaypanel_${slug(r.id)}`;
+    const automationId = automationIdFor(r.id);
     const config = ha.buildAutomation({
       id: automationId, alias: `RelayPanel: ${r.name || r.relay}`,
       sensor: r.sensor, relay: r.relay, mode: r.mode === 'above' || r.mode === 'auto' ? r.mode : 'below',
@@ -103,8 +103,12 @@ router.post('/api/reapply', requireAuth, wrap(async (req, res) => {
     await ha.upsertAutomation(automationId, config);
     n++;
   }
-  await db.addAuditLog(await currentUser(req), 'automation.reapply', { count: n });
-  res.json({ ok: true, reapplied: n });
+  const actor = await currentUser(req);
+  await db.addAuditLog(actor, 'automation.reapply', { count: n });
+  // Reapply is the maintenance sweep - clear out anything the board no longer owns.
+  const removed = await ha.pruneOrphanAutomations(boundAutomationIds(layout));
+  if (removed.length) await db.addAuditLog(actor, 'automation.prune', { removed });
+  res.json({ ok: true, reapplied: n, pruned: removed.length });
 }));
 
 // --- all relay-panel automation states (config id -> enabled) ---
@@ -114,13 +118,13 @@ router.get('/api/automations', wrap(async (req, res) => {
 
 // --- automation enable/disable (maintenance) for a relay's binding ---
 router.get('/api/relays/:rid/automation', wrap(async (req, res) => {
-  const automationId = `relaypanel_${slug(req.params.rid)}`;
+  const automationId = automationIdFor(req.params.rid);
   const a = await ha.findAutomation(automationId);
   res.json({ ok: true, exists: !!a, enabled: a ? a.enabled : false, entity_id: a ? a.entity_id : null });
 }));
 
 router.post('/api/relays/:rid/automation', requireAuth, wrap(async (req, res) => {
-  const automationId = `relaypanel_${slug(req.params.rid)}`;
+  const automationId = automationIdFor(req.params.rid);
   const a = await ha.findAutomation(automationId);
   if (!a) return res.status(404).json({ ok: false, error: 'no automation for this relay' });
   const enabled = await ha.setAutomationEnabled(a.entity_id, !!(req.body && req.body.enabled));
