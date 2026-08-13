@@ -194,7 +194,10 @@ test.describe('area editor relay grouping', () => {
       page.route('**/api/session', (r) => r.fulfill({ json: { ok: true, authed: true, user: 'tester' } })),
       page.route('**/api/entities', (r) => r.fulfill({ json: { switches: [], sensors: [] } })),
       page.route('**/api/areas', (r) => r.fulfill({ json: [{ id: AREA2, name: 'Hall' }] })),
-      page.route('**/api/relay-devices', (r) => r.fulfill({ json: [] })),
+      page.route('**/api/relay-devices', (r) => r.fulfill({ json: [
+        { device_id: 'devA', name: 'prodl1_r1', url: 'http://10.72.4.88:80', outputs: [] },
+        { device_id: 'devB', name: 'prodl1_r2', url: '', outputs: [] },   // no address in HA
+      ] })),
       page.route('**/api/live**', (r) => r.fulfill({ json: {} })),
       page.route('**/api/automations', (r) => r.fulfill({ json: {} })),
       page.route('**/api/ha-status', (r) => r.fulfill({ json: { reachable: true } })),
@@ -235,6 +238,18 @@ test.describe('area editor relay grouping', () => {
     await expect(page.locator('#dev-editor')).toBeVisible();
     await expect(page.locator('#area-editor')).toBeHidden();
     await expect(page.locator('#de-name')).toHaveValue('prodl1_r1');
+  });
+
+  test('a box header shows its address when HA has one', async ({ page }) => {
+    const heads = await page.evaluate(() => [...document.querySelectorAll('#ae-relays .ae-box')].map((h) => ({
+      box: h.querySelector('span').textContent.trim(),
+      ip: (h.querySelector('.ae-box-ip') || {}).textContent || null,
+    })));
+    expect(heads).toEqual([
+      { box: 'prodl1_r1', ip: '10.72.4.88' },   // shown bare, as in the device editor
+      { box: 'prodl1_r2', ip: null },           // HA has no configuration_url for this one
+      { box: 'Not in a relay box', ip: null },  // not a device, so no address
+    ]);
   });
 
   test('the box-less group is not clickable', async ({ page }) => {
