@@ -162,3 +162,84 @@ test.describe('area editor', () => {
     await expect(page.locator('.area-head', { hasText: 'Boiler house' })).toBeVisible();
   });
 });
+
+// #101: the relay list is grouped by physical relay, so the panel mirrors the
+// wiring rather than presenting one flat run of outputs.
+test.describe('area editor relay grouping', () => {
+  const AREA2 = 'hall';
+  const outs = (dev, n, from) => Array.from({ length: n }, (_, i) => ({
+    id: `${dev}o${i}`, name: `${dev} out ${i}`, relay: `switch.${dev}_${i}`,
+    sensor: `sensor.${dev}_${i}`, area: AREA2, device: dev,
+    mode: 'below', temp: from, deadband: 0, bound: true, x: 0, y: 0,
+  }));
+  const grouped = () => ({
+    areas: [{ id: 'a2', areaId: AREA2, name: 'Hall', x: 20, y: 20, w: 800, h: 700 }],
+    devices: [
+      { id: 'dB', deviceId: 'devB', name: 'prodl1_r2', area: AREA2, x: 400, y: 80 },
+      { id: 'dA', deviceId: 'devA', name: 'prodl1_r1', area: AREA2, x: 60, y: 80 },
+    ],
+    relays: [
+      ...outs('dA', 3, 21), ...outs('dB', 2, 21),
+      // pinned straight to the area, in no box
+      { id: 'loose1', name: 'loose card', relay: 'switch.loose', sensor: 'sensor.loose',
+        area: AREA2, mode: 'below', temp: 21, deadband: 0, bound: true, x: 60, y: 500 },
+    ],
+  });
+
+  test.beforeEach(async ({ page }) => {
+    await Promise.all([
+      page.route('**/api/layout', (r) => r.request().method() === 'GET'
+        ? r.fulfill({ json: grouped() }) : r.fulfill({ json: { ok: true } })),
+      page.route('**/api/layout/zorder', (r) => r.fulfill({ json: { ok: true } })),
+      page.route('**/api/session', (r) => r.fulfill({ json: { ok: true, authed: true, user: 'tester' } })),
+      page.route('**/api/entities', (r) => r.fulfill({ json: { switches: [], sensors: [] } })),
+      page.route('**/api/areas', (r) => r.fulfill({ json: [{ id: AREA2, name: 'Hall' }] })),
+      page.route('**/api/relay-devices', (r) => r.fulfill({ json: [] })),
+      page.route('**/api/live**', (r) => r.fulfill({ json: {} })),
+      page.route('**/api/automations', (r) => r.fulfill({ json: {} })),
+      page.route('**/api/ha-status', (r) => r.fulfill({ json: { reachable: true } })),
+      page.route('**/api/activity-log**', (r) => r.fulfill({ json: { entries: [], total: 0, page: 1, per_page: 15 } })),
+      page.route('**/api/config', (r) => r.fulfill({ json: { kwsMapUrl: '' } })),
+    ]);
+    await page.goto('/');
+    await page.click('#btn-mode');
+    const i = await page.evaluate(() => [...document.querySelectorAll('.area-head .area-gear')]
+      .findIndex((g) => g.closest('.area-head').textContent.includes('Hall')));
+    await page.locator('.area-head .area-gear').nth(i).click();
+    await expect(page.locator('#area-editor')).toBeVisible();
+  });
+
+  test('one section per physical relay, plus the loose cards', async ({ page }) => {
+    const sections = await page.evaluate(() => [...document.querySelectorAll('#ae-relays > div')].map((sec) => ({
+      box: sec.querySelector('.ae-box span').textContent.trim(),
+      count: sec.querySelectorAll('.ae-rel').length,
+    })));
+    // boxes sort by name, and the box-less group always comes last
+    expect(sections).toEqual([
+      { box: 'prodl1_r1', count: 3 },
+      { box: 'prodl1_r2', count: 2 },
+      { box: 'Not in a relay box', count: 1 },
+    ]);
+    // every relay still listed exactly once
+    await expect(page.locator('#ae-relays .ae-rel')).toHaveCount(6);
+  });
+
+  test('each section header counts its own outputs', async ({ page }) => {
+    const counts = await page.evaluate(() => [...document.querySelectorAll('#ae-relays .ae-box')]
+      .map((h) => h.lastElementChild.textContent.trim()));
+    expect(counts).toEqual(['3', '2', '1']);
+  });
+
+  test('a section header opens that physical relay, a row opens the relay', async ({ page }) => {
+    await page.locator('#ae-relays .ae-box[data-box]').first().click();
+    await expect(page.locator('#dev-editor')).toBeVisible();
+    await expect(page.locator('#area-editor')).toBeHidden();
+    await expect(page.locator('#de-name')).toHaveValue('prodl1_r1');
+  });
+
+  test('the box-less group is not clickable', async ({ page }) => {
+    const last = page.locator('#ae-relays .ae-box').last();
+    await expect(last).toHaveText(/Not in a relay box/);
+    expect(await last.getAttribute('data-box')).toBeNull();
+  });
+});
