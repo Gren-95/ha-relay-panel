@@ -63,7 +63,7 @@ function card(r, mobile) {
   // NO disabled:opacity-40 here (the dot used to have it): the bar is the board's
   // state readout and signed-out visitors are the common case in Live mode — dimming
   // it to 40% made ON vs OFF unreadable for them. Not-clickable shows in the cursor.
-  const togBase = 'r-toggle p-0 border-0 cursor-pointer flex-none self-stretch w-[26px] -ml-[14px] rounded-l-[13px] disabled:cursor-default [.kiosk_&]:w-[38px]';
+  const togBase = 'r-toggle p-0 border-0 cursor-pointer flex-none self-stretch w-[26px] -ml-[14px] rounded-l-[13px] disabled:cursor-default';
   // bg-off, not var(--toggle-off): that variable is defined nowhere, so the OFF state
   // used to compute to transparent
   const togState = togDead ? 'bg-danger' : maint ? 'bg-[#f59e0b]' : on ? 'bg-on' : 'bg-off';
@@ -93,7 +93,7 @@ function card(r, mobile) {
     </div>
     ${warnIcon}${limitIcon}
     <div class="r-metric text-right flex-none flex flex-col items-end gap-1">
-      <div class="r-temp cursor-pointer ${curColor} text-[2rem] [.kiosk_&]:text-[2.4rem] font-extrabold leading-none tabular-nums">${temp}${temp === '—' ? '' : '<span class="text-[1.1rem] font-bold opacity-50 ml-px">°</span>'}</div>
+      <div class="r-temp cursor-pointer ${curColor} text-[2rem] font-extrabold leading-none tabular-nums">${temp}${temp === '—' ? '' : '<span class="text-[1.1rem] font-bold opacity-50 ml-px">°</span>'}</div>
       ${ago ? `<div class="text-[.68rem] text-muted leading-none -mt-[3px]">${ago}</div>` : ''}
       <div class="inline-flex items-center text-[.85rem] font-semibold text-fg border-[1.5px] border-border rounded-full px-2.5 py-0.5 tabular-nums whitespace-nowrap cursor-pointer hover:border-primary">${modeIcon}${modeIcon ? '&nbsp;' : ''}<span class="tgt-text">${r.temp != null ? r.temp + '°' : '—'}</span><input class="tgt-input hidden min-h-0 w-[52px] bg-transparent text-center text-inherit font-semibold text-[.85rem] border-0 outline-none p-0" type="number" step="0.5" value="${r.temp || 20}" />${r.deadband ? `<span class="text-muted ml-1">±${r.deadband}</span>` : ''}</div>
     </div>`;

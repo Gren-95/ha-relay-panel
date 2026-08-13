@@ -95,8 +95,6 @@ html[data-theme="dark"] {
   *, ::before, ::after { box-sizing: border-box; border-width: 0; border-style: solid; border-color: var(--border); }
   /* vendor bootstrap-icons vertical alignment */
   .bi { vertical-align: -.08em; line-height: 1; }
-  /* kiosk exit-hint bar (pseudo-element has no utility form) */
-  body.kiosk .canvas::after { content: ''; position: fixed; bottom: 0; left: 0; right: 0; height: 4px; z-index: 1; background: rgba(59,110,245,.4); }
   /* editor-open backdrop blur — focuses attention on the editing sidebar */
   body.editor-open header,
   body.editor-open #ha-banner { filter: blur(4px); }

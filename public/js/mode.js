@@ -15,7 +15,6 @@ function applyMode() {
   updateAuthUI();
 }
 function toggleMode() {
-  if (state.kiosk) return; // kiosk: view-only, no edit toggle
   if (!state.edit && !state.authed) { openLogin(); return; } // entering Edit needs sign-in
   state.edit = !state.edit; applyMode(); render();
 }

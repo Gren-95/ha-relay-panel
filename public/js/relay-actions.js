@@ -126,15 +126,6 @@ async function refreshLive() {
       livePromise,
       api('/api/ha-status').catch(() => ({ reachable: true })),
     ];
-    // In kiosk mode, wait for layout refresh before rendering
-    if (state.kiosk) {
-      try {
-        const layout = await api('/api/layout');
-        state.layoutVersion = layout.updated_at || null; // #62
-        delete layout.updated_at;
-        state.layout = layout;
-      } catch {}
-    }
     const [liveData, haStatus] = await Promise.all(promises);
     state.autoStates = liveData._automations || {};
     delete liveData._automations;

@@ -52,16 +52,6 @@ async function boot() {
   if (state.loaded && state.layout.devices.length) saveLayout();
   // #62 — first poll fires immediately; no need for a separate eager refreshLive()
   (function poll() { refreshLive().finally(() => setTimeout(poll, 10000)); })();
-
-  // Kiosk mode: ?kiosk=1 — fullscreen read-only, no toolbar, no edit
-  const qs = new URLSearchParams(window.location.search);
-  if (qs.get('kiosk') === '1') {
-    state.kiosk = true;
-    document.body.classList.add('kiosk');
-    // Disable edit — kiosk is view-only
-    if (state.edit) { state.edit = false; applyMode(); }
-    updateAuthUI();
-  }
 }
 
 // ---- top-level wiring (runs after all modules have evaluated) ----

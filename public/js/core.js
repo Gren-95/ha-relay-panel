@@ -10,7 +10,6 @@ const state = {
   haAreas: [],
   relayDevices: [],
   edit: false,      // start in view (Live) mode; editing requires sign-in
-  kiosk: false,     // ?kiosk=1 — fullscreen read-only, no toolbar, no edit
   loaded: false,    // true only after the layout loads from the DB (never save before)
   authed: false,
   user: null,
@@ -41,7 +40,7 @@ function setRangeActive(btn, on) { ['bg-primary', 'border-primary', 'text-white'
 // the bottom of the board (see zStack in layout.js), so on a busy board they run
 // straight through the range the overlays use. Without a stacking context of its
 // own the canvas would let a relay card paint over the header, editor and modals.
-const CANVAS_DESKTOP = 'canvas relative isolate m-5 mt-[calc(var(--header-h,72px)_+_32px)] min-h-[calc(100vh_-_var(--header-h,72px)_-_58px)] bg-surface-2 border border-border rounded-2xl overflow-auto bg-local [background-image:radial-gradient(var(--dot)_1.4px,transparent_1.4px)] [background-size:26px_26px] mobile:m-2.5 mobile:overflow-auto [.kiosk_&]:m-0 [.kiosk_&]:border-0 [.kiosk_&]:rounded-none [.kiosk_&]:min-h-screen [.kiosk_&]:bg-surface [.kiosk_&]:[background-image:radial-gradient(var(--border)_1.3px,transparent_1.3px)] [.kiosk_&]:[background-size:32px_32px]';
+const CANVAS_DESKTOP = 'canvas relative isolate m-5 mt-[calc(var(--header-h,72px)_+_32px)] min-h-[calc(100vh_-_var(--header-h,72px)_-_58px)] bg-surface-2 border border-border rounded-2xl overflow-auto bg-local [background-image:radial-gradient(var(--dot)_1.4px,transparent_1.4px)] [background-size:26px_26px] mobile:m-2.5 mobile:overflow-auto';
 const CANVAS_MOBILE = 'canvas flex flex-col gap-3.5 bg-transparent border-0 p-0 m-3 min-h-0 overflow-visible';
 
 async function api(path, opts) {

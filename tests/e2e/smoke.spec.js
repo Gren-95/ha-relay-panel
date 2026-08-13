@@ -49,13 +49,6 @@ test.describe('relay-panel smoke', () => {
     await expect(page.locator('header')).toBeVisible();
   });
 
-  test('kiosk mode hides toolbar', async ({ page }) => {
-    await mockApi(page);
-    await page.goto('/?kiosk=1');
-    await expect(page.locator('header')).toBeHidden();
-    await expect(page.locator('#canvas')).toBeVisible();
-  });
-
   test('theme toggle in More dropdown works', async ({ page }) => {
     await mockApi(page);
     await page.goto('/');
