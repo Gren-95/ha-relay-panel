@@ -194,7 +194,9 @@ function renderBox(g, kind) {
   // so HDR in layout.js keeps matching what is actually rendered.
   // area boxes get a master on/off for all their relays (works in Live mode too)
   // an area keeps its master pair on the bar (#96); everything else is in the panel
-  const master = isDev ? '' : `<span class="area-master inline-flex gap-1">${masterButtons()}</span>`;
+  // the set point is deliberately in both places (#99): the pill shows it at a
+  // glance and edits it in one click, the panel is where you go for everything else
+  const master = isDev ? '' : areaMaster(g);
   const delBtn = `<button class="area-del bg-transparent border-0 text-inherit text-[1.15rem] cursor-pointer leading-none ${state.edit ? 'opacity-60' : 'hidden'}" title="Remove group">&times;</button>`;
   // only areas are resizable — a device box is always sized to its outputs
   const resize = state.edit && !isDev
