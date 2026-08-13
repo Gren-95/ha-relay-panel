@@ -31,7 +31,15 @@ function openDeviceEditor(g) {
   $('#de-outputs').querySelectorAll('.de-out').forEach((row) => {
     row.addEventListener('click', () => { const r = state.layout.relays.find((x) => x.id === row.dataset.id); if (r) openEditor(r); });
   });
+  // The device's own web UI, straight from HA's configuration_url. Shown as the
+  // bare host - "http://10.72.4.88:80" is noise - but linked in full, since the
+  // reason you want the address is usually to go and look at the relay.
   const dev = state.relayDevices.find((d) => d.device_id === g.deviceId);
+  const url = (dev && dev.url) || '';
+  const host = url.replace(/^https?:\/\//, '').replace(/:80$/, '').replace(/\/$/, '');
+  $('#de-addr-row').classList.toggle('hidden', !host);
+  if (host) { $('#de-addr').textContent = host; $('#de-addr').href = url; }
+
   const used = new Set(outs.map((r) => r.relay));
   const avail = dev ? dev.outputs.filter((o) => !used.has(o.entity_id)) : [];
   const sel = $('#de-add-output');

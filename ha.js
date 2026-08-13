@@ -98,7 +98,7 @@ async function getRelayDevices() {
     "{%- set p = device_attr(d,'via_device_id') -%}" +
     "{%- set roll = p and device_attr(p,'model') != 'Bridge' and device_attr(p,'manufacturer') != 'Zigbee2MQTT' -%}" +
     "{%- set g = p if roll else d -%}" +
-    "{%- set ns.rows = ns.rows + [{'entity_id': s.entity_id, 'name': s.name, 'device_id': g, 'device_name': (device_attr(g,'name_by_user') or device_attr(g,'name'))}] -%}" +
+    "{%- set ns.rows = ns.rows + [{'entity_id': s.entity_id, 'name': s.name, 'device_id': g, 'device_name': (device_attr(g,'name_by_user') or device_attr(g,'name')), 'url': device_attr(g,'configuration_url')}] -%}" +
     "{%- endif -%}" +
     "{%- endfor -%}" +
     "{{ ns.rows | tojson }}";
@@ -106,7 +106,7 @@ async function getRelayDevices() {
   const list = typeof out === 'string' ? JSON.parse(out) : out;
   const byDev = {};
   for (const r of list) {
-    const d = (byDev[r.device_id] = byDev[r.device_id] || { device_id: r.device_id, name: r.device_name, outputs: [] });
+    const d = (byDev[r.device_id] = byDev[r.device_id] || { device_id: r.device_id, name: r.device_name, url: r.url || '', outputs: [] });
     if (/(output_\d+|_relay(_\d+)?|_switch)$/i.test(r.entity_id)) d.outputs.push({ entity_id: r.entity_id, name: r.name });
   }
   return Object.values(byDev).filter((d) => d.outputs.length).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
