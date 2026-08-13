@@ -29,10 +29,6 @@
         <button id="btn-lang" data-ui="btn btnTb" title="Keel / Language">🇪🇪</button>
       </div>
       <span class="w-0.5 h-[30px] bg-border mobile:hidden"></span>
-      <div class="flex items-center gap-2 [.live-mode_&]:hidden" id="global-temp-wrap">
-        <button id="btn-global-temp" class="inline-flex items-center text-[.85rem] font-semibold text-fg border-[1.5px] border-border rounded-full px-2.5 py-0.5 tabular-nums whitespace-nowrap cursor-pointer hover:border-primary bg-surface" data-i18n-title="global_temp_title" title="Set temperature for all relays"><i class="bi bi-thermometer-half text-heat"></i>&nbsp;<span id="global-temp-text">—</span></button>
-        <input id="global-temp-input" class="hidden min-h-0 w-[60px] bg-input text-center text-fg font-semibold text-[.85rem] border-[1.5px] border-primary rounded-full p-1 outline-none" type="number" step="0.5" />
-      </div>
       <div class="flex items-center gap-1 mobile:hidden">
         <button id="btn-zoom-out" data-ui="btn" data-i18n-title="zoom_out" title="Zoom out"><i class="bi bi-zoom-out"></i></button>
         <button id="btn-zoom-in" data-ui="btn" data-i18n-title="zoom_in" title="Zoom in"><i class="bi bi-zoom-in"></i></button>
@@ -40,7 +36,7 @@
       <div class="flex items-center gap-2 mobile:block mobile:w-full tb-advanced relative">
         <button id="btn-advanced" data-ui="btn" class="mobile:hidden" data-i18n-title="advanced" title="More"><i class="bi bi-gear"></i></button>
         <button id="btn-login" data-ui="btn" class="hidden border-ok text-ok" data-i18n-title="sign_in" title="Sign in"><i class="bi bi-box-arrow-in-right"></i> <span data-i18n="sign_in">Sign in</span></button>
-        <button id="btn-logout" data-ui="btn" class="hidden border-danger text-danger" data-i18n-title="sign_out" title="Sign out"><i class="bi bi-box-arrow-right"></i> <span data-i18n="sign_out">Sign out</span></button>
+        <button id="btn-logout" data-ui="btn" class="hidden border-danger text-danger" data-i18n-title="sign_out" title="Sign out"><i class="bi bi-box-arrow-right"></i></button>
         <div id="advanced-menu" class="hidden flex flex-col gap-1.5 absolute top-full right-0 mt-2 w-max min-w-[200px] max-w-[min(360px,calc(100vw-24px))] bg-surface border-2 border-border rounded-xl p-2 shadow-panel z-20 mobile:static mobile:grid mobile:grid-cols-2 mobile:w-full mobile:bg-transparent mobile:border-0 mobile:shadow-none mobile:p-0 mobile:m-0 mobile:min-w-0 mobile:gap-2.5">
           <button id="btn-export" data-ui="btn btnMenu"><i class="bi bi-download"></i> <span data-i18n="export_layout">Export layout</span></button>
           <button id="btn-import" data-ui="btn btnMenu"><i class="bi bi-upload"></i> <span data-i18n="import_layout">Import layout</span></button>
@@ -52,6 +48,12 @@
           <button id="btn-presets" data-ui="btn btnMenu"><i class="bi bi-bookmark"></i> <span data-i18n="presets">Presets</span></button>
           <span class="h-0.5 bg-border my-[3px] rounded-[2px] mobile:hidden"></span>
           <button id="btn-theme" data-ui="btn btnMenu"><i class="bi bi-moon-stars"></i> <span data-i18n="toggle_dark">Toggle dark mode</span></button>
+          <span class="h-0.5 bg-border my-[3px] rounded-[2px] mobile:hidden"></span>
+          <div class="flex items-center justify-between gap-2 px-4 py-[11px] rounded-[11px] text-base font-semibold text-fg [.live-mode_&]:opacity-40" id="global-temp-wrap">
+            <span class="inline-flex items-center leading-none"><i class="bi bi-thermometer-half text-heat"></i> <span data-i18n="global_temp_title">Set temp for all</span></span>
+            <button id="btn-global-temp" class="self-center inline-flex items-center text-[.85rem] font-semibold leading-none text-fg border-[1.5px] border-border rounded-full px-2.5 py-1 tabular-nums whitespace-nowrap cursor-pointer hover:border-primary bg-surface"><span id="global-temp-text">—</span></button>
+            <input id="global-temp-input" class="hidden min-h-0 w-[60px] bg-input text-center text-fg font-semibold text-[.85rem] border-[1.5px] border-primary rounded-full p-1 outline-none" type="number" step="0.5" />
+          </div>
           <span class="h-0.5 bg-border my-[3px] rounded-[2px] mobile:hidden"></span>
           <button id="btn-alloff" data-ui="btn btnMenu"><i class="bi bi-power"></i> <span data-i18n="all_off">All off</span></button>
           <span class="h-0.5 bg-border my-[3px] rounded-[2px] mobile:hidden"></span>
