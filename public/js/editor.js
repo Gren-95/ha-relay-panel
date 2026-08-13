@@ -102,7 +102,7 @@ function showStaleWarning(r) {
 // for bound relays, the automation enable/disable.
 async function loadAutomationState(r) {
   const box = $('#ed-automation');
-  if (!r.relay) { box.classList.add('hidden'); return; }
+  if (!r.bound) { box.classList.add('hidden'); return; } // #80 — show for bound relays even when offline
   box.classList.remove('hidden');
   updateRelayToggleBtn(r);
 
