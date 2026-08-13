@@ -164,6 +164,40 @@
   </aside>
 
   <!-- Device (physical relay) editor panel -->
+  <aside id="area-editor" role="dialog" aria-modal="true" class="editor hidden" data-ui="editorAside">
+    <div class="flex items-center justify-between">
+      <h2 data-ui="panelH2" data-i18n="area_h">Area</h2>
+      <button id="ae-close" data-ui="closeBtn" aria-label="Close">&times;</button>
+    </div>
+    <label data-ui="label"><span data-i18n="label_shown">Label (shown on the box)</span>
+      <input id="ae-name" type="text" maxlength="190" data-ui="field" />
+    </label>
+    <label data-ui="label" class="flex flex-col gap-1"><span data-i18n="box_color">Box colour</span>
+      <div class="flex items-center gap-2">
+        <input type="color" id="ae-color" class="min-h-0 w-[40px] h-[34px] border-2 border-border rounded-[7px] cursor-pointer bg-transparent p-0" />
+        <button id="ae-color-reset" data-ui="tiny" type="button" data-i18n="reset_to_auto">Reset to auto</button>
+      </div>
+    </label>
+    <label data-ui="label" class="flex flex-col gap-1"><span data-i18n="area_target_temp">Target temperature for every relay here</span>
+      <div class="flex items-center gap-2">
+        <input id="ae-temp" type="number" step="0.5" data-ui="field" class="w-[120px]" />
+        <button id="ae-temp-apply" data-ui="tiny" type="button" data-i18n="apply_word">Apply</button>
+      </div>
+    </label>
+    <div class="text-[.95rem] font-bold text-muted mt-1.5" data-i18n="master_control">Master control</div>
+    <div class="flex items-center gap-2.5">
+      <button id="ae-all-on" data-ui="btn" class="flex-1 mobile:min-h-[54px]"><i class="bi bi-lightning-charge-fill text-on"></i> <span data-i18n="all_on">All on</span></button>
+      <button id="ae-all-off" data-ui="btn" class="flex-1 mobile:min-h-[54px]"><i class="bi bi-power text-muted"></i> <span data-i18n="all_off">All off</span></button>
+    </div>
+    <div class="text-[.95rem] font-bold text-muted mt-1.5" data-i18n="relays_word">Relays</div>
+    <div id="ae-relays" class="flex flex-col gap-1.5"></div>
+    <div class="flex flex-col gap-2.5 mt-2.5">
+      <button id="ae-save" data-ui="btnPrimary" class="mobile:min-h-[54px]" data-i18n="save">Save</button>
+      <button id="ae-delete" data-ui="btnDanger" class="mobile:min-h-[54px]" data-i18n="remove_from_board">Remove from board</button>
+    </div>
+    <p id="ae-msg" class="text-[.95rem] min-h-[1.3em] font-semibold"></p>
+  </aside>
+
   <aside id="dev-editor" role="dialog" aria-modal="true" class="editor hidden" data-ui="editorAside">
     <div class="flex items-center justify-between">
       <h2 data-ui="panelH2" data-i18n="physical_relay_h">Physical relay</h2>
