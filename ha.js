@@ -24,7 +24,7 @@ async function haFetch(path, opts = {}) {
     return txt ? JSON.parse(txt) : null;
   } catch (e) {
     clearTimeout(to);
-    if (e.name === 'AbortError') throw new Error(`HA ${opts.method || 'GET'} ${path} -> timed out after 15s`);
+    if (e.name === 'AbortError') throw new Error(`HA ${opts.method || 'GET'} ${path} -> timed out after 15s`, { cause: e });
     throw e;
   }
 }
@@ -219,7 +219,7 @@ async function verifyHaLogin(username, password) {
 
   let sf;
   try { sf = await jfetch(`${HA_URL}/auth/login_flow`, { client_id: cid, handler: ['homeassistant', null], redirect_uri: cid }); }
-  catch (e) { return { ok: false, error: 'cannot reach Home Assistant' }; }
+  catch { return { ok: false, error: 'cannot reach Home Assistant' }; }
   if (!sf || !sf.flow_id) { return { ok: false, error: 'HA login unavailable' }; }
 
   // Always delete the login flow when we're done with it — even on exceptions (#49)
@@ -227,7 +227,7 @@ async function verifyHaLogin(username, password) {
 
   let r;
   try { r = await jfetch(`${HA_URL}/auth/login_flow/${sf.flow_id}`, { client_id: cid, username, password }); }
-  catch (e) { deleteFlow(); return { ok: false, error: 'Home Assistant did not respond' }; }
+  catch { deleteFlow(); return { ok: false, error: 'Home Assistant did not respond' }; }
 
   if (r && r.type === 'create_entry') return { ok: true, user: username };
   // abandon the flow, translate the outcome
@@ -292,7 +292,7 @@ async function setSwitch(entity, action) {
   const svc = action === 'on' ? 'turn_on' : action === 'off' ? 'turn_off' : 'toggle';
   try {
     await haFetch(`/api/services/switch/${svc}`, { method: 'POST', body: JSON.stringify({ entity_id: entity }) });
-  } catch (e) { /* ignore — verify via state read below */ }
+  } catch { /* ignore — verify via state read below */ }
   await new Promise((r) => setTimeout(r, 400)); // let the device settle
   try {
     const s = await haFetch(`/api/states/${encodeURIComponent(entity)}`);
@@ -342,7 +342,7 @@ async function deleteAutomation(automationId) {
   try {
     await haFetch(`/api/config/automation/config/${automationId}`, { method: 'DELETE' });
     await haFetch('/api/services/automation/reload', { method: 'POST', body: '{}' });
-  } catch (e) {
+  } catch {
     // already gone is fine
   }
 }
@@ -359,13 +359,13 @@ async function pruneOrphanAutomations(keepIds) {
   for (const id of orphans) {
     try {
       await haFetch(`/api/config/automation/config/${id}`, { method: 'DELETE' });
-    } catch (e) { /* already gone is fine */ }
+    } catch { /* already gone is fine */ }
   }
   // One reload for the whole batch, not one per delete.
   if (orphans.length) {
     try {
       await haFetch('/api/services/automation/reload', { method: 'POST', body: '{}' });
-    } catch (e) { /* the deletes landed; HA reloads on its own schedule too */ }
+    } catch { /* the deletes landed; HA reloads on its own schedule too */ }
   }
   return orphans;
 }

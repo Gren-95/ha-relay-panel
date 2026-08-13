@@ -30,7 +30,7 @@ async function boot() {
     state.config = config && typeof config === 'object' ? config : {};
     state.haAreas = Array.isArray(areas) ? areas : [];
     state.relayDevices = Array.isArray(devices) ? devices : [];
-  } catch (e) {
+  } catch {
     // DATA-SAFETY: layout failed to load — do NOT mark loaded, so no save can
     // overwrite the real DB layout with this empty fallback. Retry shortly.
     setStatus(t('load_error_retrying')); setTimeout(boot, 4000); return;

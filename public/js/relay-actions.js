@@ -111,7 +111,7 @@ async function toggleRelay(r) {
     const res = await api('/api/switch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity_id: r.relay, action: cur === 'on' ? 'off' : 'on' }) });
     state.live[r.relay] = { ...(state.live[r.relay] || {}), state: res.state };
     setStatus(''); render();
-  } catch (e) { setStatus(t('switch_error')); }
+  } catch { setStatus(t('switch_error')); }
 }
 
 async function refreshLive() {
