@@ -1,7 +1,7 @@
 import { state, $, esc, setMsg, api } from './core.js';
 import { t } from './i18n.js';
 import { reflowDeviceOutputs, fitAreaToContents, growToInclude, assignDeviceArea, areaColor, hueToHex, hexToHue } from './layout.js';
-import { render } from './board.js';
+import { render, updateBoxColors } from './board.js';
 import { openEditor, closeEditor, clearBlur, applyBlur } from './editor.js';
 import { closeActivityLog } from './activity.js';
 import { closeBulkEdit } from './bulk.js';
@@ -69,7 +69,25 @@ function addOutputToDevice(entityId) {
   render(); saveLayout();
   openDeviceEditor(g); // refresh the list + dropdown
 }
-function closeDeviceEditor() { state.selectedDev = null; $('#dev-editor').classList.add('hidden'); $('#backdrop').classList.add('hidden'); document.body.classList.remove('editor-open'); clearBlur(); }
+
+// Dragging the colour input repaints the box behind the backdrop, the way the old
+// titlebar swatch did (#73). Purely visual: the value is only committed on Save,
+// so closing without saving has to put the real colours back - hence the flag.
+let previewed = false;
+function previewColour() {
+  const g = selectedDev(); if (!g) return;
+  const el = document.querySelector(`.area[data-gid="${g.id}"]`);
+  if (!el) return;
+  previewed = true;
+  updateBoxColors(el, hexToHue($('#de-color').value), true, g);
+}
+
+function closeDeviceEditor() {
+  state.selectedDev = null;
+  if (previewed) { previewed = false; render(); }   // discard an unsaved preview
+  $('#dev-editor').classList.add('hidden'); $('#backdrop').classList.add('hidden');
+  document.body.classList.remove('editor-open'); clearBlur();
+}
 function deMsg(m, cls) { setMsg($('#de-msg'), m, cls); }
 function selectedDev() { return state.layout.devices.find((x) => x.id === state.selectedDev); }
 
@@ -132,8 +150,10 @@ $('#de-color-reset').addEventListener('click', () => {
   const g = selectedDev(); if (!g) return;
   delete g.hue;
   $('#de-color').value = hueToHex(areaColor(g.deviceId));
+  previewColour();
   deMsg('colour reset to auto', 'ok');
 });
+$('#de-color').addEventListener('input', previewColour);
 $('#de-add-output').addEventListener('change', (e) => { addOutputToDevice(e.target.value); e.target.value = ''; });
 $('#de-rename-ha').addEventListener('click', renameDeviceHa);
 $('#de-delete').addEventListener('click', deleteDevice);

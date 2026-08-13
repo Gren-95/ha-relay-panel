@@ -1,7 +1,7 @@
 import { state, $, esc, setMsg, api } from './core.js';
 import { t } from './i18n.js';
 import { areaColor, hueToHex, hexToHue, fitAreaToContents } from './layout.js';
-import { render } from './board.js';
+import { render, updateBoxColors } from './board.js';
 import { openEditor, closeEditor, clearBlur, applyBlur } from './editor.js';
 import { closeActivityLog } from './activity.js';
 import { closeBulkEdit } from './bulk.js';
@@ -52,8 +52,22 @@ function openAreaEditor(g) {
   requestAnimationFrame(positionResizeHandles);
 }
 
+
+// Dragging the colour input repaints the box behind the backdrop, the way the old
+// titlebar swatch did (#73). Purely visual: the value is only committed on Save,
+// so closing without saving has to put the real colours back - hence the flag.
+let previewed = false;
+function previewColour() {
+  const g = selectedArea(); if (!g) return;
+  const el = document.querySelector(`.area[data-gid="${g.id}"]`);
+  if (!el) return;
+  previewed = true;
+  updateBoxColors(el, hexToHue($('#ae-color').value), false, g);
+}
+
 function closeAreaEditor() {
   state.selectedArea = null;
+  if (previewed) { previewed = false; render(); }   // discard an unsaved preview
   $('#area-editor').classList.add('hidden');
   $('#backdrop').classList.add('hidden');
   document.body.classList.remove('editor-open');
@@ -111,8 +125,10 @@ export function initAreaEditor() {
     const g = selectedArea(); if (!g) return;
     delete g.hue;
     $('#ae-color').value = hueToHex(areaColor(g.areaId));
+    previewColour();
     aeMsg(t('colour_reset'), 'ok');
   });
+  $('#ae-color').addEventListener('input', previewColour);
   $('#ae-temp-apply').addEventListener('click', applyAreaTemp);
   $('#ae-all-on').addEventListener('click', () => { const g = selectedArea(); if (g) setAreaRelays(g.areaId, true); });
   $('#ae-all-off').addEventListener('click', () => { const g = selectedArea(); if (g) setAreaRelays(g.areaId, false); });
