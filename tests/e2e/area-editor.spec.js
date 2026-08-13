@@ -76,9 +76,23 @@ test.describe('area editor', () => {
     }
   });
 
-  test('the titlebar no longer carries the master controls', async ({ page }) => {
-    await expect(page.locator('.area-head .am-btn')).toHaveCount(0);
-    await expect(page.locator('.area-head .area-temp')).toHaveCount(0);
+  test('the titlebar keeps All on / All off and nothing else', async ({ page }) => {
+    const head = page.locator('.area-head', { hasText: 'Plant room' });
+    await expect(head.locator('.am-btn[data-act]')).toHaveCount(2);
+    await expect(head.locator('.area-temp')).toHaveCount(0);        // set point -> panel
+    await expect(head.locator('.area-color-picker')).toHaveCount(0); // colour -> panel
+  });
+
+  test('the master buttons on the bar still switch the whole area', async ({ page }) => {
+    const calls = [];
+    await page.route('**/api/switch', (route) => {
+      calls.push(route.request().postDataJSON());
+      route.fulfill({ json: { ok: true, state: 'on' } });
+    });
+    await page.locator('.area-head', { hasText: 'Plant room' })
+      .locator('.am-btn[data-act="on"]').click();
+    await expect.poll(() => calls.length).toBe(3);
+    expect(calls.every((c) => c.action === 'on')).toBe(true);
   });
 
   test('it is the same kind of panel as the physical-relay editor', async ({ page }) => {

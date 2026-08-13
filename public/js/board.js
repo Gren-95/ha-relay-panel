@@ -74,14 +74,21 @@ function render() {
 // temperature pill - it has its own `.area-temp` handler and no data-act (#86).
 const AM_STYLE = 'text-[.72rem] font-bold px-[9px] py-[3px] rounded-lg cursor-pointer border-[1.5px] border-border-strong bg-surface text-fg';
 const AM_BTN = `am-btn ${AM_STYLE}`;
+// All on / All off stay on the titlebar (#96): they are the one thing reached for
+// often enough that putting them behind the gear would cost a click every time.
+// Everything else an area can do lives in its editor panel.
+const masterButtons = () => `
+    <button class="${AM_BTN} [.live-mode_&]:opacity-40 [.live-mode_&]:pointer-events-none" data-act="on">${t('all_on')}</button>
+    <button class="${AM_BTN} [.live-mode_&]:opacity-40 [.live-mode_&]:pointer-events-none" data-act="off">${t('all_off')}</button>`;
+
+// Mobile keeps the temperature pill as well - it renders a flat list with no gear
+// and no area editor, so the pill is the only way to reach the set point there.
 const areaMaster = (g) => {
   // per-area temperature set point (#81)
   const bound = state.layout.relays.filter((r) => r.bound && r.area === g.areaId && r.temp != null);
   const same = bound.length && bound.every((r) => r.temp === bound[0].temp);
   const tempLabel = bound.length ? (same ? bound[0].temp + '°' : 'mixed') : '—';
-  return `<span class="area-master inline-flex gap-1">
-    <button class="${AM_BTN} [.live-mode_&]:opacity-40 [.live-mode_&]:pointer-events-none" data-act="on">${t('all_on')}</button>
-    <button class="${AM_BTN} [.live-mode_&]:opacity-40 [.live-mode_&]:pointer-events-none" data-act="off">${t('all_off')}</button>
+  return `<span class="area-master inline-flex gap-1">${masterButtons()}
     <button class="${AM_STYLE} area-temp [.live-mode_&]:opacity-40 [.live-mode_&]:pointer-events-none" data-area="${esc(g.areaId)}" title="Set area temperature"><i class="bi bi-thermometer-half"></i> ${tempLabel}</button>
   </span>`;
 };
@@ -186,8 +193,8 @@ function renderBox(g, kind) {
   // a pinned device names its area inline — the titlebar stays one fixed-height row
   // so HDR in layout.js keeps matching what is actually rendered.
   // area boxes get a master on/off for all their relays (works in Live mode too)
-  // an area's controls live in its editor panel now (#95); a device box keeps its bar
-  const master = '';
+  // an area keeps its master pair on the bar (#96); everything else is in the panel
+  const master = isDev ? '' : `<span class="area-master inline-flex gap-1">${masterButtons()}</span>`;
   const colorBtn = state.edit ? `<span class="area-color-picker inline-block w-[16px] h-[16px] rounded-full border border-border-strong cursor-pointer flex-none opacity-60 hover:opacity-100" style="background:${hueToHex(hue)}" data-gid="${g.id}" title="Pick colour"><input type="color" class="hidden" value="${hueToHex(hue)}" /></span>` : '';
   const delBtn = `<button class="area-del bg-transparent border-0 text-inherit text-[1.15rem] cursor-pointer leading-none ${state.edit ? 'opacity-60' : 'hidden'}" title="Remove group">&times;</button>`;
   // only areas are resizable — a device box is always sized to its outputs
@@ -201,7 +208,7 @@ function renderBox(g, kind) {
   const head = `<div class="area-head h-[44px] px-2.5 flex items-center gap-1.5 font-bold select-none touch-none border-2 border-solid rounded-t-2xl ${state.edit ? 'cursor-grab active:cursor-grabbing' : ''}" style="color:${headColor(hue)};border-color:${line};background:${opaque(headTint(hue))}">
       <i class="bi ${state.edit ? 'bi-gear area-gear cursor-pointer' : (isDev ? 'bi-hdd-stack' : 'bi-grid-3x3-gap')} text-[.95rem] flex-none" title="${state.edit ? t(isDev ? 'physical_relay_h' : 'area_h') : ''}"></i>
       <span class="text-[.95rem] min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">${esc(g.name || refId)}</span>
-      ${colorBtn}
+      ${isDev ? colorBtn : ''}
       <span class="ml-auto flex items-center gap-1.5 flex-none">${master}${delBtn}</span>
     </div>`;
   // A device box keeps a plain solid CSS border; an area's body is outlined with the
