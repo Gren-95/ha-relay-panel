@@ -29,8 +29,10 @@ Instructions for Claude Code in this project.
 
 ## i18n
 
-- English (default in HTML text) + Estonian (`TR.et` object in `app.js`)
-- Add new strings to both `TR.et` (line ~6) and `EN` (line ~64) in `app.js`
+- English (default in HTML text) + Estonian (`TR.et` object) both live in `public/js/i18n.js`
+- Add every new string to **both** `TR.et` and `EN`, and **grep for the key first**: both are
+  single object literals, so a second definition silently shadows the first and the earlier one
+  becomes dead. `npx eslint public/js/i18n.js` catches it (`no-dupe-keys`) - it must stay clean.
 - Use `data-i18n` attributes on HTML elements for static text, `t('key')` for dynamic text
 
 ## Activity log
