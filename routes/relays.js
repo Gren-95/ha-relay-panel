@@ -12,7 +12,8 @@ const router = express.Router();
 // --- bind: create/update the HA automation for a relay widget ---
 router.post('/api/relays/:rid/bind', requireAuth, wrap(async (req, res) => {
   const { rid } = req.params;
-  const { name, relay, sensor, mode, temp, deadband, area, schedule, min_on, min_off } = req.body || {};
+  const { name, relay, sensor, mode, temp, deadband, area, schedule, min_on, min_off,
+    notify, notify_deviation } = req.body || {};
   if (!validEntity(relay)) return res.status(400).json({ ok: false, error: 'invalid relay entity' });
   if (!validEntity(sensor)) return res.status(400).json({ ok: false, error: 'invalid sensor entity' });
   const t = Number(temp);
@@ -31,7 +32,7 @@ router.post('/api/relays/:rid/bind', requireAuth, wrap(async (req, res) => {
   if (r) {
     Object.assign(r, { name, relay, sensor, mode: md, temp: t, deadband: band, area: area || null, schedule: sched, automationId, bound: true,
       min_on: Number(min_on) || 0, min_off: Number(min_off) || 0,
-      notify: !!req.body.notify, notify_deviation: Number(req.body.notify_deviation) || 5 });
+      notify: !!notify, notify_deviation: Number(notify_deviation) || 5 });
     await db.saveLayout(layout);
   }
   await db.addAuditLog(await currentUser(req), 'relay.bind',
