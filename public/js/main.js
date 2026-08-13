@@ -16,6 +16,7 @@ import { initTheme } from './theme.js';
 import { initChart } from './chart.js';
 import { initDeviceEditor } from './device-editor.js';
 import { initAreaEditor } from './area-editor.js';
+import { initModals, registerModal } from './modals.js';
 
 async function boot() {
   try {
@@ -97,6 +98,7 @@ function updateAboutHAStatus() {
   el.textContent = state.live && Object.keys(state.live).length ? t('about_ha_reachable') : t('about_ha_checking');
   el.className = state.live && Object.keys(state.live).length ? 'text-ok' : 'text-muted';
 }
+registerModal('about-modal', closeAbout);
 $('#btn-about').addEventListener('click', openAbout);
 $('#about-close').addEventListener('click', closeAbout);
 $('#about-dismiss').addEventListener('click', closeAbout);
@@ -202,6 +204,7 @@ let _wasMobile = isMobile();
 window.addEventListener('resize', () => { const m = isMobile(); if (m !== _wasMobile) { _wasMobile = m; render(); } });
 
 // ---- init sequence ----
+initModals();
 initTheme();
 initResize();
 initMode();

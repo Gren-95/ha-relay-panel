@@ -6,14 +6,12 @@ import { toggleRelay, refreshLive } from './relay-actions.js';
 import { render } from './board.js';
 import { saveLayout } from './history-undo.js';
 import { positionResizeHandles } from './resize.js';
-import { closeDeviceEditor } from './device-editor.js';
-import { closeActivityLog } from './activity.js';
-import { closeBulkEdit } from './bulk.js';
-import { closePresets } from './presets.js';
+import { registerModal, closeOthers, syncBackdrop } from './modals.js';
+
 
 function openEditor(r) {
   if (!state.authed) return;
-  closeDeviceEditor(); closeActivityLog(); closeBulkEdit(); closePresets();
+  closeOthers('editor');
   state.selected = r.id;
   $('#ed-name').value = r.name || '';
   $('#ed-relay').value = r.relay || '';
@@ -47,8 +45,7 @@ function openEditor(r) {
     const btn = $('#' + id); if (btn) btn.classList.toggle('hidden', !show);
   });
   $('#editor').classList.remove('hidden');
-  $('#backdrop').classList.remove('hidden');
-  document.body.classList.add('editor-open');
+  syncBackdrop();
   applyBlur();
   requestAnimationFrame(positionResizeHandles);
 }
@@ -150,7 +147,7 @@ async function toggleAutomation() {
     await bind(); // auto-save thermostat settings when toggling maintenance
   } catch (e) { edMsg(t('error_label') + ': ' + e.message, 'err'); loadAutomationState(r); }
 }
-function closeEditor() { state.selected = null; $('#editor').classList.add('hidden'); $('#backdrop').classList.add('hidden'); document.body.classList.remove('editor-open'); clearBlur(); }
+function closeEditor() { state.selected = null; $('#editor').classList.add('hidden'); syncBackdrop(); clearBlur(); }
 
 // Apply .blurred to everything except the relay being edited and its containing
 // area / device group.  Called on editor open + re-applied after every render().
@@ -297,7 +294,7 @@ async function deleteRelay() {
 // wiring for the relay editor panel
 export function initEditor() {
 $('#ed-close').addEventListener('click', closeEditor);
-$('#backdrop').addEventListener('click', () => { closeEditor(); closeDeviceEditor(); });
+registerModal('editor', closeEditor, { dim: true, blur: true });
 // Re-apply blur synchronously after every render() rebuilds the canvas DOM.
 // Using a custom event dispatched at the end of render() — no debounce, no flash.
 $('#canvas').addEventListener('render', applyBlur);

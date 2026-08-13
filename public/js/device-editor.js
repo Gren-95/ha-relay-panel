@@ -2,18 +2,15 @@ import { state, $, esc, setMsg, api } from './core.js';
 import { t } from './i18n.js';
 import { reflowDeviceOutputs, fitAreaToContents, growToInclude, assignDeviceArea, areaColor, hueToHex, hexToHue } from './layout.js';
 import { render, updateBoxColors } from './board.js';
-import { openEditor, closeEditor, clearBlur, applyBlur } from './editor.js';
-import { closeActivityLog } from './activity.js';
-import { closeBulkEdit } from './bulk.js';
-import { closePresets } from './presets.js';
-import { closeAreaEditor } from './area-editor.js';
+import { openEditor, clearBlur, applyBlur } from './editor.js';
+import { registerModal, closeOthers, syncBackdrop } from './modals.js';
 import { saveLayout } from './history-undo.js';
 import { positionResizeHandles } from './resize.js';
 
 // ---- device (physical relay) editor ----
 function openDeviceEditor(g) {
   if (!state.authed) return; // #63
-  closeEditor(); closeActivityLog(); closeBulkEdit(); closePresets(); closeAreaEditor();
+  closeOthers('dev-editor');
   state.selectedDev = g.id;
   // Populate fields first (like the relay editor does) so the blur paints instantly
   $('#de-name').value = g.name || '';
@@ -44,8 +41,7 @@ function openDeviceEditor(g) {
   deMsg('');
   // Show the modal + blur all at once (fields already populated)
   $('#dev-editor').classList.remove('hidden');
-  $('#backdrop').classList.remove('hidden');
-  document.body.classList.add('editor-open');
+  syncBackdrop();
   applyBlur();
   requestAnimationFrame(positionResizeHandles);
 }
@@ -85,8 +81,8 @@ function previewColour() {
 function closeDeviceEditor() {
   state.selectedDev = null;
   if (previewed) { previewed = false; render(); }   // discard an unsaved preview
-  $('#dev-editor').classList.add('hidden'); $('#backdrop').classList.add('hidden');
-  document.body.classList.remove('editor-open'); clearBlur();
+  $('#dev-editor').classList.add('hidden');
+  syncBackdrop(); clearBlur();
 }
 function deMsg(m, cls) { setMsg($('#de-msg'), m, cls); }
 function selectedDev() { return state.layout.devices.find((x) => x.id === state.selectedDev); }
@@ -143,6 +139,7 @@ async function deleteDevice() {
 
 // wiring for the physical-relay (device) editor panel
 export function initDeviceEditor() {
+registerModal('dev-editor', closeDeviceEditor, { dim: true, blur: true });
 $('#de-close').addEventListener('click', closeDeviceEditor);
 $('#de-save').addEventListener('click', saveDevice);
 // Reset colour to auto (hashed) — #73

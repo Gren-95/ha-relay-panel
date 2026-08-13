@@ -1,6 +1,7 @@
 import { state, $, setRangeActive, api } from './core.js';
 import { t } from './i18n.js';
 import { selected, edMsg } from './editor.js';
+import { registerModal } from './modals.js';
 
 // relay last-changed duration + temperature chart
 let historyRange = 24;
@@ -313,7 +314,8 @@ $('#chart-modal-map').addEventListener('click', () => {
   const url = $('#chart-modal-map').dataset.url;
   if (url) window.open(url, '_blank', 'noopener');
 });
-$('#chart-modal').addEventListener('click', (e) => { if (e.target === $('#chart-modal')) $('#chart-modal').classList.add('hidden'); });
+// click-outside + Esc come from the registry now (#98)
+registerModal('chart-modal', () => $('#chart-modal').classList.add('hidden'));
 
 $('#ed-spark').addEventListener('click', () => openChartModal());
 
