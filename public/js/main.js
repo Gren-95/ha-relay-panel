@@ -6,7 +6,7 @@ import { addRelay, initEditor } from './editor.js';
 import { openActivityLog, initActivity } from './activity.js';
 import { openBulkEdit, initBulk } from './bulk.js';
 import { openPresets, initPresets } from './presets.js';
-import { allOff, refreshLive, initRelayActions } from './relay-actions.js';
+import { allOff, setRelaysTemp, refreshLive, initRelayActions } from './relay-actions.js';
 import { exportLayout, importLayout } from './import-export.js';
 import { saveLayout, initHistory, undo, redo } from './history-undo.js';
 import { applyMode, toggleMode, closeTopmost, initMode } from './mode.js';
@@ -113,6 +113,41 @@ $('#btn-zoom-out').addEventListener('click', () => {
   const idx = ZOOM_STEPS.indexOf(state.canvasScale);
   if (idx > 0) { state.canvasScale = ZOOM_STEPS[idx - 1]; render(); }
 });
+
+// Global temperature set point (#81) — click to edit, applies to all bound relays
+const gTempText = $('#global-temp-text');
+const gTempInput = $('#global-temp-input');
+function updateGlobalTempDisplay() {
+  const bound = state.layout.relays.filter((r) => r.bound && r.temp != null);
+  if (!bound.length) { gTempText.textContent = '—'; return; }
+  const vals = bound.map((r) => r.temp);
+  const same = vals.every((v) => v === vals[0]);
+  gTempText.textContent = same ? vals[0] + '°' : 'mixed';
+}
+$('#btn-global-temp').addEventListener('click', () => {
+  if (!state.authed) { openLogin(); return; }
+  if (!state.edit) return;
+  gTempText.classList.add('hidden');
+  $('#btn-global-temp').classList.add('hidden');
+  gTempInput.classList.remove('hidden');
+  gTempInput.value = state.layout.relays.find((r) => r.bound && r.temp != null)?.temp || 20;
+  gTempInput.focus();
+});
+const commitGlobalTemp = async () => {
+  const v = parseFloat(gTempInput.value);
+  gTempInput.classList.add('hidden');
+  $('#btn-global-temp').classList.remove('hidden');
+  gTempText.classList.remove('hidden');
+  if (isFinite(v) && v >= 1) {
+    await setRelaysTemp(state.layout.relays, v);
+    updateGlobalTempDisplay();
+  }
+};
+gTempInput.addEventListener('blur', commitGlobalTemp);
+gTempInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') commitGlobalTemp(); });
+// refresh the global temp display whenever the board re-renders
+document.getElementById('canvas').addEventListener('render', updateGlobalTempDisplay);
+
 
 // keyboard shortcuts
 document.addEventListener('keydown', (e) => {
