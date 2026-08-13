@@ -187,7 +187,7 @@ function renderBox(g, kind) {
   // area boxes get a master on/off for all their relays (works in Live mode too)
   const master = !isDev ? areaMaster(g) : '';
   const colorBtn = state.edit ? `<span class="area-color-picker inline-block w-[16px] h-[16px] rounded-full border border-border-strong cursor-pointer flex-none opacity-60 hover:opacity-100" style="background:${hueToHex(hue)}" data-gid="${g.id}" title="Pick colour"><input type="color" class="hidden" value="${hueToHex(hue)}" /></span>` : '';
-  const delBtn = `<button class="area-del bg-transparent border-0 text-inherit text-[1.15rem] cursor-pointer leading-none${state.edit ? ' opacity-60' : ' hidden'}" title="Remove group">&times;</button>`;
+  const delBtn = `<button class="area-del bg-transparent border-0 text-inherit text-[1.15rem] cursor-pointer leading-none ${state.edit ? 'opacity-60' : 'hidden'}" title="Remove group">&times;</button>`;
   // only areas are resizable — a device box is always sized to its outputs
   const resize = state.edit && !isDev
     ? '<div class="area-resize absolute right-[3px] bottom-[3px] w-[26px] h-[26px] cursor-nwse-resize border-r-[3px] border-b-[3px] border-border-strong rounded-br-[12px] touch-none"></div>' : '';
@@ -196,7 +196,7 @@ function renderBox(g, kind) {
   // (no top border — the bar's bottom edge already draws that line).
   // h-[44px] = 2px border + 40px row + 2px border, i.e. exactly HDR, so the body
   // starts where layout.js says content begins.
-  const head = `<div class="area-head h-[44px] px-2.5 flex items-center gap-1.5 font-bold select-none touch-none border-2 border-solid rounded-t-2xl${state.edit ? ' cursor-grab active:cursor-grabbing' : ''}" style="color:${headColor(hue)};border-color:${line};background:${opaque(headTint(hue))}">
+  const head = `<div class="area-head h-[44px] px-2.5 flex items-center gap-1.5 font-bold select-none touch-none border-2 border-solid rounded-t-2xl ${state.edit ? 'cursor-grab active:cursor-grabbing' : ''}" style="color:${headColor(hue)};border-color:${line};background:${opaque(headTint(hue))}">
       <i class="bi ${isDev ? (state.edit ? 'bi-gear area-gear cursor-pointer' : 'bi-hdd-stack') : 'bi-grid-3x3-gap'} text-[.95rem] flex-none"></i>
       <span class="text-[.95rem] min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">${esc(g.name || refId)}</span>
       ${colorBtn}
