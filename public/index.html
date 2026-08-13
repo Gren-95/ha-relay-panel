@@ -29,6 +29,10 @@
         <button id="btn-lang" data-ui="btn btnTb" title="Keel / Language">🇪🇪</button>
       </div>
       <span class="w-0.5 h-[30px] bg-border mobile:hidden"></span>
+      <div class="flex items-center gap-2 [.live-mode_&]:hidden" id="global-temp-wrap">
+        <button id="btn-global-temp" class="inline-flex items-center text-[.85rem] font-semibold text-fg border-[1.5px] border-border rounded-full px-2.5 py-0.5 tabular-nums whitespace-nowrap cursor-pointer hover:border-primary bg-surface" data-i18n-title="global_temp_title" title="Set temperature for all relays"><i class="bi bi-thermometer-half text-heat"></i>&nbsp;<span id="global-temp-text">—</span></button>
+        <input id="global-temp-input" class="hidden min-h-0 w-[60px] bg-input text-center text-fg font-semibold text-[.85rem] border-[1.5px] border-primary rounded-full p-1 outline-none" type="number" step="0.5" />
+      </div>
       <div class="flex items-center gap-1 mobile:hidden">
         <button id="btn-zoom-out" data-ui="btn" data-i18n-title="zoom_out" title="Zoom out"><i class="bi bi-zoom-out"></i></button>
         <button id="btn-zoom-in" data-ui="btn" data-i18n-title="zoom_in" title="Zoom in"><i class="bi bi-zoom-in"></i></button>

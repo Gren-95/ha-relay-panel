@@ -58,6 +58,34 @@ async function setAreaRelays(areaId, on) {
   setStatus(failed ? `${failed}/${relays.length} failed` : ''); render(); // #64
 }
 
+// Set a temperature on a list of bound relays (#81) — reused by the global
+// header set point and the per-area set point.
+async function setRelaysTemp(relays, temp) {
+  if (!state.authed) { openLogin(); return; }
+  if (!state.edit) return;
+  const targets = relays.filter((r) => r.bound && r.relay && r.sensor);
+  if (!targets.length) return;
+  let ok = 0;
+  for (const r of targets) {
+    try {
+      await api(`/api/relays/${r.id}/bind`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: r.name, relay: r.relay, sensor: r.sensor, area: r.area || '',
+          mode: r.mode || 'below', temp, deadband: Number(r.deadband) || 0,
+          schedule: r.schedule || null,
+          min_on: Number(r.min_on) || 0, min_off: Number(r.min_off) || 0,
+          notify: !!r.notify, notify_deviation: Number(r.notify_deviation) || 5,
+        }),
+      });
+      r.temp = temp;
+      ok++;
+    } catch {}
+  }
+  render(); saveLayout(); refreshLive();
+  return ok;
+}
+
 // Warning "!" popover: click the icon to see the plain-language reason.
 function showWarnPop(anchor, msg) {
   const existing = document.getElementById('warn-pop');
@@ -137,9 +165,24 @@ function updateSummary() {
 export function initRelayActions() {
 canvas.addEventListener('click', (e) => {
   const btn = e.target.closest('.adj-btn');
-  if (!btn) return;
-  e.stopPropagation();
-  adjustTemp(btn.dataset.rid, parseInt(btn.dataset.dir));
+  if (btn) {
+    e.stopPropagation();
+    adjustTemp(btn.dataset.rid, parseInt(btn.dataset.dir));
+    return;
+  }
+  // per-area temperature set point (#81)
+  const tbtn = e.target.closest('.area-temp');
+  if (tbtn) {
+    e.stopPropagation();
+    if (!state.authed) { openLogin(); return; }
+    if (!state.edit) return;
+    const areaId = tbtn.dataset.area;
+    const relays = state.layout.relays.filter((r) => r.bound && r.relay && r.sensor && r.area === areaId);
+    if (!relays.length) return;
+    const cur = relays[0].temp != null ? relays[0].temp : 20;
+    const v = parseFloat(prompt(t('enter_target_temp'), cur));
+    if (isFinite(v) && v >= 1) setRelaysTemp(relays, v);
+  }
 });
 
 document.addEventListener('click', (e) => {
@@ -148,4 +191,4 @@ document.addEventListener('click', (e) => {
 });
 }
 
-export { adjustTemp, allOff, setAreaRelays, showWarnPop, toggleRelay, refreshLive, updateSummary };
+export { adjustTemp, allOff, setAreaRelays, setRelaysTemp, showWarnPop, toggleRelay, refreshLive, updateSummary };

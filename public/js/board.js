@@ -70,7 +70,17 @@ function render() {
 
 // shared area master on/off buttons (keeps .area-master hook for live-mode hide + .am-btn hooks)
 const AM_BTN = 'am-btn text-[.72rem] font-bold px-[9px] py-[3px] rounded-lg cursor-pointer border-[1.5px] border-border-strong bg-surface text-fg';
-const areaMaster = () => `<span class="area-master inline-flex gap-1"><button class="${AM_BTN} [.live-mode_&]:opacity-40 [.live-mode_&]:pointer-events-none" data-act="on">${t('all_on')}</button><button class="${AM_BTN} [.live-mode_&]:opacity-40 [.live-mode_&]:pointer-events-none" data-act="off">${t('all_off')}</button></span>`;
+const areaMaster = (g) => {
+  // per-area temperature set point (#81)
+  const bound = state.layout.relays.filter((r) => r.bound && r.area === g.areaId && r.temp != null);
+  const same = bound.length && bound.every((r) => r.temp === bound[0].temp);
+  const tempLabel = bound.length ? (same ? bound[0].temp + '°' : 'mixed') : '—';
+  return `<span class="area-master inline-flex gap-1">
+    <button class="${AM_BTN} [.live-mode_&]:opacity-40 [.live-mode_&]:pointer-events-none" data-act="on">${t('all_on')}</button>
+    <button class="${AM_BTN} [.live-mode_&]:opacity-40 [.live-mode_&]:pointer-events-none" data-act="off">${t('all_off')}</button>
+    <button class="${AM_BTN} area-temp [.live-mode_&]:opacity-40 [.live-mode_&]:pointer-events-none" data-area="${esc(g.areaId)}" title="Set area temperature"><i class="bi bi-thermometer-half"></i> ${tempLabel}</button>
+  </span>`;
+};
 
 // Mobile: ignore x/y positions, render a nested flex list (area -> device -> outputs).
 function renderMobile() {
@@ -101,7 +111,7 @@ function renderMobile() {
     box.className = 'border-[3px] border-solid border-border-strong rounded-[14px] p-2.5 flex flex-col gap-2.5';
     box.style.borderColor = `hsl(${hue},50%,55%)`;
     box.innerHTML = `<div class="flex items-center justify-between font-extrabold text-[1.05rem] p-0.5" style="color:${headColor(hue)}"><span><i class="bi bi-grid-3x3-gap"></i> ${esc(a.name || a.areaId)}</span>
-      ${areaMaster()}</div>`;
+      ${areaMaster(a)}</div>`;
     box.querySelectorAll('.am-btn').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); setAreaRelays(a.areaId, b.dataset.act === 'on'); }));
     for (const d of state.layout.devices.filter((x) => x.area === a.areaId)) box.appendChild(deviceBlock(d));
     for (const r of state.layout.relays.filter((x) => x.area === a.areaId && !x.device)) { box.appendChild(card(r, true)); doneRel.add(r.id); }
@@ -172,7 +182,7 @@ function renderBox(g, kind) {
   // a pinned device names its area inline — the titlebar stays one fixed-height row
   // so HDR in layout.js keeps matching what is actually rendered.
   // area boxes get a master on/off for all their relays (works in Live mode too)
-  const master = !isDev ? areaMaster() : '';
+  const master = !isDev ? areaMaster(g) : '';
   const colorBtn = state.edit ? `<span class="area-color-picker inline-block w-[16px] h-[16px] rounded-full border border-border-strong cursor-pointer flex-none opacity-60 hover:opacity-100" style="background:${hueToHex(hue)}" data-gid="${g.id}" title="Pick colour"><input type="color" class="hidden" value="${hueToHex(hue)}" /></span>` : '';
   const delBtn = `<button class="area-del bg-transparent border-0 text-inherit text-[1.15rem] cursor-pointer leading-none${state.edit ? ' opacity-60' : ' hidden'}" title="Remove group">&times;</button>`;
   // only areas are resizable — a device box is always sized to its outputs
