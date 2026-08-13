@@ -83,6 +83,22 @@ test.describe('area editor', () => {
     await expect(head.locator('.area-color-picker')).toHaveCount(0); // colour lives only in the panel
   });
 
+  // #103: read mode is for reading. Controls it will not let you press are not
+  // greyed out any more, they are gone, leaving the titlebar as icon + name.
+  test('read mode hides the master controls entirely', async ({ page }) => {
+    const head = page.locator('.area-head', { hasText: 'Plant room' });
+    await expect(head.locator('.area-master')).toBeVisible();      // still in edit mode
+
+    await page.click('#btn-mode');                                 // -> read mode
+    await expect(head.locator('.area-master')).toBeHidden();
+    await expect(head.locator('.am-btn').first()).toBeHidden();
+    await expect(head.locator('.area-temp')).toBeHidden();
+    await expect(head).toContainText('Plant room');                // the name stays
+
+    await page.click('#btn-mode');                                 // back to edit
+    await expect(head.locator('.area-master')).toBeVisible();
+  });
+
   test('the bar pill shows the same set point the panel does', async ({ page }) => {
     const pill = page.locator('.area-head', { hasText: 'Plant room' }).locator('.area-temp');
     await expect(pill).toContainText('21');
