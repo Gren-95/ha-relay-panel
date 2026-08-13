@@ -1,9 +1,6 @@
 import { $, state, esc, TINY, api } from './core.js';
 import { t } from './i18n.js';
-import { closeEditor } from './editor.js';
-import { closeDeviceEditor } from './device-editor.js';
-import { closeActivityLog } from './activity.js';
-import { closeBulkEdit } from './bulk.js';
+import { registerModal, closeOthers, syncBackdrop } from './modals.js';
 import { render } from './board.js';
 import { saveLayout } from './history-undo.js';
 import { refreshLive } from './relay-actions.js';
@@ -11,16 +8,18 @@ import { positionResizeHandles } from './resize.js';
 
 // ---- presets ----
 function openPresets() {
-  closeEditor(); closeDeviceEditor(); closeActivityLog(); closeBulkEdit();
+  closeOthers('preset-editor');
   state.layout.presets = state.layout.presets || [];
   renderPresets();
   $('#preset-editor').classList.remove('hidden');
+  syncBackdrop();
   requestAnimationFrame(positionResizeHandles);
 }
 
 function closePresets() {
   $('#preset-editor').classList.add('hidden');
   $('#pr-list').innerHTML = '';
+  syncBackdrop();
 }
 
 function renderPresets() {
@@ -90,6 +89,7 @@ async function deletePreset(idx) {
 
 // wiring for the presets panel
 export function initPresets() {
+registerModal('preset-editor', closePresets, { dim: true });
 $('#pr-close').addEventListener('click', closePresets);
 $('#pr-save').addEventListener('click', savePreset);
 }

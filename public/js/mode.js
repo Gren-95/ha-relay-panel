@@ -3,10 +3,8 @@ import { t } from './i18n.js';
 import { closeEditor } from './editor.js';
 import { closeDeviceEditor } from './device-editor.js';
 import { closeAreaEditor } from './area-editor.js';
-import { openLogin, closeLogin, updateAuthUI } from './auth.js';
-import { closeActivityLog } from './activity.js';
-import { closePresets } from './presets.js';
-import { closeBulkEdit } from './bulk.js';
+import { openLogin, updateAuthUI } from './auth.js';
+import { closeTopmost as closeTopmostModal } from './modals.js';
 import { render } from './board.js';
 
 function applyMode() {
@@ -22,20 +20,11 @@ function toggleMode() {
   state.edit = !state.edit; applyMode(); render();
 }
 
-// Esc closes the top-most open thing (in priority order)
-function closeTopmost() {
-  if (!$('#chart-modal').classList.contains('hidden')) { $('#chart-modal').classList.add('hidden'); return true; }
-  if (!$('#about-modal').classList.contains('hidden')) { $('#about-modal').classList.add('hidden'); return true; }
-  if (!$('#login-modal').classList.contains('hidden')) { closeLogin(); return true; }
-  if (!$('#advanced-menu').classList.contains('hidden')) { $('#advanced-menu').classList.add('hidden'); return true; }
-  if (!$('#activity-editor').classList.contains('hidden')) { closeActivityLog(); return true; }
-  if (!$('#preset-editor').classList.contains('hidden')) { closePresets(); return true; }
-  if (!$('#bulk-editor').classList.contains('hidden')) { closeBulkEdit(); return true; }
-  if (!$('#editor').classList.contains('hidden')) { closeEditor(); return true; }
-  if (!$('#dev-editor').classList.contains('hidden')) { closeDeviceEditor(); return true; }
-  if (!$('#area-editor').classList.contains('hidden')) { closeAreaEditor(); return true; }
-  return false;
-}
+// Esc closes the top-most open thing. The priority order and every panel's close
+// function now live in the registry (#98), so this no longer drifts when a panel
+// is added — which is how the area editor came to be missing from three of the
+// hand-written mutual-exclusion chains.
+const closeTopmost = closeTopmostModal;
 
 // wiring: Edit/View mode button
 export function initMode() {

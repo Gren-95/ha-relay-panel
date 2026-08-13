@@ -2,10 +2,8 @@ import { state, $, esc, setMsg, api } from './core.js';
 import { t } from './i18n.js';
 import { areaColor, hueToHex, hexToHue, fitAreaToContents } from './layout.js';
 import { render, updateBoxColors } from './board.js';
-import { openEditor, closeEditor, clearBlur, applyBlur } from './editor.js';
-import { closeActivityLog } from './activity.js';
-import { closeBulkEdit } from './bulk.js';
-import { closePresets } from './presets.js';
+import { openEditor, clearBlur, applyBlur } from './editor.js';
+import { registerModal, closeOthers, syncBackdrop } from './modals.js';
 import { saveLayout } from './history-undo.js';
 import { positionResizeHandles } from './resize.js';
 import { setAreaRelays, setRelaysTemp } from './relay-actions.js';
@@ -17,7 +15,7 @@ import { setAreaRelays, setRelaysTemp } from './relay-actions.js';
 // Both are now "click the gear, get a panel".
 function openAreaEditor(g) {
   if (!state.authed) return;                                  // #63, as the device editor does
-  closeEditor(); closeActivityLog(); closeBulkEdit(); closePresets();
+  closeOthers('area-editor');
   state.selectedArea = g.id;
   // Populate before showing so the blur paints on a finished panel
   $('#ae-name').value = g.name || '';
@@ -46,8 +44,7 @@ function openAreaEditor(g) {
 
   aeMsg('');
   $('#area-editor').classList.remove('hidden');
-  $('#backdrop').classList.remove('hidden');
-  document.body.classList.add('editor-open');
+  syncBackdrop();
   applyBlur();
   requestAnimationFrame(positionResizeHandles);
 }
@@ -69,8 +66,7 @@ function closeAreaEditor() {
   state.selectedArea = null;
   if (previewed) { previewed = false; render(); }   // discard an unsaved preview
   $('#area-editor').classList.add('hidden');
-  $('#backdrop').classList.add('hidden');
-  document.body.classList.remove('editor-open');
+  syncBackdrop();
   clearBlur();
 }
 function aeMsg(m, cls) { setMsg($('#ae-msg'), m, cls); }
@@ -119,6 +115,7 @@ async function deleteArea() {
 }
 
 export function initAreaEditor() {
+registerModal('area-editor', closeAreaEditor, { dim: true, blur: true });
   $('#ae-close').addEventListener('click', closeAreaEditor);
   $('#ae-save').addEventListener('click', saveArea);
   $('#ae-color-reset').addEventListener('click', () => {

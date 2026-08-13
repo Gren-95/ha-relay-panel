@@ -2,6 +2,7 @@ import { $, state, api } from './core.js';
 import { t } from './i18n.js';
 import { applyMode } from './mode.js';
 import { render } from './board.js';
+import { registerModal } from './modals.js';
 
 // --- auth (validates against Home Assistant) ---
 function updateAuthUI() {
@@ -53,6 +54,7 @@ async function doLogout() {
 
 // wiring: login modal + logout, then restore any existing session
 export function initAuth() {
+registerModal('login-modal', closeLogin);
 $('#login-submit').addEventListener('click', doLogin);
 $('#login-cancel').addEventListener('click', closeLogin);
 $('#login-pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });

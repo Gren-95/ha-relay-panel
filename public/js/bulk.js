@@ -1,9 +1,6 @@
 import { $, state, esc, setMsg, api } from './core.js';
 import { t } from './i18n.js';
-import { closeEditor } from './editor.js';
-import { closeDeviceEditor } from './device-editor.js';
-import { closeActivityLog } from './activity.js';
-import { closePresets } from './presets.js';
+import { registerModal, closeOthers, syncBackdrop } from './modals.js';
 import { render } from './board.js';
 import { saveLayout } from './history-undo.js';
 import { refreshLive } from './relay-actions.js';
@@ -11,7 +8,7 @@ import { positionResizeHandles } from './resize.js';
 
 // ---- bulk edit ----
 function openBulkEdit() {
-  closeEditor(); closeDeviceEditor(); closeActivityLog(); closePresets();
+  closeOthers('bulk-editor');
   // populate area dropdown
   const sel = $('#bk-area');
   sel.innerHTML = '<option value="" data-i18n="all_relays">All relays</option>' +
@@ -19,12 +16,14 @@ function openBulkEdit() {
   sel.value = '';
   updateBulkList();
   $('#bulk-editor').classList.remove('hidden');
+  syncBackdrop();
   requestAnimationFrame(positionResizeHandles);
 }
 
 function closeBulkEdit() {
   $('#bulk-editor').classList.add('hidden');
   $('#bk-list').innerHTML = '';
+  syncBackdrop();
 }
 
 function updateBulkList() {
@@ -85,6 +84,7 @@ async function applyBulk() {
 
 // wiring for the bulk-edit panel
 export function initBulk() {
+registerModal('bulk-editor', closeBulkEdit, { dim: true });
 $('#bk-close').addEventListener('click', closeBulkEdit);
 $('#bk-area').addEventListener('change', updateBulkList);
 ['change', 'input'].forEach((ev) => {

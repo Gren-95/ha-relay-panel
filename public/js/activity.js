@@ -1,9 +1,6 @@
 import { $, esc, setMsg, api } from './core.js';
 import { t, fmtAgo } from './i18n.js';
-import { closeEditor } from './editor.js';
-import { closeDeviceEditor } from './device-editor.js';
-import { closeBulkEdit } from './bulk.js';
-import { closePresets } from './presets.js';
+import { registerModal, closeOthers, syncBackdrop } from './modals.js';
 import { positionResizeHandles } from './resize.js';
 
 // ---- activity log ----
@@ -11,9 +8,10 @@ const activity = { page: 1, total: 0, perPage: 15 };
 
 function openActivityLog(page) {
   page = page || 1;
-  closeEditor(); closeDeviceEditor(); closeBulkEdit(); closePresets();
+  closeOthers('activity-editor');
   activity.page = page;
   $('#activity-editor').classList.remove('hidden');
+  syncBackdrop();
   requestAnimationFrame(positionResizeHandles);
   loadActivity(page);
 }
@@ -39,6 +37,7 @@ async function exportActivityCSV() {
 function closeActivityLog() {
   $('#activity-editor').classList.add('hidden');
   $('#act-list').innerHTML = '';
+  syncBackdrop();
 }
 
 async function loadActivity(page) {
@@ -140,6 +139,8 @@ function fmtTime(ts) {
 
 // wiring for the activity-log panel
 export function initActivity() {
+// dims the board so a click outside lands on the backdrop and dismisses it (#98)
+registerModal('activity-editor', closeActivityLog, { dim: true });
 $('#act-close').addEventListener('click', closeActivityLog);
 $('#act-prev').addEventListener('click', () => { if (activity.page > 1) loadActivity(activity.page - 1); });
 $('#act-next').addEventListener('click', () => loadActivity(activity.page + 1));

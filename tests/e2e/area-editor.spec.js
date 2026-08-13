@@ -118,6 +118,16 @@ test.describe('area editor', () => {
     await expect(page.locator('#backdrop')).toBeHidden();
   });
 
+  // the bug that prompted #98: the backdrop closed the relay and device editors
+  // but had never been taught about this one
+  test('clicking outside closes it', async ({ page }) => {
+    await (await areaGear(page)).click();
+    await expect(page.locator('#area-editor')).toBeVisible();
+    await page.mouse.click(5, 400);
+    await expect(page.locator('#area-editor')).toBeHidden();
+    await expect(page.locator('#backdrop')).toBeHidden();
+  });
+
   test('renaming the area through the panel updates the box', async ({ page }) => {
     await (await areaGear(page)).click();
     await page.fill('#ae-name', 'Boiler house');
