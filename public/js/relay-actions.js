@@ -82,6 +82,8 @@ async function setRelaysTemp(relays, temp) {
       ok++;
     } catch {}
   }
+  const fail = targets.length - ok;
+  flashStatus(t('applied_to_n', { n: ok }) + (fail ? ', ' + t('n_failed', { n: fail }) : ''));
   render(); saveLayout(); refreshLive();
   return ok;
 }
