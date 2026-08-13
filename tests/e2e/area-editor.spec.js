@@ -76,11 +76,18 @@ test.describe('area editor', () => {
     }
   });
 
-  test('the titlebar keeps All on / All off and nothing else', async ({ page }) => {
+  test('the titlebar keeps the master pair and the set point, not the colour', async ({ page }) => {
     const head = page.locator('.area-head', { hasText: 'Plant room' });
     await expect(head.locator('.am-btn[data-act]')).toHaveCount(2);
-    await expect(head.locator('.area-temp')).toHaveCount(0);        // set point -> panel
-    await expect(head.locator('.area-color-picker')).toHaveCount(0); // colour -> panel
+    await expect(head.locator('.area-temp')).toHaveCount(1);         // #99: on the bar AND in the panel
+    await expect(head.locator('.area-color-picker')).toHaveCount(0); // colour lives only in the panel
+  });
+
+  test('the bar pill shows the same set point the panel does', async ({ page }) => {
+    const pill = page.locator('.area-head', { hasText: 'Plant room' }).locator('.area-temp');
+    await expect(pill).toContainText('21');
+    await (await areaGear(page)).click();
+    await expect(page.locator('#ae-temp')).toHaveValue('21');
   });
 
   test('the master buttons on the bar still switch the whole area', async ({ page }) => {
@@ -126,6 +133,26 @@ test.describe('area editor', () => {
     await page.mouse.click(5, 400);
     await expect(page.locator('#area-editor')).toBeHidden();
     await expect(page.locator('#backdrop')).toBeHidden();
+  });
+
+  test('applying a set point in the panel moves the pill on the bar', async ({ page }) => {
+    const bound = [];
+    await page.route('**/api/relays/*/bind', (route) => {
+      bound.push(route.request().postDataJSON());
+      route.fulfill({ json: { ok: true, automationId: 'x' } });
+    });
+
+    await (await areaGear(page)).click();
+    await page.fill('#ae-temp', '19.5');
+    await page.click('#ae-temp-apply');
+
+    // every bound relay in the area gets re-bound at the new target
+    await expect.poll(() => bound.length).toBe(3);
+    expect(bound.every((b) => b.temp === 19.5)).toBe(true);
+
+    await page.keyboard.press('Escape');
+    const pill = page.locator('.area-head', { hasText: 'Plant room' }).locator('.area-temp');
+    await expect(pill).toContainText('19.5');
   });
 
   test('renaming the area through the panel updates the box', async ({ page }) => {
