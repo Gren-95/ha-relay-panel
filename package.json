@@ -34,7 +34,7 @@
     "test": "bash scripts/test.sh"
   },
   "dependencies": {
-    "express": "^4.19.2",
+    "express": "^5.2.1",
     "mqtt": "^5.10.1",
     "mysql2": "^3.11.0",
     "ws": "^8.18.0"
