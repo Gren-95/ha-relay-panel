@@ -1,6 +1,6 @@
 import { state, canvas, CANVAS_DESKTOP, CANVAS_MOBILE, esc, setStatus, flashStatus, api } from './core.js';
 import { t } from './i18n.js';
-import { refreshAreaPicker, normalizeLayout, areaColor, headColor, boxTint, headTint, opaque, bodyFill, dashedSides, areaName, hueToHex, hexToHue,
+import { refreshAreaPicker, normalizeLayout, areaColor, headColor, boxTint, headTint, opaque, bodyFill, dashedSides, areaName,
   pinDeviceToArea, containArea, fitAreaToContents, minAreaSize, reflowDeviceOutputs,
   num, CARD_W, CARD_H, PAD, HDR, DEV_W, MIN_AREA_W, MIN_AREA_H,
   zIndexOf, bringToFront } from './layout.js';
@@ -195,7 +195,6 @@ function renderBox(g, kind) {
   // area boxes get a master on/off for all their relays (works in Live mode too)
   // an area keeps its master pair on the bar (#96); everything else is in the panel
   const master = isDev ? '' : `<span class="area-master inline-flex gap-1">${masterButtons()}</span>`;
-  const colorBtn = state.edit ? `<span class="area-color-picker inline-block w-[16px] h-[16px] rounded-full border border-border-strong cursor-pointer flex-none opacity-60 hover:opacity-100" style="background:${hueToHex(hue)}" data-gid="${g.id}" title="Pick colour"><input type="color" class="hidden" value="${hueToHex(hue)}" /></span>` : '';
   const delBtn = `<button class="area-del bg-transparent border-0 text-inherit text-[1.15rem] cursor-pointer leading-none ${state.edit ? 'opacity-60' : 'hidden'}" title="Remove group">&times;</button>`;
   // only areas are resizable — a device box is always sized to its outputs
   const resize = state.edit && !isDev
@@ -208,7 +207,6 @@ function renderBox(g, kind) {
   const head = `<div class="area-head h-[44px] px-2.5 flex items-center gap-1.5 font-bold select-none touch-none border-2 border-solid rounded-t-2xl ${state.edit ? 'cursor-grab active:cursor-grabbing' : ''}" style="color:${headColor(hue)};border-color:${line};background:${opaque(headTint(hue))}">
       <i class="bi ${state.edit ? 'bi-gear area-gear cursor-pointer' : (isDev ? 'bi-hdd-stack' : 'bi-grid-3x3-gap')} text-[.95rem] flex-none" title="${state.edit ? t(isDev ? 'physical_relay_h' : 'area_h') : ''}"></i>
       <span class="text-[.95rem] min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">${esc(g.name || refId)}</span>
-      ${isDev ? colorBtn : ''}
       <span class="ml-auto flex items-center gap-1.5 flex-none">${master}${delBtn}</span>
     </div>`;
   // A device box keeps a plain solid CSS border; an area's body is outlined with the
@@ -235,23 +233,6 @@ function renderBox(g, kind) {
   if (gearBtn) {
     gearBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
     gearBtn.addEventListener('click', (e) => { e.stopPropagation(); (isDev ? openDeviceEditor : openAreaEditor)(g); });
-  }
-  // Inline colour picker (#73) — hidden input inside a coloured circle span
-  const swatch = el.querySelector('.area-color-picker');
-  if (swatch) {
-    const cp = swatch.querySelector('input');
-    swatch.addEventListener('pointerdown', (e) => e.stopPropagation());
-    swatch.addEventListener('click', () => { cp.click(); });
-    cp.addEventListener('input', () => {
-      const h = hexToHue(cp.value);
-      g.hue = h;
-      swatch.style.background = hueToHex(h);
-      updateBoxColors(el, h, isDev, g);
-    });
-    cp.addEventListener('change', () => {
-      g.hue = hexToHue(cp.value);
-      saveLayout();
-    });
   }
   el.querySelectorAll('.am-btn, .area-temp').forEach((b) => {
     b.addEventListener('pointerdown', (e) => e.stopPropagation());
@@ -397,4 +378,4 @@ function addPhysicalRelay(deviceId) {
 }
 
 export { isMobile, render, renderMobile, memberFilter, renderBox, groupHeaderDrag,
-  dragMove, addArea, addPhysicalRelay, areaMaster, applyZ, raise };
+  dragMove, addArea, addPhysicalRelay, areaMaster, applyZ, raise, updateBoxColors };
