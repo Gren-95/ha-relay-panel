@@ -69,7 +69,9 @@ function render() {
   canvas.dispatchEvent(new CustomEvent('render'));
 }
 
-// shared area master on/off buttons (keeps .area-master hook for live-mode hide + .am-btn hooks)
+// Shared area master controls. `.area-master` is the live-mode hide hook: in read
+// mode the whole cluster goes away rather than sitting there greyed out, leaving
+// the titlebar as icon + name. `.am-btn` stays the ON/OFF click hook.
 // AM_STYLE is the look; `am-btn` is the ON/OFF click hook and must NOT be on the
 // temperature pill - it has its own `.area-temp` handler and no data-act (#86).
 const AM_STYLE = 'text-[.72rem] font-bold px-[9px] py-[3px] rounded-lg cursor-pointer border-[1.5px] border-border-strong bg-surface text-fg';
@@ -78,8 +80,8 @@ const AM_BTN = `am-btn ${AM_STYLE}`;
 // often enough that putting them behind the gear would cost a click every time.
 // Everything else an area can do lives in its editor panel.
 const masterButtons = () => `
-    <button class="${AM_BTN} [.live-mode_&]:opacity-40 [.live-mode_&]:pointer-events-none" data-act="on">${t('all_on')}</button>
-    <button class="${AM_BTN} [.live-mode_&]:opacity-40 [.live-mode_&]:pointer-events-none" data-act="off">${t('all_off')}</button>`;
+    <button class="${AM_BTN}" data-act="on">${t('all_on')}</button>
+    <button class="${AM_BTN}" data-act="off">${t('all_off')}</button>`;
 
 // Mobile keeps the temperature pill as well - it renders a flat list with no gear
 // and no area editor, so the pill is the only way to reach the set point there.
@@ -88,8 +90,8 @@ const areaMaster = (g) => {
   const bound = state.layout.relays.filter((r) => r.bound && r.area === g.areaId && r.temp != null);
   const same = bound.length && bound.every((r) => r.temp === bound[0].temp);
   const tempLabel = bound.length ? (same ? bound[0].temp + '°' : 'mixed') : '—';
-  return `<span class="area-master inline-flex gap-1">${masterButtons()}
-    <button class="${AM_STYLE} area-temp [.live-mode_&]:opacity-40 [.live-mode_&]:pointer-events-none" data-area="${esc(g.areaId)}" title="Set area temperature"><i class="bi bi-thermometer-half"></i> ${tempLabel}</button>
+  return `<span class="area-master inline-flex gap-1 [.live-mode_&]:hidden">${masterButtons()}
+    <button class="${AM_STYLE} area-temp" data-area="${esc(g.areaId)}" title="Set area temperature"><i class="bi bi-thermometer-half"></i> ${tempLabel}</button>
   </span>`;
 };
 
@@ -196,7 +198,7 @@ function renderBox(g, kind) {
   // an area keeps its master pair on the bar (#96); everything else is in the panel
   // the set point is deliberately in both places (#99): the pill shows it at a
   // glance and edits it in one click, the panel is where you go for everything else
-  const master = isDev ? '' : areaMaster(g);
+  const master = isDev ? '' : areaMaster(g);   // hidden in read mode by .area-master
   const delBtn = `<button class="area-del bg-transparent border-0 text-inherit text-[1.15rem] cursor-pointer leading-none ${state.edit ? 'opacity-60' : 'hidden'}" title="Remove group">&times;</button>`;
   // only areas are resizable — a device box is always sized to its outputs
   const resize = state.edit && !isDev
