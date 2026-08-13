@@ -37,7 +37,7 @@ Instructions for Claude Code in this project.
 
 - Page size: 15 entries
 - Retention: 1000 newest events (auto-pruned after each insert)
-- Actions logged: login, logout, relay.bind, relay.unbind, relay.delete, device.rename, switch.toggle, automation.pause, automation.resume, layout.save, layout.restore, automation.reapply, device.delete, area.delete
+- Actions logged: login, logout, relay.bind, relay.unbind, relay.delete, device.rename, switch.toggle, automation.pause, automation.resume, layout.save, layout.restore, automation.reapply, automation.prune, device.delete, area.delete
 - CSV export available via download button in the panel footer
 
 ## Facility-map button (combo sensors)

@@ -101,6 +101,7 @@ const TR = {
     act_switch_toggle: 'Käsitsi lülitus',
     act_automation_pause: 'Automaatika peatatud', act_automation_resume: 'Automaatika jätkatud',
     act_automation_reapply: 'Automaatika uuesti rakendatud',
+    act_automation_prune: 'Orbautomaatika eemaldatud',
     act_layout_save: 'Paigutus salvestatud', act_layout_restore: 'Paigutus taastatud',
     // JS-built strings (#71)
     add: 'Lisa', all_relays: 'Kõik releed', apply_to_n: 'Rakenda {n} releele',
@@ -148,6 +149,7 @@ const EN = {  // English fallbacks for dynamic (non-HTML) strings
   act_device_rename: 'Rename', act_switch_toggle: 'Manual switch',
   act_automation_pause: 'Automation paused', act_automation_resume: 'Automation resumed',
   act_automation_reapply: 'Reapply automations',
+  act_automation_prune: 'Orphan automation removed',
   act_layout_save: 'Layout saved', act_layout_restore: 'Layout restored',
   act_relay_delete: 'Relay deleted', act_device_delete: 'Device removed',
   act_area_delete: 'Area removed', download_csv: 'Download CSV',

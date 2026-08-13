@@ -94,6 +94,7 @@ function formatDetail(action, d) {
     case 'layout.save': return `${d.relays || 0} relays, ${d.areas || 0} areas, ${d.devices || 0} devices`;
     case 'layout.restore': return `backup #${d.backup_id || '?'}`;
     case 'automation.reapply': return `${d.count || 0} automation${d.count === 1 ? '' : 's'}`;
+    case 'automation.prune': return esc((d.removed || []).join(', '));
     case 'automation.pause':
     case 'automation.resume': return esc(d.rid || '');
     default: return '';
@@ -117,6 +118,7 @@ function actionIcon(action) {
     'layout.save':         { icon: 'bi-floppy',             cls: C.yellow },
     'layout.restore':      { icon: 'bi-arrow-counterclockwise', cls: C.amber },
     'automation.reapply':  { icon: 'bi-arrow-repeat',       cls: C.gray },
+    'automation.prune':    { icon: 'bi-eraser',             cls: C.red },
     'automation.pause':    { icon: 'bi-pause-fill',         cls: C.amber2 },
     'automation.resume':   { icon: 'bi-play-fill',          cls: C.green },
     'relay.delete':        { icon: 'bi-trash',              cls: C.red },

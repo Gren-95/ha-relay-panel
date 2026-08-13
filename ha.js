@@ -347,6 +347,29 @@ async function deleteAutomation(automationId) {
   }
 }
 
+// Delete every `relaypanel_*` automation in HA that no longer has a bound relay
+// behind it. Deleting a card/device/area only rewrites the layout JSON, so without
+// this the old automation keeps running against the same physical switch on its
+// old sensor and setpoint, fighting whatever binding replaced it (#84).
+// `keepIds` empty means the board is empty or unreadable - never answer that by
+// wiping every automation, so bail out instead.
+async function pruneOrphanAutomations(keepIds) {
+  if (!keepIds || !keepIds.size) return [];
+  const orphans = Object.keys(await listRelayAutomations()).filter((id) => !keepIds.has(id));
+  for (const id of orphans) {
+    try {
+      await haFetch(`/api/config/automation/config/${id}`, { method: 'DELETE' });
+    } catch (e) { /* already gone is fine */ }
+  }
+  // One reload for the whole batch, not one per delete.
+  if (orphans.length) {
+    try {
+      await haFetch('/api/services/automation/reload', { method: 'POST', body: '{}' });
+    } catch (e) { /* the deletes landed; HA reloads on its own schedule too */ }
+  }
+  return orphans;
+}
+
 // Build a thermostat-style binding. Single setpoint by default (deadband 0):
 //   heat (mode 'below'): ON while temp <= target, OFF when temp > target
 //   cool (mode 'above'): ON while temp >= target, OFF when temp < target
@@ -489,6 +512,7 @@ module.exports = {
   renameHaDevice,
   upsertAutomation,
   deleteAutomation,
+  pruneOrphanAutomations,
   findAutomation,
   listRelayAutomations,
   setAutomationEnabled,
