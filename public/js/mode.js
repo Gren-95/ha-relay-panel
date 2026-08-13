@@ -2,6 +2,7 @@ import { $, state } from './core.js';
 import { t } from './i18n.js';
 import { closeEditor } from './editor.js';
 import { closeDeviceEditor } from './device-editor.js';
+import { closeAreaEditor } from './area-editor.js';
 import { openLogin, closeLogin, updateAuthUI } from './auth.js';
 import { closeActivityLog } from './activity.js';
 import { closePresets } from './presets.js';
@@ -12,7 +13,7 @@ function applyMode() {
   $('#mode-label').textContent = state.edit ? t('mode_edit') : t('mode_live');
   const i = $('#btn-mode i'); if (i) i.className = state.edit ? 'bi bi-pencil-square' : 'bi bi-eye';
   document.body.classList.toggle('live-mode', !state.edit);
-  if (!state.edit) { closeEditor(); closeDeviceEditor(); }
+  if (!state.edit) { closeEditor(); closeDeviceEditor(); closeAreaEditor(); }
   updateAuthUI();
 }
 function toggleMode() {
@@ -32,6 +33,7 @@ function closeTopmost() {
   if (!$('#bulk-editor').classList.contains('hidden')) { closeBulkEdit(); return true; }
   if (!$('#editor').classList.contains('hidden')) { closeEditor(); return true; }
   if (!$('#dev-editor').classList.contains('hidden')) { closeDeviceEditor(); return true; }
+  if (!$('#area-editor').classList.contains('hidden')) { closeAreaEditor(); return true; }
   return false;
 }
 

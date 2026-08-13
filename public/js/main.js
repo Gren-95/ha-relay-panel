@@ -15,6 +15,7 @@ import { initResize } from './resize.js';
 import { initTheme } from './theme.js';
 import { initChart } from './chart.js';
 import { initDeviceEditor } from './device-editor.js';
+import { initAreaEditor } from './area-editor.js';
 
 async function boot() {
   try {
@@ -207,6 +208,7 @@ initMode();
 initEditor();
 initChart();
 initDeviceEditor();
+initAreaEditor();
 initActivity();
 initBulk();
 initPresets();

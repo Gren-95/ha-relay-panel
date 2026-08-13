@@ -6,13 +6,14 @@ import { openEditor, closeEditor, clearBlur, applyBlur } from './editor.js';
 import { closeActivityLog } from './activity.js';
 import { closeBulkEdit } from './bulk.js';
 import { closePresets } from './presets.js';
+import { closeAreaEditor } from './area-editor.js';
 import { saveLayout } from './history-undo.js';
 import { positionResizeHandles } from './resize.js';
 
 // ---- device (physical relay) editor ----
 function openDeviceEditor(g) {
   if (!state.authed) return; // #63
-  closeEditor(); closeActivityLog(); closeBulkEdit(); closePresets();
+  closeEditor(); closeActivityLog(); closeBulkEdit(); closePresets(); closeAreaEditor();
   state.selectedDev = g.id;
   // Populate fields first (like the relay editor does) so the blur paints instantly
   $('#de-name').value = g.name || '';

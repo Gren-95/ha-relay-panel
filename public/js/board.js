@@ -7,6 +7,7 @@ import { refreshAreaPicker, normalizeLayout, areaColor, headColor, boxTint, head
 import { updateSummary, setAreaRelays } from './relay-actions.js';
 import { card } from './card.js';
 import { openDeviceEditor } from './device-editor.js';
+import { openAreaEditor } from './area-editor.js';
 import { saveLayout, saveZOrder } from './history-undo.js';
 
 const isMobile = () => window.innerWidth <= 700;
@@ -185,7 +186,8 @@ function renderBox(g, kind) {
   // a pinned device names its area inline — the titlebar stays one fixed-height row
   // so HDR in layout.js keeps matching what is actually rendered.
   // area boxes get a master on/off for all their relays (works in Live mode too)
-  const master = !isDev ? areaMaster(g) : '';
+  // an area's controls live in its editor panel now (#95); a device box keeps its bar
+  const master = '';
   const colorBtn = state.edit ? `<span class="area-color-picker inline-block w-[16px] h-[16px] rounded-full border border-border-strong cursor-pointer flex-none opacity-60 hover:opacity-100" style="background:${hueToHex(hue)}" data-gid="${g.id}" title="Pick colour"><input type="color" class="hidden" value="${hueToHex(hue)}" /></span>` : '';
   const delBtn = `<button class="area-del bg-transparent border-0 text-inherit text-[1.15rem] cursor-pointer leading-none ${state.edit ? 'opacity-60' : 'hidden'}" title="Remove group">&times;</button>`;
   // only areas are resizable — a device box is always sized to its outputs
@@ -197,7 +199,7 @@ function renderBox(g, kind) {
   // h-[44px] = 2px border + 40px row + 2px border, i.e. exactly HDR, so the body
   // starts where layout.js says content begins.
   const head = `<div class="area-head h-[44px] px-2.5 flex items-center gap-1.5 font-bold select-none touch-none border-2 border-solid rounded-t-2xl ${state.edit ? 'cursor-grab active:cursor-grabbing' : ''}" style="color:${headColor(hue)};border-color:${line};background:${opaque(headTint(hue))}">
-      <i class="bi ${isDev ? (state.edit ? 'bi-gear area-gear cursor-pointer' : 'bi-hdd-stack') : 'bi-grid-3x3-gap'} text-[.95rem] flex-none"></i>
+      <i class="bi ${state.edit ? 'bi-gear area-gear cursor-pointer' : (isDev ? 'bi-hdd-stack' : 'bi-grid-3x3-gap')} text-[.95rem] flex-none" title="${state.edit ? t(isDev ? 'physical_relay_h' : 'area_h') : ''}"></i>
       <span class="text-[.95rem] min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">${esc(g.name || refId)}</span>
       ${colorBtn}
       <span class="ml-auto flex items-center gap-1.5 flex-none">${master}${delBtn}</span>
@@ -225,7 +227,7 @@ function renderBox(g, kind) {
   const gearBtn = el.querySelector('.area-gear');
   if (gearBtn) {
     gearBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
-    gearBtn.addEventListener('click', (e) => { e.stopPropagation(); if (isDev) openDeviceEditor(g); });
+    gearBtn.addEventListener('click', (e) => { e.stopPropagation(); (isDev ? openDeviceEditor : openAreaEditor)(g); });
   }
   // Inline colour picker (#73) — hidden input inside a coloured circle span
   const swatch = el.querySelector('.area-color-picker');

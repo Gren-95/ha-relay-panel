@@ -95,6 +95,11 @@ const TR = {
     act_automation_pause: 'Automaatika peatatud', act_automation_resume: 'Automaatika jätkatud',
     act_automation_reapply: 'Automaatika uuesti rakendatud',
     act_automation_prune: 'Orbautomaatika eemaldatud',
+    // area editor panel (#95)
+    area_h: 'Ala', area_target_temp: 'Sihttemperatuur kõigile siinsetele releedele',
+    master_control: 'Üldjuhtimine', relays_word: 'Releed', apply_word: 'Rakenda',
+    no_relays_here: 'siin pole releesid', mixed_word: 'erinevad',
+    colour_reset: 'värv lähtestatud automaatseks',
     act_layout_save: 'Paigutus salvestatud', act_layout_restore: 'Paigutus taastatud',
     // JS-built strings (#71)
     add: 'Lisa', all_relays: 'Kõik releed', apply_to_n: 'Rakenda {n} releele',
@@ -143,6 +148,11 @@ const EN = {  // English fallbacks for dynamic (non-HTML) strings
   act_automation_pause: 'Automation paused', act_automation_resume: 'Automation resumed',
   act_automation_reapply: 'Reapply automations',
   act_automation_prune: 'Orphan automation removed',
+  // area editor panel (#95)
+  area_h: 'Area', area_target_temp: 'Target temperature for every relay here',
+  master_control: 'Master control', relays_word: 'Relays', apply_word: 'Apply',
+  no_relays_here: 'no relays here', mixed_word: 'mixed',
+  colour_reset: 'colour reset to auto',
   act_layout_save: 'Layout saved', act_layout_restore: 'Layout restored',
   act_relay_delete: 'Relay deleted', act_device_delete: 'Device removed',
   act_area_delete: 'Area removed', download_csv: 'Download CSV',
