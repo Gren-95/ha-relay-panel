@@ -1,5 +1,5 @@
 # ---- CSS build stage: install all deps (incl. Tailwind) and compile the stylesheet ----
-FROM node:20-alpine AS cssbuild
+FROM node:24-alpine AS cssbuild
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -9,7 +9,7 @@ COPY public ./public
 RUN npm run build:css
 
 # ---- Runtime stage ----
-FROM node:20-alpine
+FROM node:24-alpine
 ENV NODE_ENV=production
 WORKDIR /app
 

@@ -21,7 +21,12 @@ cd "$(dirname "$0")/.."
 NODE_IMAGE="${NODE_IMAGE:-node:24-alpine}"
 BASE_URL="${BASE_URL:-http://localhost:8090}"
 # Keep the browser image in step with the package, or Playwright refuses to run.
-PW_VERSION="$(sed -n 's/.*"@playwright\/test"[^0-9]*\([0-9][0-9.]*\).*/\1/p' package.json)"
+# Read the LOCKED version, not the range in package.json: `npm update` moves the
+# lock without rewriting "^1.62.0", and a tag built from the range would then pull
+# browsers for the wrong build. Resolved in a container so the host needs no Node.
+PW_VERSION="$(docker run --rm -v "$PWD":/app -w /app "$NODE_IMAGE" \
+  node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version" 2>/dev/null \
+  || sed -n 's/.*"@playwright\/test"[^0-9]*\([0-9][0-9.]*\).*/\1/p' package.json)"
 PW_IMAGE="${PW_IMAGE:-mcr.microsoft.com/playwright:v${PW_VERSION}-noble}"
 # node_modules lives in a volume so the container never writes to (or reads) the
 # host's tree - the host installs under a different Node and npm.
