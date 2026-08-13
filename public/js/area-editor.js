@@ -42,9 +42,16 @@ function openAreaEditor(g) {
   const boxes = state.layout.devices
     .filter((d) => d.area === g.areaId)
     .sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+  // the address the physical relay editor shows (#100), repeated here so the area
+  // view answers "which box, and where is it" without opening anything
+  const hostOf = (deviceId) => {
+    const dev = state.relayDevices.find((x) => x.device_id === deviceId);
+    return ((dev && dev.url) || '').replace(/^https?:\/\//, '').replace(/:80$/, '').replace(/\/$/, '');
+  };
   const groups = boxes.map((d) => ({
     boxId: d.id,
     title: d.name || d.deviceId || 'relay box',
+    host: hostOf(d.deviceId),
     relays: state.layout.relays.filter((r) => r.device === d.id),
   }));
   // cards pinned straight to the area belong to no box - they still have to show
@@ -56,6 +63,7 @@ function openAreaEditor(g) {
       <div class="ae-box flex items-center gap-1.5 text-[.82rem] font-bold text-muted px-0.5 ${gr.boxId ? 'cursor-pointer hover:text-fg' : ''}"${gr.boxId ? ` data-box="${esc(gr.boxId)}"` : ''}>
         <i class="bi ${gr.boxId ? 'bi-hdd-stack' : 'bi-dash-circle-dotted'}"></i>
         <span class="overflow-hidden text-ellipsis whitespace-nowrap">${esc(gr.title)}</span>
+        ${gr.host ? `<span class="ae-box-ip tabular-nums font-normal opacity-70 flex-none">${esc(gr.host)}</span>` : ''}
         <span class="ml-auto tabular-nums">${gr.relays.length}</span>
       </div>
       ${gr.relays.map(row).join('')}
