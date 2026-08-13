@@ -4,7 +4,7 @@
  * Pure-utility project (issue #29): all styling is Tailwind utility classes in the
  * markup (index.html) and in app.js template strings / classList toggles. There are
  * NO component CSS classes and NO @apply. What remains below is the irreducible set:
- *   1. Tailwind directives.
+ *   1. Tailwind's layer imports + @config (v4).
  *   2. Design-token CSS variables — there is no utility form for `--surface: #hex`,
  *      and flipping them under [data-theme=dark] is what powers dark mode (the same
  *      pattern shadcn / Tailwind v4 use). Utility colours (bg-surface, text-fg, …)
@@ -13,9 +13,14 @@
  *      off, vendor bootstrap-icon vertical alignment, and the one kiosk exit-hint
  *      pseudo-element (::after has no utility form).
  */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+/* preflight.css is deliberately NOT imported — in v3 this was
+   corePlugins.preflight=false; v4 dropped corePlugins, so omitting the import IS
+   the switch. The @layer base block further down still supplies the border reset
+   that the border-* utilities need without it. */
+@config "../tailwind.config.js";
 
 /* ---- 2. Design tokens ---- */
 :root {
@@ -67,6 +72,21 @@ html[data-theme="dark"] {
   --caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath fill='%239aa0a6' d='M0 0l6 7 6-7z'/%3E%3C/svg%3E");
   --stale-bg: #3f1414; --stale-fg: #fca5a5; --stale-border: #7f1d1d;
   --maint-bg: #422006; --maint-fg: #fcd34d;  /* amber — automation paused (#75) */
+}
+
+/* ---- 2b. `hidden` must beat the display utilities ----
+ * v3 emitted `.hidden` after `.flex`/`.inline-flex`, so `class="hidden … flex"`
+ * resolved to display:none by source order alone. v4 emits `.inline-flex` after
+ * `.hidden`, which silently un-hides 13 elements in index.html - the activity
+ * pager, the chart map button, the editor rows, the login modal and its backdrop.
+ * Renaming them to `hidden!` is not an option: 57 JS call sites toggle the plain
+ * class name. Re-asserting the rule at the end of the utilities layer restores
+ * the old precedence without touching a single call site.
+ * Note this now also beats variant display utilities (`mobile:grid`), which is
+ * what "hidden" should have meant all along - see #btn-menu in index.html for
+ * the one element that genuinely wanted the variant to win. */
+@layer utilities {
+  .hidden { display: none; }
 }
 
 /* ---- 3. Minimal base ---- */
