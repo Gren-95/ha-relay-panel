@@ -4,6 +4,7 @@ import { areaColor, hueToHex, hexToHue, fitAreaToContents } from './layout.js';
 import { render, updateBoxColors } from './board.js';
 import { openEditor, clearBlur, applyBlur } from './editor.js';
 import { registerModal, closeOthers, syncBackdrop } from './modals.js';
+import { openDeviceEditor } from './device-editor.js';
 import { saveLayout } from './history-undo.js';
 import { positionResizeHandles } from './resize.js';
 import { setAreaRelays, setRelaysTemp } from './relay-actions.js';
@@ -27,18 +28,50 @@ function openAreaEditor(g) {
   $('#ae-temp').value = same ? bound[0].temp : '';
   $('#ae-temp').placeholder = bound.length && !same ? t('mixed_word') : '';
 
-  $('#ae-relays').innerHTML = relays.map((r) => {
+  // Grouped by physical relay (#101). A flat list of nine outputs says nothing
+  // about which box to go and look at; grouped, the panel mirrors the wiring.
+  const row = (r) => {
     const on = (state.live[r.relay] || {}).state === 'on';
     return `<div class="ae-rel flex items-center gap-2.5 px-3 py-2.5 bg-surface-2 border-2 border-border rounded-[10px] cursor-pointer text-base" data-id="${esc(r.id)}">
       <span class="w-[46px] h-[30px] rounded-lg flex-none border-2 ${r.relay ? (on ? 'bg-on border-on' : 'bg-off border-border-strong') : 'bg-danger border-danger'}"></span>
       <span class="flex-auto overflow-hidden text-ellipsis whitespace-nowrap">${esc(r.name || r.relay || 'relay')}</span>
       <span class="text-muted text-[.8rem]">${r.bound ? `${r.temp}°` : '<i class="bi bi-circle"></i>'}</span>
     </div>`;
-  }).join('') || `<div class="text-muted text-[.9rem]">${t('no_relays_here')}</div>`;
-  $('#ae-relays').querySelectorAll('.ae-rel').forEach((row) => {
-    row.addEventListener('click', () => {
-      const r = state.layout.relays.find((x) => x.id === row.dataset.id);
+  };
+
+  const boxes = state.layout.devices
+    .filter((d) => d.area === g.areaId)
+    .sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+  const groups = boxes.map((d) => ({
+    boxId: d.id,
+    title: d.name || d.deviceId || 'relay box',
+    relays: state.layout.relays.filter((r) => r.device === d.id),
+  }));
+  // cards pinned straight to the area belong to no box - they still have to show
+  const loose = state.layout.relays.filter((r) => r.area === g.areaId && !r.device);
+  if (loose.length) groups.push({ boxId: null, title: t('no_device'), relays: loose });
+
+  $('#ae-relays').innerHTML = groups.filter((gr) => gr.relays.length).map((gr) => `
+    <div class="flex flex-col gap-1.5">
+      <div class="ae-box flex items-center gap-1.5 text-[.82rem] font-bold text-muted px-0.5 ${gr.boxId ? 'cursor-pointer hover:text-fg' : ''}"${gr.boxId ? ` data-box="${esc(gr.boxId)}"` : ''}>
+        <i class="bi ${gr.boxId ? 'bi-hdd-stack' : 'bi-dash-circle-dotted'}"></i>
+        <span class="overflow-hidden text-ellipsis whitespace-nowrap">${esc(gr.title)}</span>
+        <span class="ml-auto tabular-nums">${gr.relays.length}</span>
+      </div>
+      ${gr.relays.map(row).join('')}
+    </div>`).join('') || `<div class="text-muted text-[.9rem]">${t('no_relays_here')}</div>`;
+
+  $('#ae-relays').querySelectorAll('.ae-rel').forEach((el) => {
+    el.addEventListener('click', () => {
+      const r = state.layout.relays.find((x) => x.id === el.dataset.id);
       if (r) openEditor(r);
+    });
+  });
+  // a row opens its relay, so the header opens its box - the obvious parallel
+  $('#ae-relays').querySelectorAll('.ae-box[data-box]').forEach((el) => {
+    el.addEventListener('click', () => {
+      const d = state.layout.devices.find((x) => x.id === el.dataset.box);
+      if (d) openDeviceEditor(d);
     });
   });
 

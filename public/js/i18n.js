@@ -96,7 +96,7 @@ const TR = {
     act_automation_reapply: 'Automaatika uuesti rakendatud',
     act_automation_prune: 'Orbautomaatika eemaldatud',
     // area editor panel (#95)
-    device_address: 'Aadress', area_h: 'Ala', area_target_temp: 'Sihttemperatuur kõigile siinsetele releedele',
+    device_address: 'Aadress', no_device: 'Ilma releekarbita', area_h: 'Ala', area_target_temp: 'Sihttemperatuur kõigile siinsetele releedele',
     master_control: 'Üldjuhtimine', relays_word: 'Releed', apply_word: 'Rakenda',
     no_relays_here: 'siin pole releesid', mixed_word: 'erinevad',
     colour_reset: 'värv lähtestatud automaatseks',
@@ -149,7 +149,7 @@ const EN = {  // English fallbacks for dynamic (non-HTML) strings
   act_automation_reapply: 'Reapply automations',
   act_automation_prune: 'Orphan automation removed',
   // area editor panel (#95)
-  device_address: 'Address', area_h: 'Area', area_target_temp: 'Target temperature for every relay here',
+  device_address: 'Address', no_device: 'Not in a relay box', area_h: 'Area', area_target_temp: 'Target temperature for every relay here',
   master_control: 'Master control', relays_word: 'Relays', apply_word: 'Apply',
   no_relays_here: 'no relays here', mixed_word: 'mixed',
   colour_reset: 'colour reset to auto',
