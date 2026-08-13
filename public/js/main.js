@@ -10,7 +10,7 @@ import { allOff, setRelaysTemp, refreshLive, initRelayActions } from './relay-ac
 import { exportLayout, importLayout } from './import-export.js';
 import { saveLayout, initHistory, undo, redo } from './history-undo.js';
 import { applyMode, toggleMode, closeTopmost, initMode } from './mode.js';
-import { updateAuthUI, initAuth } from './auth.js';
+import { updateAuthUI, openLogin, initAuth } from './auth.js';
 import { initResize } from './resize.js';
 import { initTheme } from './theme.js';
 import { initChart } from './chart.js';
@@ -134,6 +134,9 @@ $('#btn-global-temp').addEventListener('click', () => {
   gTempInput.focus();
 });
 const commitGlobalTemp = async () => {
+  // Enter hides the input, which blurs it and fires this again - the second pass
+  // would re-bind every relay on the board.
+  if (gTempInput.classList.contains('hidden')) return;
   const v = parseFloat(gTempInput.value);
   gTempInput.classList.add('hidden');
   $('#btn-global-temp').classList.remove('hidden');

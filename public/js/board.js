@@ -69,7 +69,10 @@ function render() {
 }
 
 // shared area master on/off buttons (keeps .area-master hook for live-mode hide + .am-btn hooks)
-const AM_BTN = 'am-btn text-[.72rem] font-bold px-[9px] py-[3px] rounded-lg cursor-pointer border-[1.5px] border-border-strong bg-surface text-fg';
+// AM_STYLE is the look; `am-btn` is the ON/OFF click hook and must NOT be on the
+// temperature pill - it has its own `.area-temp` handler and no data-act (#86).
+const AM_STYLE = 'text-[.72rem] font-bold px-[9px] py-[3px] rounded-lg cursor-pointer border-[1.5px] border-border-strong bg-surface text-fg';
+const AM_BTN = `am-btn ${AM_STYLE}`;
 const areaMaster = (g) => {
   // per-area temperature set point (#81)
   const bound = state.layout.relays.filter((r) => r.bound && r.area === g.areaId && r.temp != null);
@@ -78,7 +81,7 @@ const areaMaster = (g) => {
   return `<span class="area-master inline-flex gap-1">
     <button class="${AM_BTN} [.live-mode_&]:opacity-40 [.live-mode_&]:pointer-events-none" data-act="on">${t('all_on')}</button>
     <button class="${AM_BTN} [.live-mode_&]:opacity-40 [.live-mode_&]:pointer-events-none" data-act="off">${t('all_off')}</button>
-    <button class="${AM_BTN} area-temp [.live-mode_&]:opacity-40 [.live-mode_&]:pointer-events-none" data-area="${esc(g.areaId)}" title="Set area temperature"><i class="bi bi-thermometer-half"></i> ${tempLabel}</button>
+    <button class="${AM_STYLE} area-temp [.live-mode_&]:opacity-40 [.live-mode_&]:pointer-events-none" data-area="${esc(g.areaId)}" title="Set area temperature"><i class="bi bi-thermometer-half"></i> ${tempLabel}</button>
   </span>`;
 };
 
