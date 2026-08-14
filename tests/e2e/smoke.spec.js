@@ -53,12 +53,13 @@ test.describe('relay-panel smoke', () => {
     await expect(page.locator('header')).toBeVisible();
   });
 
-  test('theme toggle in More dropdown works', async ({ page }) => {
+  test('theme toggle in the options menu works', async ({ page }) => {
     await mockApi(page);
     await page.goto('/');
     const initial = await page.locator('html').getAttribute('data-theme');
-    // Theme button moved to More dropdown (#70)
-    await page.click('#btn-advanced');
+    // Theme moved: More dropdown (#70) -> the account/options menu (#104), with
+    // language and zoom, since all three are per-viewer display preferences.
+    await page.click('#user-badge');
     await page.click('#btn-theme');
     await page.waitForTimeout(200);
     const after = await page.locator('html').getAttribute('data-theme');

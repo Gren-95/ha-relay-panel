@@ -31,48 +31,48 @@
       <div class="flex items-center gap-2 mobile:block mobile:w-full tb-advanced relative">
         <button id="btn-advanced" data-ui="btn" class="mobile:hidden" data-i18n-title="advanced" title="More"><i class="bi bi-gear"></i></button>
         <button id="btn-login" data-ui="btn" class="hidden border-ok text-ok" data-i18n-title="sign_in" title="Sign in"><i class="bi bi-box-arrow-in-right"></i> <span data-i18n="sign_in">Sign in</span></button>
-        <div id="advanced-menu" class="hidden flex flex-col gap-1.5 absolute top-full right-0 mt-2 w-max min-w-[200px] max-w-[min(360px,calc(100vw-24px))] bg-surface border-2 border-border rounded-xl p-2 shadow-panel z-20 mobile:static mobile:grid mobile:grid-cols-2 mobile:w-full mobile:bg-transparent mobile:border-0 mobile:shadow-none mobile:p-0 mobile:m-0 mobile:min-w-0 mobile:gap-2.5">
-          <button id="btn-export" data-ui="btn btnMenu"><i class="bi bi-download"></i> <span data-i18n="export_layout">Export layout</span></button>
-          <button id="btn-import" data-ui="btn btnMenu"><i class="bi bi-upload"></i> <span data-i18n="import_layout">Import layout</span></button>
-          <span class="h-0.5 bg-border my-[3px] rounded-[2px] mobile:hidden"></span>
-          <button id="btn-activity" data-ui="btn btnMenu"><i class="bi bi-clock-history"></i> <span data-i18n="activity_log">Activity log</span></button>
-          <span class="h-0.5 bg-border my-[3px] rounded-[2px] mobile:hidden"></span>
-          <button id="btn-bulk" data-ui="btn btnMenu"><i class="bi bi-collection"></i> <span data-i18n="bulk_edit">Bulk edit</span></button>
-          <span class="h-0.5 bg-border my-[3px] rounded-[2px] mobile:hidden"></span>
-          <button id="btn-presets" data-ui="btn btnMenu"><i class="bi bi-bookmark"></i> <span data-i18n="presets">Presets</span></button>
-          <span class="h-0.5 bg-border my-[3px] rounded-[2px] mobile:hidden"></span>
-          <button id="btn-theme" data-ui="btn btnMenu"><i class="bi bi-moon-stars"></i> <span data-i18n="toggle_dark">Toggle dark mode</span></button>
-          <span class="h-0.5 bg-border my-[3px] rounded-[2px] mobile:hidden"></span>
-          <div class="flex items-center justify-between gap-2 px-4 py-[11px] rounded-[11px] text-base font-semibold text-fg [.live-mode_&]:opacity-40" id="global-temp-wrap">
-            <span class="inline-flex items-center leading-none"><i class="bi bi-thermometer-half text-heat"></i> <span data-i18n="global_temp_title">Set temp for all</span></span>
-            <button id="btn-global-temp" class="self-center inline-flex items-center text-[.85rem] font-semibold leading-none text-fg border-[1.5px] border-border rounded-full px-2.5 py-1 tabular-nums whitespace-nowrap cursor-pointer hover:border-primary bg-surface"><span id="global-temp-text">—</span></button>
-            <input id="global-temp-input" class="hidden min-h-0 w-[60px] bg-input text-center text-fg font-semibold text-[.85rem] border-[1.5px] border-primary rounded-full p-1 outline-none" type="number" step="0.5" />
+        <div id="advanced-menu" class="hidden flex flex-col gap-0.5 absolute top-full right-0 mt-2 w-max min-w-[210px] max-w-[min(360px,calc(100vw-24px))] bg-surface border border-border rounded-xl p-1.5 shadow-panel z-20 mobile:static mobile:w-full mobile:bg-transparent mobile:border-0 mobile:shadow-none mobile:p-0 mobile:m-0 mobile:min-w-0 mobile:max-w-none">
+          <button id="btn-export" data-ui="menuItem"><i class="bi bi-download w-4 text-center text-muted"></i> <span data-i18n="export_layout">Export</span></button>
+          <button id="btn-import" data-ui="menuItem"><i class="bi bi-upload w-4 text-center text-muted"></i> <span data-i18n="import_layout">Import</span></button>
+          <span class="h-px bg-border mx-2 my-1"></span>
+          <button id="btn-activity" data-ui="menuItem"><i class="bi bi-clock-history w-4 text-center text-muted"></i> <span data-i18n="activity_log">Activity log</span></button>
+          <button id="btn-bulk" data-ui="menuItem"><i class="bi bi-collection w-4 text-center text-muted"></i> <span data-i18n="bulk_edit">Bulk edit</span></button>
+          <button id="btn-presets" data-ui="menuItem"><i class="bi bi-bookmark w-4 text-center text-muted"></i> <span data-i18n="presets">Presets</span></button>
+          <span class="h-px bg-border mx-2 my-1"></span>
+          <div data-ui="menuRow" class="[.live-mode_&]:opacity-40" id="global-temp-wrap">
+            <span class="inline-flex items-center gap-2.5"><i class="bi bi-thermometer-half w-4 text-center text-heat"></i> <span data-i18n="global_temp_title">Set temp for all</span></span>
+            <button id="btn-global-temp" class="inline-flex items-center text-[.85rem] font-semibold leading-none text-fg border border-border rounded-lg px-2.5 py-1.5 tabular-nums whitespace-nowrap cursor-pointer bg-transparent font-sans hover:border-primary"><span id="global-temp-text">—</span></button>
+            <input id="global-temp-input" class="hidden min-h-0 w-[60px] bg-input text-center text-fg font-semibold font-sans text-[.85rem] border border-primary rounded-lg px-2 py-1.5 outline-none" type="number" step="0.5" />
           </div>
-          <span class="h-0.5 bg-border my-[3px] rounded-[2px] mobile:hidden"></span>
-          <button id="btn-alloff" data-ui="btn btnMenu"><i class="bi bi-power"></i> <span data-i18n="all_off">All off</span></button>
-          <span class="h-0.5 bg-border my-[3px] rounded-[2px] mobile:hidden"></span>
-          <button id="btn-about" data-ui="btn btnMenu"><i class="bi bi-info-circle"></i> <span data-i18n="about_title">About Relay Panel</span></button>
+          <button id="btn-alloff" data-ui="menuItem"><i class="bi bi-power w-4 text-center text-muted"></i> <span data-i18n="all_off">All off</span></button>
+          <span class="h-px bg-border mx-2 my-1"></span>
+          <button id="btn-about" data-ui="menuItem"><i class="bi bi-info-circle w-4 text-center text-muted"></i> <span data-i18n="about">About</span></button>
         </div>
         <input id="import-file" type="file" accept="application/json,.json" hidden />
       </div>
       <div class="flex items-center gap-2 mobile:block mobile:w-full tb-account relative">
-        <button id="user-badge" type="button" aria-haspopup="menu" aria-expanded="false" class="inline-flex items-center gap-2 h-10 pl-1 pr-2.5 rounded-full bg-surface-2 border border-border text-fg font-sans cursor-pointer active:translate-y-px hover:border-border-strong mobile:h-[46px] mobile:w-full mobile:justify-center">
+        <button id="user-badge" type="button" aria-haspopup="menu" aria-expanded="false" class="inline-flex items-center gap-2 h-10 pl-1 pr-2.5 rounded-full bg-transparent border border-border text-fg font-sans cursor-pointer active:translate-y-px hover:bg-surface-2 mobile:h-[46px] mobile:w-full mobile:justify-center">
           <span id="prefs-icon" class="grid place-items-center w-8 h-8 shrink-0 rounded-full text-muted text-[1rem] leading-none"><i class="bi bi-sliders"></i></span>
-          <span id="user-avatar" class="hidden grid place-items-center w-8 h-8 shrink-0 rounded-full bg-primary text-white text-[.8rem] font-bold uppercase leading-none"></span>
+          <span id="user-avatar" class="hidden grid place-items-center w-8 h-8 shrink-0 rounded-full bg-primary/15 text-primary text-[.8rem] font-bold uppercase leading-none"></span>
           <span id="user-name" class="hidden text-[.85rem] font-semibold text-fg max-w-[14ch] truncate"></span>
-          <i class="bi bi-caret-down-fill text-[.65rem] text-muted"></i>
+          <i class="bi bi-caret-down-fill text-[.6rem] text-muted"></i>
         </button>
-        <div id="account-menu" role="menu" class="hidden flex flex-col gap-1.5 absolute top-full right-0 mt-2 w-max min-w-[220px] max-w-[min(360px,calc(100vw-24px))] bg-surface border-2 border-border rounded-xl p-2 shadow-panel z-20 mobile:static mobile:w-full mobile:bg-transparent mobile:border-0 mobile:shadow-none mobile:p-0 mobile:m-0 mobile:mt-2.5 mobile:min-w-0 mobile:max-w-none">
-          <button id="btn-lang" role="menuitem" data-ui="btn btnMenu" class="flex items-center justify-between gap-3" title="Keel / Language"><span class="inline-flex items-center gap-1.5 leading-none"><i class="bi bi-translate"></i> <span data-i18n="language">Language</span></span><span id="btn-lang-flag">🇪🇪</span></button>
-          <div id="zoom-row" class="flex items-center justify-between gap-3 px-4 py-[11px] rounded-[11px] text-base font-semibold text-fg mobile:hidden">
-            <span class="inline-flex items-center gap-1.5 leading-none"><i class="bi bi-zoom-in"></i> <span data-i18n="zoom">Zoom</span></span>
-            <span class="flex items-center gap-1">
-              <button id="btn-zoom-out" data-ui="btn" class="min-h-0 px-2.5 py-1" data-i18n-title="zoom_out" title="Zoom out"><i class="bi bi-zoom-out"></i></button>
-              <button id="btn-zoom-in" data-ui="btn" class="min-h-0 px-2.5 py-1" data-i18n-title="zoom_in" title="Zoom in"><i class="bi bi-zoom-in"></i></button>
+        <div id="account-menu" role="menu" class="hidden flex flex-col gap-0.5 absolute top-full right-0 mt-2 w-max min-w-[210px] max-w-[min(360px,calc(100vw-24px))] bg-surface border border-border rounded-xl p-1.5 shadow-panel z-20 mobile:static mobile:w-full mobile:bg-transparent mobile:border-0 mobile:shadow-none mobile:p-0 mobile:m-0 mobile:mt-2.5 mobile:min-w-0 mobile:max-w-none">
+          <button id="btn-lang" role="menuitem" data-ui="menuItem" class="justify-between" title="Keel / Language">
+            <span class="inline-flex items-center gap-2.5"><i class="bi bi-translate w-4 text-center text-muted"></i> <span data-i18n="language">Language</span></span>
+            <span id="btn-lang-flag" class="text-[1.05rem] leading-none">🇪🇪</span>
+          </button>
+          <button id="btn-theme" role="menuitem" data-ui="menuItem"><i class="bi bi-moon-stars w-4 text-center text-muted"></i> <span data-i18n="toggle_dark">Toggle dark mode</span></button>
+          <div id="zoom-row" data-ui="menuRow" class="mobile:hidden">
+            <span class="inline-flex items-center gap-2.5"><i class="bi bi-zoom-in w-4 text-center text-muted"></i> <span data-i18n="zoom">Zoom</span></span>
+            <span class="inline-flex items-center rounded-lg border border-border overflow-hidden">
+              <button id="btn-zoom-out" data-ui="stepBtn" data-i18n-title="zoom_out" title="Zoom out"><i class="bi bi-dash-lg"></i></button>
+              <span class="w-px h-5 bg-border"></span>
+              <button id="btn-zoom-in" data-ui="stepBtn" data-i18n-title="zoom_in" title="Zoom in"><i class="bi bi-plus-lg"></i></button>
             </span>
           </div>
-          <span id="logout-sep" class="hidden h-0.5 bg-border my-[3px] rounded-[2px] mobile:hidden"></span>
-          <button id="btn-logout" role="menuitem" data-ui="btn btnMenu" class="hidden border-danger text-danger"><i class="bi bi-box-arrow-right"></i> <span data-i18n="sign_out">Sign out</span></button>
+          <span id="logout-sep" class="hidden h-px bg-border mx-2 my-1"></span>
+          <button id="btn-logout" role="menuitem" data-ui="menuItem" class="hidden text-danger! hover:bg-danger/10"><i class="bi bi-box-arrow-right w-4 text-center"></i> <span data-i18n="sign_out">Sign out</span></button>
         </div>
       </div>
     </div>
