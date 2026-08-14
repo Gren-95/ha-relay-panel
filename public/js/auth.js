@@ -4,22 +4,36 @@ import { applyMode } from './mode.js';
 import { render } from './board.js';
 import { registerModal } from './modals.js';
 
+// --- account menu (#104) — the chip IS the control; Sign out lives inside it ---
+function closeAccountMenu() {
+  $('#account-menu').classList.add('hidden');
+  $('#user-badge').setAttribute('aria-expanded', 'false');
+}
+function toggleAccountMenu() {
+  const open = $('#account-menu').classList.toggle('hidden') === false;
+  $('#user-badge').setAttribute('aria-expanded', String(open));
+}
+
 // --- auth (validates against Home Assistant) ---
 function updateAuthUI() {
-  // Sign in/out — exactly one visible at a time (#72)
   $('#btn-login').classList.toggle('hidden', state.authed);
-  $('#btn-logout').classList.toggle('hidden', !state.authed);
-  if (state.user) $('#btn-logout').title = 'Sign out (' + state.user + ')';
-  // Who am I? (#82) — an account chip beside Sign out, signed-in only; the Sign in
-  // button covers the signed-out case. The name carries the identity, so the full
-  // "Logged in as …" phrasing lives in the tooltip rather than in the crowded bar.
+  // The chip is BOTH the identity (#82) and the options menu's trigger (#104). It stays
+  // put when signed out — language and zoom live in that menu and are open to everyone —
+  // and only swaps its face: avatar + name signed in, a neutral sliders icon otherwise.
+  const signedIn = !!(state.authed && state.user);
   const badge = $('#user-badge');
   if (state.user) {
     $('#user-avatar').textContent = state.user.trim().charAt(0) || '?';
     $('#user-name').textContent = state.user;
-    badge.title = t('logged_in_as', { user: state.user });
   }
-  badge.classList.toggle('hidden', !(state.authed && state.user));
+  // The name carries the identity, so the full "Logged in as …" phrasing is the tooltip
+  // rather than width in an already crowded bar.
+  badge.title = signedIn ? t('logged_in_as', { user: state.user }) : t('options');
+  $('#user-avatar').classList.toggle('hidden', !signedIn);
+  $('#user-name').classList.toggle('hidden', !signedIn);
+  $('#prefs-icon').classList.toggle('hidden', signedIn);
+  $('#btn-logout').classList.toggle('hidden', !signedIn);
+  $('#logout-sep').classList.toggle('hidden', !signedIn);
   const alloff = $('#btn-alloff'); alloff.classList.toggle('hidden', !state.authed); alloff.classList.toggle('opacity-40', !state.edit); alloff.disabled = !state.edit;
 }
 async function checkSession() {
@@ -58,6 +72,7 @@ async function doLogin() {
   } finally { clearTimeout(to); $('#login-submit').disabled = false; }
 }
 async function doLogout() {
+  closeAccountMenu();
   try { await api('/api/logout', { method: 'POST' }); } catch {}
   state.authed = false; state.user = null; state.edit = false; applyMode(); render(); updateAuthUI();
 }
@@ -71,7 +86,11 @@ $('#login-pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') doL
 $('#login-user').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#login-pass').focus(); });
 $('#btn-logout').addEventListener('click', doLogout);
 $('#btn-login').addEventListener('click', openLogin);
+// The chip opens its menu. No stopPropagation here on purpose: the click still reaches
+// the document listeners that shut the +Add and More dropdowns, so only one is ever open.
+$('#user-badge').addEventListener('click', toggleAccountMenu);
+document.addEventListener('click', (e) => { if (!e.target.closest('.tb-account')) closeAccountMenu(); });
 checkSession();
 }
 
-export { updateAuthUI, checkSession, openLogin, closeLogin, doLogin, doLogout };
+export { updateAuthUI, checkSession, openLogin, closeLogin, doLogin, doLogout, closeAccountMenu };
