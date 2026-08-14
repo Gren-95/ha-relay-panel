@@ -347,7 +347,12 @@
   <div id="login-modal" class="hidden fixed inset-0 z-[50] flex items-center justify-center bg-black/45 p-4">
     <div class="w-full max-w-[360px] flex flex-col gap-3 bg-surface text-fg border-2 border-solid border-border rounded-[14px] p-[22px] shadow-panel">
       <h2 data-ui="panelH2"><i class="bi bi-shield-lock"></i> <span data-i18n="sign_in_to_edit">Sign in to edit</span></h2>
-      <p class="m-0 text-muted text-[.95rem]"><span data-i18n="use_ha_1">Use your </span><b>Home Assistant</b><span data-i18n="use_ha_2"> account.</span></p>
+      <p id="login-hint" class="m-0 text-muted text-[.95rem]"><span data-i18n="use_ha_1">Use your </span><b id="login-provider-name">Home Assistant</b><span data-i18n="use_ha_2"> account.</span></p>
+      <!-- only rendered when a second provider is configured (EXTRA_AUTH_URL) -->
+      <div id="login-providers" class="hidden grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-surface-2 border border-border">
+        <button type="button" data-provider="ha" class="lp-opt px-3 py-2 rounded-lg bg-transparent border-0 font-sans text-[.9rem] font-semibold text-fg cursor-pointer">Home Assistant</button>
+        <button type="button" data-provider="extra" class="lp-opt px-3 py-2 rounded-lg bg-transparent border-0 font-sans text-[.9rem] font-semibold text-fg cursor-pointer"></button>
+      </div>
       <input id="login-user" type="text" data-i18n-ph="username" placeholder="Username" autocomplete="username"
         class="bg-input text-fg border-2 border-solid border-border rounded-[10px] p-3 text-[1.05rem] min-h-[50px] focus:outline-none focus:border-primary" />
       <input id="login-pass" type="password" data-i18n-ph="password" placeholder="Password" autocomplete="current-password"
