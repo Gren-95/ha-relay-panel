@@ -23,6 +23,41 @@ function applyZ() {
   for (const a of state.layout.areas) set(box(a.id), a);
   for (const d of state.layout.devices) set(box(d.id), d);
   for (const r of state.layout.relays) set(canvas.querySelector('.relay[data-id="' + r.id + '"]'), r);
+  // the offline wash rides one level above its own outputs, so raising must move it too
+  for (const d of state.layout.devices) {
+    const w = canvas.querySelector('.box-off-wash[data-off-gid="' + d.id + '"]');
+    if (w) w.style.zIndex = washZ(d);
+  }
+}
+
+/*
+ * One translucent warning laid across a dead box, its outputs included.
+ *
+ * It has to be a canvas child rather than a child of the box: zStack emits a box
+ * BEFORE its outputs, so the outputs are siblings sitting on higher levels, and the
+ * box owns a stacking context — a watermark inside it could never paint over them.
+ * So it is stacked explicitly, one level above the highest output of that box, which
+ * is still below the next group's first level.
+ *
+ * It starts below the titlebar so the box's name and warning stay legible, and it is
+ * pointer-events-none: the cards underneath must stay clickable.
+ */
+const washZ = (d) => Math.max(zIndexOf(d), ...boxOutputs(d.id).map(zIndexOf)) + 1;
+
+function offlineWash(d) {
+  const w = num(d.w, DEV_W), h = num(d.h, MIN_AREA_H) - HDR;
+  const el = document.createElement('div');
+  el.className = 'box-off-wash absolute pointer-events-none flex items-center justify-center rounded-b-2xl bg-danger/5';
+  el.dataset.offGid = d.id;
+  el.style.left = num(d.x) + 'px';
+  el.style.top = (num(d.y) + HDR) + 'px';
+  el.style.width = w + 'px';
+  el.style.height = h + 'px';
+  el.style.zIndex = washZ(d);
+  // big enough to read as a watermark over the whole block, never wider than the box
+  const size = Math.max(40, Math.min(h - 24, w - 24, 190));
+  el.innerHTML = `<i class="bi bi-exclamation-triangle-fill text-danger opacity-20" style="font-size:${size}px;line-height:1"></i>`;
+  return el;
 }
 
 // Clicking anything on the board brings it (and its group) to the front, and the
@@ -52,6 +87,7 @@ function render() {
   for (const a of state.layout.areas) canvas.appendChild(renderBox(a, 'area'));
   for (const d of state.layout.devices) canvas.appendChild(renderBox(d, 'device'));
   for (const r of state.layout.relays) canvas.appendChild(card(r));
+  for (const d of state.layout.devices) if (boxOffline(d.id)) canvas.appendChild(offlineWash(d));
 
   // Auto-size canvas to fit all content with padding
   let maxX = 600, maxY = 400;
@@ -118,6 +154,15 @@ function renderMobile() {
     head.addEventListener('click', () => openDeviceEditor(d));
     box.appendChild(head);
     for (const r of state.layout.relays.filter((x) => x.device === d.id)) { box.appendChild(card(r, true)); doneRel.add(r.id); }
+    // here the outputs are CHILDREN of the block, so the wash only has to come last
+    // in the DOM to sit over them — none of the desktop z-index work applies
+    if (off) {
+      box.classList.add('relative');
+      const wash = document.createElement('div');
+      wash.className = 'box-off-wash absolute inset-0 pointer-events-none flex items-center justify-center rounded-[14px] bg-danger/5';
+      wash.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-danger opacity-20" style="font-size:120px;line-height:1"></i>';
+      box.appendChild(wash);
+    }
     return box;
   };
 

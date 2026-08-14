@@ -50,6 +50,28 @@ test.describe('a dead relay box speaks once', () => {
     await expect(cardWarns(page)).toHaveCount(0);
   });
 
+  test('the wash covers the outputs and does not swallow their clicks', async ({ page }) => {
+    await mockApi(page, { 'switch.out_1': gone, 'switch.out_2': gone, 'switch.out_3': gone });
+    await page.goto('/');
+    const wash = page.locator('.box-off-wash');
+    await expect(wash).toBeVisible();
+    // it has to paint ABOVE the outputs, or it is just a background tint
+    const [washZ, cardZ] = await Promise.all([
+      wash.evaluate((e) => +getComputedStyle(e).zIndex),
+      page.locator('.relay').first().evaluate((e) => +getComputedStyle(e).zIndex),
+    ]);
+    expect(washZ).toBeGreaterThan(cardZ);
+    // ...while still letting the card underneath take the click
+    await expect(wash).toHaveCSS('pointer-events', 'none');
+    const box = await page.locator('.relay').first().boundingBox();
+    expect(await page.locator('.box-off-wash').boundingBox()).not.toBeNull();
+    const hit = await page.evaluate(([x, y]) => {
+      const el = document.elementFromPoint(x, y);
+      return !!(el && el.closest('.relay'));
+    }, [box.x + box.width / 2, box.y + box.height / 2]);
+    expect(hit).toBe(true);
+  });
+
   test('one output down is still that output\'s problem', async ({ page }) => {
     await mockApi(page, { 'switch.out_1': gone, 'switch.out_2': on, 'switch.out_3': on });
     await page.goto('/');
