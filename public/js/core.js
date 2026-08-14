@@ -58,4 +58,38 @@ function setStatus(m) { $('#status').textContent = m || ''; }
 function flashStatus(msg, ms = 1200) { setStatus(msg); setTimeout(() => setStatus(''), ms); }
 function esc(v) { const d = document.createElement('div'); d.textContent = v == null ? '' : String(v); return d.innerHTML.replace(/"/g, '&quot;'); }
 
-export { state, $, canvas, BTN, TINY, FIELD, MSG, CANVAS_DESKTOP, CANVAS_MOBILE, setMsg, setRangeActive, api, setStatus, flashStatus, esc };
+/*
+ * Grouping a set of relays by the physical box they live in (#101). A flat list of
+ * outputs says nothing about which box to go and look at; grouped, a panel mirrors
+ * the wiring. The area editor and bulk edit both need it, so it lives here rather
+ * than in either of them.
+ *
+ * Takes whatever relays the caller has already selected and returns only non-empty
+ * groups, boxes first in name order, then the relays belonging to no box - which
+ * come back with `boxId: null` and no title, because the caller owns the wording
+ * (core cannot import i18n without closing a cycle back through board.js).
+ */
+function deviceHost(deviceId) {
+  const dev = state.relayDevices.find((x) => x.device_id === deviceId);
+  return ((dev && dev.url) || '').replace(/^https?:\/\//, '').replace(/:80$/, '').replace(/\/$/, '');
+}
+function groupByDevice(relays) {
+  const byBox = new Map();
+  for (const r of relays) {
+    const key = r.device || '';
+    if (!byBox.has(key)) byBox.set(key, []);
+    byBox.get(key).push(r);
+  }
+  const groups = [];
+  for (const d of [...state.layout.devices].sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')))) {
+    const rs = byBox.get(d.id);
+    if (rs && rs.length) {
+      groups.push({ boxId: d.id, title: d.name || d.deviceId || 'relay box', host: deviceHost(d.deviceId), relays: rs });
+    }
+  }
+  const loose = byBox.get('') || [];
+  if (loose.length) groups.push({ boxId: null, title: null, host: '', relays: loose });
+  return groups;
+}
+
+export { state, $, canvas, BTN, TINY, FIELD, MSG, CANVAS_DESKTOP, CANVAS_MOBILE, setMsg, setRangeActive, api, setStatus, flashStatus, esc, deviceHost, groupByDevice };

@@ -1,4 +1,4 @@
-import { state, $, esc, setMsg, api } from './core.js';
+import { state, $, esc, setMsg, api, groupByDevice } from './core.js';
 import { t } from './i18n.js';
 import { areaColor, hueToHex, hexToHue, fitAreaToContents } from './layout.js';
 import { render, updateBoxColors } from './board.js';
@@ -39,24 +39,14 @@ function openAreaEditor(g) {
     </div>`;
   };
 
-  const boxes = state.layout.devices
-    .filter((d) => d.area === g.areaId)
-    .sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
-  // the address the physical relay editor shows (#100), repeated here so the area
-  // view answers "which box, and where is it" without opening anything
-  const hostOf = (deviceId) => {
-    const dev = state.relayDevices.find((x) => x.device_id === deviceId);
-    return ((dev && dev.url) || '').replace(/^https?:\/\//, '').replace(/:80$/, '').replace(/\/$/, '');
-  };
-  const groups = boxes.map((d) => ({
-    boxId: d.id,
-    title: d.name || d.deviceId || 'relay box',
-    host: hostOf(d.deviceId),
-    relays: state.layout.relays.filter((r) => r.device === d.id),
-  }));
-  // cards pinned straight to the area belong to no box - they still have to show
-  const loose = state.layout.relays.filter((r) => r.area === g.areaId && !r.device);
-  if (loose.length) groups.push({ boxId: null, title: t('no_device'), relays: loose });
+  // A relay in a box inherits the box's area, so "this area's relays" is every relay
+  // whose box sits here, plus the loose cards pinned straight to the area. The address
+  // in the header is the one the physical relay editor shows (#100), repeated so the
+  // area view answers "which box, and where is it" without opening anything.
+  const boxIdsHere = new Set(state.layout.devices.filter((d) => d.area === g.areaId).map((d) => d.id));
+  const groups = groupByDevice(state.layout.relays.filter((r) =>
+    r.device ? boxIdsHere.has(r.device) : r.area === g.areaId
+  )).map((gr) => ({ ...gr, title: gr.title || t('no_device') }));
 
   $('#ae-relays').innerHTML = groups.filter((gr) => gr.relays.length).map((gr) => `
     <div class="flex flex-col gap-1.5">

@@ -1,4 +1,4 @@
-import { $, state, esc, setMsg, api } from './core.js';
+import { $, state, esc, setMsg, api, groupByDevice } from './core.js';
 import { t } from './i18n.js';
 import { registerModal, closeOthers, syncBackdrop } from './modals.js';
 import { render } from './board.js';
@@ -43,10 +43,10 @@ function updateBulkList() {
   // temperature, not the relay's existing ones. The old preview fell back to the relay's
   // own mode whenever the chosen one was not 'above' — which, with 'above' unreachable,
   // was always — so picking Auto still previewed "heat".
-  list.innerHTML = matches.map((r) => {
+  const row = (r) => {
     const curTemp = r.temp != null ? r.temp + '°' : '—';
     const changed = isFinite(temp) && (r.temp !== temp || r.mode !== mode);
-    return `<div class="flex items-center gap-3 px-3 py-2 text-[.85rem]">
+    return `<div class="bk-row flex items-center gap-3 px-3 py-2 text-[.85rem]">
       <span class="flex-1 min-w-0 truncate font-medium">${esc(r.name || r.relay)}</span>
       <span class="shrink-0 text-muted tabular-nums">${esc(modeWord(r.mode))} ${curTemp}</span>
       <i class="bi bi-arrow-right text-muted text-[.75rem]"></i>
@@ -54,7 +54,19 @@ function updateBulkList() {
         isFinite(temp) ? `${esc(modeWord(mode))} ${temp}°${deadband ? ` ±${deadband}°` : ''}` : esc(t('unchanged'))
       }</span>
     </div>`;
-  }).join('') || `<div class="px-3 py-5 text-center text-muted text-[.85rem]">${esc(t('no_bound_relays_match'))}</div>`;
+  };
+  // Grouped by physical relay, as the area editor's list is (#101) — "apply to 23
+  // relays" is a lot to agree to, and the boxes are what you would walk over to check.
+  list.innerHTML = groupByDevice(matches).map((gr) => `
+    <div class="bk-group">
+      <div class="flex items-center gap-1.5 px-3 py-1.5 bg-surface-2 text-[.78rem] font-bold text-muted">
+        <i class="bi ${gr.boxId ? 'bi-hdd-stack' : 'bi-dash-circle-dotted'}"></i>
+        <span class="truncate">${esc(gr.title || t('no_device'))}</span>
+        ${gr.host ? `<span class="tabular-nums font-normal opacity-70 flex-none">${esc(gr.host)}</span>` : ''}
+        <span class="ml-auto tabular-nums">${gr.relays.length}</span>
+      </div>
+      ${gr.relays.map(row).join('')}
+    </div>`).join('') || `<div class="px-3 py-5 text-center text-muted text-[.85rem]">${esc(t('no_bound_relays_match'))}</div>`;
   $('#bk-apply').innerHTML = `<i class="bi bi-check-lg"></i> ${esc(t('apply_to_n', { n: matches.length || 0 }))}`;
 }
 
