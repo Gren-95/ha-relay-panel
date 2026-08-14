@@ -100,15 +100,22 @@ site already has its own account service, set `EXTRA_AUTH_URL` to an endpoint th
 accepts a form POST of `user` and `pass` and replies with the bare word `TRUE` when the
 pair is valid. The login modal then offers both, named by `EXTRA_AUTH_LABEL`.
 
-Authenticating only proves who someone is. If you also keep a permissions table, set
-`EXTRA_AUTH_PERM_QUERY` to a statement with exactly one `?` — the username is bound to
-it — plus the `EXTRA_AUTH_PERM_DB_*` connection settings, and a verified account is
-admitted only when that statement returns a row. The statement lives in `.env`, so no
-part of your schema is committed, and any schema is supported by writing a different
-one. It **fails closed**: unreachable, malformed or slow all mean refused, and the
-refusal is recorded in the activity log as a `login.fail`. Home Assistant sign-ins skip
-the gate entirely, so an outage there can never lock you out of your own panel. Give it
-a database account with `SELECT` on that one table and nothing more.
+Authenticating only proves who someone is. If your account service also knows who is
+*allowed* to drive the panel, set `EXTRA_AUTH_PERM_URL` to an endpoint that answers the
+question, plus `EXTRA_AUTH_PERM_TOKEN` (a shared secret) and `EXTRA_AUTH_PERM_VALUE`
+(the permission to require). The panel POSTs `user`, `permission` and `token`, and
+admits the account only on `{"allowed":true}`.
+
+It asks a question rather than reading a permissions table directly, which is what keeps
+this side small: no database credentials in this panel's `.env`, no route from the panel
+to your account server's database, and nothing about your schema in this repository. The
+token is what stops the endpoint being an open oracle for "does this person hold that
+permission", which is why it travels in the body and not the query string.
+
+It **fails closed** — unreachable, non-200, unparseable or anything but an explicit
+`allowed:true` refuses, and the refusal is recorded in the activity log as a
+`login.fail`. Home Assistant sign-ins skip the gate entirely, so an outage on the
+permission service can never lock you out of your own panel.
 
 It is off unless configured: with `EXTRA_AUTH_URL` unset no second option is rendered,
 and the server rejects the choice even if a client asks for it. The provider is always
