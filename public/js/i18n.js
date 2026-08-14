@@ -7,7 +7,8 @@ const TR = {
     ha_unreachable: 'Home Assistant pole saadaval — näidud võivad olla vananenud',
     app_title: 'Relee paneel',
     physical_relay_ph: '+ Füüsiline relee…', area_ph: '+ Ala…',
-    save: 'Salvesta', sign_out: 'Logi välja', toggle_dark: 'Tumeda režiimi lüliti',
+    save: 'Salvesta', sign_out: 'Logi välja',
+    dark_mode: 'Tume režiim', light_mode: 'Hele režiim',
     advanced: 'Rohkem', add_single_relay: 'Lisa üksik relee',
     export_layout: 'Ekspordi', import_layout: 'Impordi', about: 'Teave',
     edit_relay: 'Muuda releed', name: 'Nimi', name_ph: 'nt Tehnoruumi küte',
@@ -128,6 +129,7 @@ const EN = {  // English fallbacks for dynamic (non-HTML) strings
   saved: 'saved', save_error: 'save error', save_conflict: 'conflict — retrying…', sign_in_to_save: 'sign in to save',
   signing_in: 'signing in…', signed_in_loading: 'signed in — loading…',
   logged_in_as: 'Logged in as {user}', options: 'Options',
+  dark_mode: 'Dark mode', light_mode: 'Light mode',
   enter_user_pass: 'Enter username and password.', sign_in_failed: 'Sign in failed.',
   timed_out: 'Timed out — check the connection and try again.',
   exported: 'exported', imported: 'imported',
@@ -230,7 +232,23 @@ function applyI18n() {
   document.querySelectorAll('[data-i18n-title]').forEach((el) => { const v = LANG === 'et' ? TR.et[el.dataset.i18nTitle] : null; if (v != null) el.title = v; });
   // the flag lives in its own span (#104) — #btn-lang now also carries a "Language" label
   const lb = document.getElementById('btn-lang-flag'); if (lb) lb.textContent = LANG === 'et' ? '🇪🇪' : '🇬🇧';
+  refreshThemeLabel();
   document.documentElement.lang = LANG;
+}
+
+/*
+ * The theme item names the mode it switches TO, so it cannot be a data-i18n span:
+ * applyI18n's English branch restores dataset.i18nEn, the text snapshotted at load,
+ * which would drag a stale "Dark mode" back on every language switch. Same reason
+ * #mode-label is written from applyMode() rather than declared in the markup.
+ *
+ * It lives here, not in theme.js, so theme.js can import it without i18n importing
+ * theme back — and so the string and the code that picks it stay together.
+ */
+function refreshThemeLabel() {
+  const el = document.getElementById('theme-label'); if (!el) return;
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  el.textContent = dark ? t('light_mode') : t('dark_mode');
 }
 function setLang(l) {
   LANG = l === 'et' ? 'et' : 'en';
@@ -241,4 +259,4 @@ function setLang(l) {
   if (typeof render === 'function') { applyMode(); render(); }
 }
 
-export { t, fmtAgo, applyI18n, setLang, LANG };
+export { t, fmtAgo, applyI18n, setLang, refreshThemeLabel, LANG };

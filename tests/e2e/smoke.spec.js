@@ -60,10 +60,14 @@ test.describe('relay-panel smoke', () => {
     // Theme moved: More dropdown (#70) -> the account/options menu (#104), with
     // language and zoom, since all three are per-viewer display preferences.
     await page.click('#user-badge');
+    // the item names the mode it switches TO, and flips with the theme
+    const offered = initial === 'dark' ? 'Light mode' : 'Dark mode';
+    await expect(page.locator('#theme-label')).toHaveText(offered);
     await page.click('#btn-theme');
     await page.waitForTimeout(200);
     const after = await page.locator('html').getAttribute('data-theme');
     expect(after).not.toBe(initial);
+    await expect(page.locator('#theme-label')).toHaveText(offered === 'Dark mode' ? 'Light mode' : 'Dark mode');
   });
 
   // Header zoom lock was disabled — verify the header is fixed-position and visible

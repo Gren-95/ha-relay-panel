@@ -1,5 +1,6 @@
 import { $ } from './core.js';
 import { render } from './board.js';
+import { refreshThemeLabel } from './i18n.js';
 
 // theme: follows the OS/browser preference by default; an explicit toggle
 // (remembered per browser) overrides it.
@@ -11,6 +12,7 @@ function applyTheme(t) {
   // markup had put on the icon — the menus' w-4 alignment column, in this case (#104).
   const icon = $('#btn-theme i');
   if (icon) { icon.classList.toggle('bi-sun', t === 'dark'); icon.classList.toggle('bi-moon-stars', t !== 'dark'); }
+  refreshThemeLabel();   // the label names the mode it switches TO, so it flips with the icon
 }
 
 // wiring: theme toggle button + follow-OS listener
