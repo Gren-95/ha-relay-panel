@@ -60,6 +60,25 @@ Instructions for Claude Code in this project.
 - Actions logged: login, logout, relay.bind, relay.unbind, relay.delete, device.rename, switch.toggle, automation.pause, automation.resume, layout.save, layout.restore, automation.reapply, automation.prune, device.delete, area.delete
 - CSV export available via download button in the panel footer
 
+## No production identifiers in the repo
+
+This is a public repository operating a private site, so nothing committed may name the
+real deployment. Every host, port, credential and timezone is read from `.env` -
+`compose.yml` interpolates `${HTTP_PORT}` / `${TZ}` rather than hard-coding them, and
+`.env.example` carries placeholders only.
+
+What that rules out beyond secrets: **real LAN addresses, real device names and real
+customer or machine brands** - including in code comments, e2e fixtures and UI example
+text (the relay-name placeholder is an example, not a customer). Test fixtures cannot come
+from `.env` - the suite has to pass on a fresh clone with no environment at all - so they
+use invented names and **RFC 5737 documentation addresses** (`192.0.2.0/24`) instead.
+
+Grep before committing:
+
+    git grep -nIE "([0-9]{1,3}\.){3}[0-9]{1,3}" -- . ":(exclude)package-lock.json"
+
+The only addresses that should match are `192.0.2.x`, `127.0.0.1` and `localhost`.
+
 ## Facility-map button (combo sensors)
 
 - A sensor with both `sensor.<base>_temperature` and `sensor.<base>_humidity` is a **combo**

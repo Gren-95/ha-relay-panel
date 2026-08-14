@@ -5,7 +5,7 @@ const { test, expect } = require('@playwright/test');
 // address is HA's configuration_url, carried through /api/relay-devices.
 
 const AREA = 'plantroom';
-const DEVICE = { id: 'dA', deviceId: 'devA', name: 'prodl1_r1', area: AREA, x: 60, y: 80 };
+const DEVICE = { id: 'dA', deviceId: 'devA', name: 'hall_r1', area: AREA, x: 60, y: 80 };
 
 function layout() {
   return {
@@ -18,7 +18,7 @@ function layout() {
   };
 }
 
-async function mockApi(page, { url } = { url: 'http://10.72.4.88:80' }) {
+async function mockApi(page, { url } = { url: 'http://192.0.2.10:80' }) {
   await Promise.all([
     page.route('**/api/layout', (route) => route.request().method() === 'GET'
       ? route.fulfill({ json: layout() })
@@ -29,7 +29,7 @@ async function mockApi(page, { url } = { url: 'http://10.72.4.88:80' }) {
     page.route('**/api/areas', (route) => route.fulfill({ json: [{ id: AREA, name: 'Plant room' }] })),
     page.route('**/api/relay-devices', (route) => route.fulfill({
       json: [{
-        device_id: 'devA', name: 'prodl1_r1', url,
+        device_id: 'devA', name: 'hall_r1', url,
         outputs: [0, 1, 2].map((i) => ({ entity_id: `switch.dA_${i}`, name: `out ${i}` })),
       }],
     })),
@@ -42,7 +42,7 @@ async function mockApi(page, { url } = { url: 'http://10.72.4.88:80' }) {
 
 const openDevice = async (page) => {
   const i = await page.evaluate(() => [...document.querySelectorAll('.area-head .area-gear')]
-    .findIndex((g) => g.closest('.area-head').textContent.includes('prodl1_r1')));
+    .findIndex((g) => g.closest('.area-head').textContent.includes('hall_r1')));
   await page.locator('.area-head .area-gear').nth(i).click();
 };
 
@@ -56,9 +56,9 @@ test.describe('physical relay editor', () => {
     await expect(page.locator('#dev-editor')).toBeVisible();
     const addr = page.locator('#de-addr');
     await expect(page.locator('#de-addr-row')).toBeVisible();
-    // shown bare - "http://10.72.4.88:80" would be noise
-    await expect(addr).toHaveText('10.72.4.88');
-    await expect(addr).toHaveAttribute('href', 'http://10.72.4.88:80');
+    // shown bare - "http://192.0.2.10:80" would be noise
+    await expect(addr).toHaveText('192.0.2.10');
+    await expect(addr).toHaveAttribute('href', 'http://192.0.2.10:80');
     await expect(addr).toHaveAttribute('target', '_blank');
     await expect(addr).toHaveAttribute('rel', 'noopener noreferrer');
   });

@@ -191,8 +191,8 @@ test.describe('area editor relay grouping', () => {
   const grouped = () => ({
     areas: [{ id: 'a2', areaId: AREA2, name: 'Hall', x: 20, y: 20, w: 800, h: 700 }],
     devices: [
-      { id: 'dB', deviceId: 'devB', name: 'prodl1_r2', area: AREA2, x: 400, y: 80 },
-      { id: 'dA', deviceId: 'devA', name: 'prodl1_r1', area: AREA2, x: 60, y: 80 },
+      { id: 'dB', deviceId: 'devB', name: 'hall_r2', area: AREA2, x: 400, y: 80 },
+      { id: 'dA', deviceId: 'devA', name: 'hall_r1', area: AREA2, x: 60, y: 80 },
     ],
     relays: [
       ...outs('dA', 3, 21), ...outs('dB', 2, 21),
@@ -211,8 +211,8 @@ test.describe('area editor relay grouping', () => {
       page.route('**/api/entities', (r) => r.fulfill({ json: { switches: [], sensors: [] } })),
       page.route('**/api/areas', (r) => r.fulfill({ json: [{ id: AREA2, name: 'Hall' }] })),
       page.route('**/api/relay-devices', (r) => r.fulfill({ json: [
-        { device_id: 'devA', name: 'prodl1_r1', url: 'http://10.72.4.88:80', outputs: [] },
-        { device_id: 'devB', name: 'prodl1_r2', url: '', outputs: [] },   // no address in HA
+        { device_id: 'devA', name: 'hall_r1', url: 'http://192.0.2.10:80', outputs: [] },
+        { device_id: 'devB', name: 'hall_r2', url: '', outputs: [] },   // no address in HA
       ] })),
       page.route('**/api/live**', (r) => r.fulfill({ json: {} })),
       page.route('**/api/automations', (r) => r.fulfill({ json: {} })),
@@ -235,8 +235,8 @@ test.describe('area editor relay grouping', () => {
     })));
     // boxes sort by name, and the box-less group always comes last
     expect(sections).toEqual([
-      { box: 'prodl1_r1', count: 3 },
-      { box: 'prodl1_r2', count: 2 },
+      { box: 'hall_r1', count: 3 },
+      { box: 'hall_r2', count: 2 },
       { box: 'Not in a relay box', count: 1 },
     ]);
     // every relay still listed exactly once
@@ -253,7 +253,7 @@ test.describe('area editor relay grouping', () => {
     await page.locator('#ae-relays .ae-box[data-box]').first().click();
     await expect(page.locator('#dev-editor')).toBeVisible();
     await expect(page.locator('#area-editor')).toBeHidden();
-    await expect(page.locator('#de-name')).toHaveValue('prodl1_r1');
+    await expect(page.locator('#de-name')).toHaveValue('hall_r1');
   });
 
   test('a box header shows its address when HA has one', async ({ page }) => {
@@ -262,8 +262,8 @@ test.describe('area editor relay grouping', () => {
       ip: (h.querySelector('.ae-box-ip') || {}).textContent || null,
     })));
     expect(heads).toEqual([
-      { box: 'prodl1_r1', ip: '10.72.4.88' },   // shown bare, as in the device editor
-      { box: 'prodl1_r2', ip: null },           // HA has no configuration_url for this one
+      { box: 'hall_r1', ip: '192.0.2.10' },   // shown bare, as in the device editor
+      { box: 'hall_r2', ip: null },           // HA has no configuration_url for this one
       { box: 'Not in a relay box', ip: null },  // not a device, so no address
     ]);
   });

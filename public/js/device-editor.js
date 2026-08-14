@@ -32,7 +32,7 @@ function openDeviceEditor(g) {
     row.addEventListener('click', () => { const r = state.layout.relays.find((x) => x.id === row.dataset.id); if (r) openEditor(r); });
   });
   // The device's own web UI, straight from HA's configuration_url. Shown as the
-  // bare host - "http://10.72.4.88:80" is noise - but linked in full, since the
+  // bare host - "http://192.0.2.10:80" is noise - but linked in full, since the
   // reason you want the address is usually to go and look at the relay.
   const dev = state.relayDevices.find((d) => d.device_id === g.deviceId);
   const url = (dev && dev.url) || '';
