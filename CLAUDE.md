@@ -79,6 +79,16 @@ Grep before committing:
 
 The only addresses that should match are `192.0.2.x`, `127.0.0.1` and `localhost`.
 
+**This covers the names of internal systems, not just their addresses.** The second
+sign-in provider is the working example: the variables are `EXTRA_AUTH_URL` and
+`EXTRA_AUTH_LABEL`, never named after the service a given site puts behind them, and the
+label is a variable *because* the provider's name is part of what must not be committed.
+A deployment calls it whatever it likes in its own `.env`; the repo says
+`Company account`. Do not "clarify" these by renaming them after a real service - that
+would publish the very thing the indirection exists to keep private.
+
+    git grep -niI "<the real provider name>" -- . ":(exclude)package-lock.json"
+
 ## Facility-map button (combo sensors)
 
 - A sensor with both `sensor.<base>_temperature` and `sensor.<base>_humidity` is a **combo**

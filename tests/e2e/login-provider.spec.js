@@ -45,13 +45,25 @@ test.describe('sign-in providers', () => {
     await expect(page.locator('#login-providers')).toBeHidden();
   });
 
-  test('configured: the choice appears under its configured name', async ({ page }) => {
+  test('configured: the choice appears, and it is the one selected', async ({ page }) => {
     await mockApi(page, { extraAuth: { enabled: true, label: 'Acme SSO' } });
     await page.goto('/');
     await openLogin(page);
     await expect(page.locator('#login-providers')).toBeVisible();
     await expect(page.locator('[data-provider="extra"]')).toHaveText('Acme SSO');
-    await expect(page.locator('#login-provider-name')).toHaveText('Home Assistant');  // default
+    // configuring it means it is the account these operators have — it opens selected
+    await expect(page.locator('#login-provider-name')).toHaveText('Acme SSO');
+  });
+
+  test('reopening the modal returns to the configured default', async ({ page }) => {
+    await mockApi(page, { extraAuth: { enabled: true, label: 'Acme SSO' } });
+    await page.goto('/');
+    await openLogin(page);
+    await page.click('[data-provider="ha"]');
+    await expect(page.locator('#login-provider-name')).toHaveText('Home Assistant');
+    await page.click('#login-cancel');
+    await openLogin(page);
+    await expect(page.locator('#login-provider-name')).toHaveText('Acme SSO');
   });
 
   test('the picked provider is what the login request carries', async ({ page }) => {
@@ -67,12 +79,13 @@ test.describe('sign-in providers', () => {
     await page.fill('#login-user', 'someone');
     await page.fill('#login-pass', 'secret');
     await page.click('#login-submit');
-    await expect.poll(() => sent && sent.provider).toBe('ha');       // default
+    await expect.poll(() => sent && sent.provider).toBe('extra');    // the configured default
 
-    await page.click('[data-provider="extra"]');
-    await expect(page.locator('#login-provider-name')).toHaveText('Acme SSO');
+    // and the choice sticks after a rejection rather than reverting under the operator
+    await page.click('[data-provider="ha"]');
+    await expect(page.locator('#login-provider-name')).toHaveText('Home Assistant');
     await page.click('#login-submit');
-    await expect.poll(() => sent && sent.provider).toBe('extra');
+    await expect.poll(() => sent && sent.provider).toBe('ha');
   });
 
   // Against the REAL server, not a mock: /api/config is the one thing the browser is
