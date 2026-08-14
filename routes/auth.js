@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const db = require('../db');
 const ha = require('../ha');
 const extraAuth = require('../lib/extra-auth');
+const extraPerm = require('../lib/extra-auth-perm');
 const { wrap, currentUser, cookies, SESSION_MS } = require('../lib/middleware');
 
 const router = express.Router();
@@ -60,6 +61,16 @@ router.post('/api/login', wrap(async (req, res) => {
     if (req._loginEntry.count >= 10) req._loginEntry.blockedUntil = Date.now() + 300000;      // 5 min
     else if (req._loginEntry.count >= 5) req._loginEntry.blockedUntil = Date.now() + 60000;   // 1 min
     return res.status(401).json({ ok: false, error: r.error });
+  }
+  // Authenticated, but is this account allowed to drive the panel? Only the second
+  // provider has a permissions table behind it; HA accounts are governed by HA.
+  if (useExtra) {
+    const perm = await extraPerm.allows(r.user);
+    if (!perm.ok) {
+      req._loginEntry.count++;
+      await db.addAuditLog(r.user, 'login.fail', { reason: 'not permitted', via });
+      return res.status(403).json({ ok: false, error: perm.error });
+    }
   }
   // Session rotation: delete any existing sessions for this user before creating a new one
   await db.deleteSessionsForUser(r.user);
