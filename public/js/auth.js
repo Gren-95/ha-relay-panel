@@ -69,6 +69,11 @@ function pickProvider(p) { provider = p; paintProviders(); $('#login-msg').textC
 
 function openLogin() {
   $('#login-msg').textContent = ''; $('#login-user').value = ''; $('#login-pass').value = '';
+  // A site that configured a second provider configured it because that is the account
+  // its operators actually have, so it opens selected. Home Assistant stays one click
+  // away, and the choice holds while the modal is open — a rejected password does not
+  // silently bounce you back to the other system.
+  provider = extraAuthCfg().enabled ? 'extra' : 'ha';
   paintProviders();
   $('#login-modal').classList.remove('hidden'); $('#login-user').focus();
 }
