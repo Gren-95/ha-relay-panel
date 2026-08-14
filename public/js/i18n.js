@@ -70,6 +70,7 @@ const TR = {
     username: 'Kasutajanimi', password: 'Parool', sign_in: 'Logi sisse', cancel: 'Tühista',
     // dynamic
     mode_edit: 'Muuda', mode_live: 'Vaade',
+    mode_auto: 'Auto', mode_heat: 'Küte', mode_cool: 'Jahutus', unchanged: 'muutmata',
     saved: 'salvestatud', save_error: 'salvestamise viga', save_conflict: 'konflikt — uuesti salvestamine…', sign_in_to_save: 'salvestamiseks logi sisse',
     signing_in: 'logib sisse…', signed_in_loading: 'sisse logitud — laen…',
     logged_in_as: 'Sisse logitud: {user}', options: 'Valikud',
@@ -126,6 +127,7 @@ const TR = {
 };
 const EN = {  // English fallbacks for dynamic (non-HTML) strings
   mode_edit: 'Edit', mode_live: 'Live',
+  mode_auto: 'Auto', mode_heat: 'Heating', mode_cool: 'Cooling', unchanged: 'unchanged',
   saved: 'saved', save_error: 'save error', save_conflict: 'conflict — retrying…', sign_in_to_save: 'sign in to save',
   signing_in: 'signing in…', signed_in_loading: 'signed in — loading…',
   logged_in_as: 'Logged in as {user}', options: 'Options',
