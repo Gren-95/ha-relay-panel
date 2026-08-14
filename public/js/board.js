@@ -1,4 +1,4 @@
-import { state, canvas, CANVAS_DESKTOP, CANVAS_MOBILE, esc, setStatus, flashStatus, api } from './core.js';
+import { state, canvas, CANVAS_DESKTOP, CANVAS_MOBILE, esc, setStatus, flashStatus, api, boxOutputs, boxOffline } from './core.js';
 import { t } from './i18n.js';
 import { refreshAreaPicker, normalizeLayout, areaColor, headColor, boxTint, headTint, opaque, bodyFill, dashedSides, areaName,
   pinDeviceToArea, containArea, fitAreaToContents, minAreaSize, reflowDeviceOutputs,
@@ -106,11 +106,15 @@ function renderMobile() {
     const hue = areaColor(d.deviceId, d);
     const box = document.createElement('div');
     box.className = 'border-2 border-border rounded-[14px] p-2.5 bg-surface-2 flex flex-col gap-2.5';
-    box.style.borderColor = `hsl(${hue},45%,55%)`;
+    // the cards inside suppress their offline badges for a dead box wherever they
+    // render, so mobile has to carry the block-level warning too or it says nothing
+    const off = boxOffline(d.id);
+    box.style.borderColor = off ? 'var(--danger)' : `hsl(${hue},45%,55%)`;
     const head = document.createElement('div');
     head.className = 'font-bold text-fg text-base cursor-pointer';
     head.style.color = headColor(hue);
-    head.innerHTML = `<i class="bi bi-hdd-stack"></i> ${esc(d.name || d.deviceId)}`;
+    head.innerHTML = `<i class="bi bi-hdd-stack"></i> ${esc(d.name || d.deviceId)}`
+      + (off ? ` <i class="box-warn bi bi-exclamation-triangle-fill text-danger" title="${esc(t('warn_box_offline', { n: boxOutputs(d.id).length }))}"></i>` : '');
     head.addEventListener('click', () => openDeviceEditor(d));
     box.appendChild(head);
     for (const r of state.layout.relays.filter((x) => x.device === d.id)) { box.appendChild(card(r, true)); doneRel.add(r.id); }
@@ -191,7 +195,14 @@ function renderBox(g, kind) {
   el.style.top = num(g.y) + 'px';
   el.style.width = num(g.w, isDev ? DEV_W : MIN_AREA_W) + 'px';
   el.style.height = num(g.h, MIN_AREA_H) + 'px';
-  const line = `hsl(${hue},50%,55%)`;
+  // A box whose outputs have ALL gone unavailable is stated once, here, in danger
+  // colour — the cards inside then drop their own offline badges (see card.js). One
+  // dead channel out of three is not this: that stays a per-output badge.
+  const devOffline = isDev && boxOffline(g.id);
+  const line = devOffline ? 'var(--danger)' : `hsl(${hue},50%,55%)`;
+  const offWarn = devOffline
+    ? `<i class="box-warn bi bi-exclamation-triangle-fill text-danger text-[.95rem] flex-none" title="${esc(t('warn_box_offline', { n: boxOutputs(g.id).length }))}"></i>`
+    : '';
   // a pinned device names its area inline — the titlebar stays one fixed-height row
   // so HDR in layout.js keeps matching what is actually rendered.
   // area boxes get a master on/off for all their relays (works in Live mode too)
@@ -211,6 +222,7 @@ function renderBox(g, kind) {
   const head = `<div class="area-head h-[44px] px-2.5 flex items-center gap-1.5 font-bold select-none touch-none border-2 border-solid rounded-t-2xl ${state.edit ? 'cursor-grab active:cursor-grabbing' : ''}" style="color:${headColor(hue)};border-color:${line};background:${opaque(headTint(hue))}">
       <i class="bi ${state.edit ? 'bi-gear area-gear cursor-pointer' : (isDev ? 'bi-hdd-stack' : 'bi-grid-3x3-gap')} text-[.95rem] flex-none" title="${state.edit ? t(isDev ? 'physical_relay_h' : 'area_h') : ''}"></i>
       <span class="text-[.95rem] min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">${esc(g.name || refId)}</span>
+      ${offWarn}
       <span class="ml-auto flex items-center gap-1.5 flex-none">${master}${delBtn}</span>
     </div>`;
   // A device box keeps a plain solid CSS border; an area's body is outlined with the

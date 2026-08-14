@@ -1,4 +1,4 @@
-import { state, esc } from './core.js';
+import { state, esc, boxOffline } from './core.js';
 import { t, fmtAgo } from './i18n.js';
 import { boxFor, clampToBox, num, zIndexOf } from './layout.js';
 import { toggleRelay, showWarnPop, adjustTemp } from './relay-actions.js';
@@ -45,8 +45,12 @@ function card(r, mobile) {
   const relayBad = relMissing || relOffline;  // relay itself unreachable -> can't switch
   // one clear "!" icon per problem; message shown on hover/click
   let warnMsg = '', warnLevel = '';
+  // If the whole box is down its header already says so, once — repeating it on every
+  // output card just fills the block with identical triangles. The toggle still goes
+  // dead, because that is this output's own state, not a duplicated announcement.
+  const inDeadBox = !!(r.device && boxOffline(r.device));
   if (relMissing) { warnMsg = t('warn_relay_missing'); warnLevel = 'error'; }
-  else if (relOffline) { warnMsg = t('warn_relay_offline'); warnLevel = 'error'; }
+  else if (relOffline && !inDeadBox) { warnMsg = t('warn_relay_offline'); warnLevel = 'error'; }
   else if (senMissing) { warnMsg = t('warn_sensor_missing'); warnLevel = 'error'; }
   else if (senOffline) { warnMsg = t('warn_sensor_offline'); warnLevel = 'warn'; }
   const warnColor = warnLevel === 'error' ? 'text-danger' : 'text-[#d97706]';

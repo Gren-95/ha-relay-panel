@@ -92,4 +92,29 @@ function groupByDevice(relays) {
   return groups;
 }
 
-export { state, $, canvas, BTN, TINY, FIELD, MSG, CANVAS_DESKTOP, CANVAS_MOBILE, setMsg, setRangeActive, api, setStatus, flashStatus, esc, deviceHost, groupByDevice };
+/*
+ * A physical relay either answers or it does not: when the box drops off the network,
+ * HA marks every one of its outputs `unavailable` in the same breath. Flagging each
+ * output card then states the same fact N times, so the board says it once, on the box.
+ *
+ * Deliberately narrow. It reports offline only when EVERY output that has an entity is
+ * unavailable — one dead channel out of three is a per-output problem and keeps its own
+ * badge — and never when an entity is `missing`, which means the binding points at an
+ * entity HA no longer has. That is a configuration fault needing per-output attention,
+ * not a box that lost power, and the two must not be dressed the same.
+ *
+ * Before the first live poll `state.live` is empty, so nothing reads as offline.
+ */
+function boxOutputs(boxId) {
+  return state.layout.relays.filter((r) => r.device === boxId && r.relay);
+}
+function boxOffline(boxId) {
+  const outs = boxOutputs(boxId);
+  if (!outs.length) return false;
+  return outs.every((r) => {
+    const l = state.live[r.relay] || {};
+    return !l.missing && (l.state === 'unavailable' || l.state === 'unknown');
+  });
+}
+
+export { state, $, canvas, BTN, TINY, FIELD, MSG, CANVAS_DESKTOP, CANVAS_MOBILE, setMsg, setRangeActive, api, setStatus, flashStatus, esc, deviceHost, groupByDevice, boxOutputs, boxOffline };
