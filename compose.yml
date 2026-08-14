@@ -8,7 +8,7 @@ services:
       - MARIADB_USER=relay
       - MARIADB_PASSWORD=${DB_PASSWORD}
       - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
-      - TZ=Europe/Tallinn
+      - TZ=${TZ:-UTC}
     volumes:
       - relay-panel-data:/var/lib/mysql
     healthcheck:
@@ -31,14 +31,14 @@ services:
     container_name: relay-panel-web
     restart: always
     ports:
-      - "8090:3000"
+      - "${HTTP_PORT:-8090}:3000"
     env_file:
       - .env
     environment:
       - DB_HOST=relay-panel-db
       - DB_USER=relay
       - DB_NAME=relaypanel
-      - TZ=Europe/Tallinn
+      - TZ=${TZ:-UTC}
     depends_on:
       relay-panel-db:
         condition: service_healthy

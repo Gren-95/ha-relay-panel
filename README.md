@@ -81,6 +81,15 @@ Tags: `latest`, the branch name, `sha-<commit>`, and `vX.Y.Z` on releases.
 | `MQTT_URL` | MQTT broker URL (optional; for Zigbee2MQTT renames) |
 | `DB_PASSWORD` / `DB_ROOT_PASSWORD` | Credentials for the bundled MariaDB container |
 | `KWS_MAP_URL` | Optional facility-map page for the cards' map button (see below) |
+| `HTTP_PORT` | Host port the panel is published on (default `8090`; the container always listens on 3000) |
+| `TZ` | Timezone for both containers - what the activity log and history charts render in (default `UTC`) |
+| `NOTIFY_SERVICE` | Optional HA `notify.*` service for offline / temperature-deviation alerts |
+| `TRUST_PROXY` | Set to `1` only behind a reverse proxy, so `X-Forwarded-For` is trusted |
+| `SECURE_COOKIE` | Set to `1` when serving over TLS, to add `Secure` to the session cookie |
+
+Every host, port and credential this app knows about is read from `.env`. Nothing in the
+repository names a real deployment - if you need a concrete address in a comment, a test
+fixture or an example, use a documentation-reserved one (`192.0.2.0/24`, RFC 5737).
 
 ### Map button
 
