@@ -7,7 +7,10 @@ const savedTheme = () => { try { return localStorage.getItem('relaypanel-theme')
 const systemTheme = () => { try { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } catch { return 'light'; } };
 function applyTheme(t) {
   document.documentElement.setAttribute('data-theme', t);
-  const icon = $('#btn-theme i'); if (icon) icon.className = t === 'dark' ? 'bi bi-sun' : 'bi bi-moon-stars';
+  // Swap ONLY the glyph. Assigning className here wiped whatever layout classes the
+  // markup had put on the icon — the menus' w-4 alignment column, in this case (#104).
+  const icon = $('#btn-theme i');
+  if (icon) { icon.classList.toggle('bi-sun', t === 'dark'); icon.classList.toggle('bi-moon-stars', t !== 'dark'); }
 }
 
 // wiring: theme toggle button + follow-OS listener

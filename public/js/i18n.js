@@ -9,7 +9,7 @@ const TR = {
     physical_relay_ph: '+ Füüsiline relee…', area_ph: '+ Ala…',
     save: 'Salvesta', sign_out: 'Logi välja', toggle_dark: 'Tumeda režiimi lüliti',
     advanced: 'Rohkem', add_single_relay: 'Lisa üksik relee',
-    export_layout: 'Ekspordi paigutus', import_layout: 'Impordi paigutus',
+    export_layout: 'Ekspordi', import_layout: 'Impordi', about: 'Teave',
     edit_relay: 'Muuda releed', name: 'Nimi', name_ph: 'nt Tehnoruumi küte',
     relay_to_switch: 'Lülitatav relee', rename_this_relay: 'Nimeta see relee ümber',
     temp_sensor: 'Temperatuuriandur', rename_this_sensor: 'Nimeta see andur ümber',
