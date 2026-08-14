@@ -37,7 +37,6 @@
           <span class="h-px bg-border mx-2 my-1"></span>
           <button id="btn-activity" data-ui="menuItem"><i class="bi bi-clock-history w-4 text-center text-muted"></i> <span data-i18n="activity_log">Activity log</span></button>
           <button id="btn-bulk" data-ui="menuItem"><i class="bi bi-collection w-4 text-center text-muted"></i> <span data-i18n="bulk_edit">Bulk edit</span></button>
-          <button id="btn-presets" data-ui="menuItem"><i class="bi bi-bookmark w-4 text-center text-muted"></i> <span data-i18n="presets">Presets</span></button>
           <span class="h-px bg-border mx-2 my-1"></span>
           <div data-ui="menuRow" class="[.live-mode_&]:opacity-40" id="global-temp-wrap">
             <span class="inline-flex items-center gap-2.5"><i class="bi bi-thermometer-half w-4 text-center text-heat"></i> <span data-i18n="global_temp_title">Set temp for all</span></span>
@@ -318,19 +317,6 @@
     </div>
   </div>
 
-  <!-- Presets panel -->
-  <aside id="preset-editor" role="dialog" aria-modal="true" class="editor hidden" data-ui="editorAside">
-    <div class="flex items-center justify-between">
-      <h2 data-ui="panelH2"><i class="bi bi-bookmark"></i> <span data-i18n="presets">Presets</span></h2>
-      <button id="pr-close" data-ui="closeBtn" aria-label="Close">&times;</button>
-    </div>
-    <div class="flex gap-2">
-      <input id="pr-name" type="text" data-i18n-ph="preset_name_ph" placeholder="Preset name" maxlength="190" data-ui="field" class="flex-1 placeholder:text-muted placeholder:opacity-80" />
-      <button id="pr-save" class="border border-primary bg-primary text-white px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px"><i class="bi bi-save"></i> Save</button>
-    </div>
-    <div id="pr-list" class="flex flex-col gap-1"></div>
-    <p id="pr-msg" class="text-[.95rem] min-h-[1.3em] font-semibold"></p>
-  </aside>
 
   <!-- Editor backdrop overlay -->
   <div id="backdrop" class="hidden fixed inset-0 bg-black/25 z-[19]"></div>

@@ -30,7 +30,6 @@ async function mockApi(page) {
 const PANELS = [
   { id: 'activity-editor', open: async (p) => { await p.click('#btn-advanced'); await p.click('#btn-activity'); } },
   { id: 'bulk-editor', open: async (p) => { await p.click('#btn-advanced'); await p.click('#btn-bulk'); } },
-  { id: 'preset-editor', open: async (p) => { await p.click('#btn-advanced'); await p.click('#btn-presets'); } },
   { id: 'about-modal', open: async (p) => { await p.click('#btn-advanced'); await p.click('#btn-about'); } },
 ];
 

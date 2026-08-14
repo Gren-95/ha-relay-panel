@@ -5,7 +5,6 @@ import { render, isMobile, addArea, addPhysicalRelay } from './board.js';
 import { addRelay, initEditor } from './editor.js';
 import { openActivityLog, initActivity } from './activity.js';
 import { openBulkEdit, initBulk } from './bulk.js';
-import { openPresets, initPresets } from './presets.js';
 import { allOff, setRelaysTemp, refreshLive, initRelayActions } from './relay-actions.js';
 import { exportLayout, importLayout } from './import-export.js';
 import { saveLayout, initHistory, undo, redo } from './history-undo.js';
@@ -71,7 +70,6 @@ $('#btn-export').addEventListener('click', exportLayout);
 $('#btn-import').addEventListener('click', () => { $('#advanced-menu').classList.add('hidden'); $('#import-file').click(); });
 $('#btn-activity').addEventListener('click', () => { closeAdvanced(); openActivityLog(); });
 $('#btn-bulk').addEventListener('click', () => { closeAdvanced(); openBulkEdit(); });
-$('#btn-presets').addEventListener('click', () => { closeAdvanced(); openPresets(); });
 $('#btn-alloff').addEventListener('click', () => { closeAdvanced(); allOff(); });
 // About modal (#78)
 function openAbout() {
@@ -209,7 +207,6 @@ initDeviceEditor();
 initAreaEditor();
 initActivity();
 initBulk();
-initPresets();
 initRelayActions();
 initAuth();
 applyMode();
