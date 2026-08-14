@@ -26,6 +26,10 @@ function closeBulkEdit() {
   syncBackdrop();
 }
 
+// 'above' is no longer offered in the UI (auto/heating only, ebeea3a) but relays bound
+// before that can still carry it, so the CURRENT side of the preview must render it.
+const modeWord = (m) => (m === 'above' ? t('mode_cool') : m === 'auto' ? t('mode_auto') : t('mode_heat'));
+
 function updateBulkList() {
   const area = $('#bk-area').value;
   const mode = $('#bk-mode').value;
@@ -35,17 +39,23 @@ function updateBulkList() {
     r.bound && r.relay && r.sensor && (!area || r.area === area)
   );
   const list = $('#bk-list');
+  // before → after, where "after" is what Apply actually writes: the chosen mode and
+  // temperature, not the relay's existing ones. The old preview fell back to the relay's
+  // own mode whenever the chosen one was not 'above' — which, with 'above' unreachable,
+  // was always — so picking Auto still previewed "heat".
   list.innerHTML = matches.map((r) => {
-    const curTemp = r.temp != null ? r.temp : '?';
-    const curMode = r.mode === 'above' ? 'cool' : 'heat';
-    const newTemp = isFinite(temp) ? temp : curTemp;
-    return `<div class="flex items-center gap-2 px-2.5 py-2 bg-surface-2 border-[1.5px] border-border rounded-[10px] text-[.85rem]">
-      <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-semibold">${esc(r.name || r.relay)}</span>
-      <span class="text-muted">${curMode} ${curTemp}° → ${newTemp}° @ ${mode === 'above' ? 'cool' : r.mode === 'above' ? 'cool' : 'heat'}</span>
+    const curTemp = r.temp != null ? r.temp + '°' : '—';
+    const changed = isFinite(temp) && (r.temp !== temp || r.mode !== mode);
+    return `<div class="flex items-center gap-3 px-3 py-2 text-[.85rem]">
+      <span class="flex-1 min-w-0 truncate font-medium">${esc(r.name || r.relay)}</span>
+      <span class="shrink-0 text-muted tabular-nums">${esc(modeWord(r.mode))} ${curTemp}</span>
+      <i class="bi bi-arrow-right text-muted text-[.75rem]"></i>
+      <span class="shrink-0 tabular-nums ${changed ? 'font-semibold text-primary' : 'text-muted'}">${
+        isFinite(temp) ? `${esc(modeWord(mode))} ${temp}°${deadband ? ` ±${deadband}°` : ''}` : esc(t('unchanged'))
+      }</span>
     </div>`;
-  }).join('') || `<div style="text-align:center;padding:20px;color:var(--muted)">${t('no_bound_relays_match')}</div>`;
-  $('#bk-count').textContent = matches.length ? `${matches.length} relay${matches.length === 1 ? '' : 's'}` : '';
-  $('#bk-apply').innerHTML = `<i class="bi bi-check-lg"></i> ${t('apply_to_n', { n: matches.length || 0 })}`;
+  }).join('') || `<div class="px-3 py-5 text-center text-muted text-[.85rem]">${esc(t('no_bound_relays_match'))}</div>`;
+  $('#bk-apply').innerHTML = `<i class="bi bi-check-lg"></i> ${esc(t('apply_to_n', { n: matches.length || 0 }))}`;
 }
 
 async function applyBulk() {
