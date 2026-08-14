@@ -10,9 +10,15 @@ function updateAuthUI() {
   $('#btn-login').classList.toggle('hidden', state.authed);
   $('#btn-logout').classList.toggle('hidden', !state.authed);
   if (state.user) $('#btn-logout').title = 'Sign out (' + state.user + ')';
-  // Who am I? (#82) — subtle, signed-in only; the Sign in button covers the signed-out case.
+  // Who am I? (#82) — an account chip beside Sign out, signed-in only; the Sign in
+  // button covers the signed-out case. The name carries the identity, so the full
+  // "Logged in as …" phrasing lives in the tooltip rather than in the crowded bar.
   const badge = $('#user-badge');
-  badge.textContent = state.user ? t('logged_in_as', { user: state.user }) : '';
+  if (state.user) {
+    $('#user-avatar').textContent = state.user.trim().charAt(0) || '?';
+    $('#user-name').textContent = state.user;
+    badge.title = t('logged_in_as', { user: state.user });
+  }
   badge.classList.toggle('hidden', !(state.authed && state.user));
   const alloff = $('#btn-alloff'); alloff.classList.toggle('hidden', !state.authed); alloff.classList.toggle('opacity-40', !state.edit); alloff.disabled = !state.edit;
 }

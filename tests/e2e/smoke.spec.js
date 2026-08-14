@@ -82,7 +82,11 @@ test.describe('relay-panel smoke', () => {
     await mockApi(page);
     await page.route('**/api/session', (route) => route.fulfill({ json: { ok:true, authed:true, user:'risto' } }));
     await page.goto('/');
-    await expect(page.locator('#user-badge')).toHaveText('Logged in as risto');
+    await expect(page.locator('#user-badge')).toBeVisible();
+    await expect(page.locator('#user-name')).toHaveText('risto');
+    await expect(page.locator('#user-avatar')).toHaveText('r');           // uppercased in CSS
+    await expect(page.locator('#user-badge')).toHaveAttribute('title', 'Logged in as risto');
+    await expect(page.locator('#btn-login')).toBeHidden();
   });
 
   test('mobile viewport shows hamburger menu', async ({ page }) => {
