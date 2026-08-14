@@ -3,6 +3,7 @@ const express = require('express');
 const crypto = require('crypto');
 const db = require('../db');
 const ha = require('../ha');
+const extraAuth = require('../lib/extra-auth');
 const { wrap, currentUser, cookies, SESSION_MS } = require('../lib/middleware');
 
 const router = express.Router();
@@ -36,16 +37,26 @@ function sessionCookie(token, maxAgeSec) {
 
 router.post('/api/login', wrap(async (req, res) => {
   if (!checkLoginRate(req, res)) return;
-  const { username, password } = req.body || {};
+  const { username, password, provider } = req.body || {};
   if (!username || !password) {
     req._loginEntry.count++;
     await db.addAuditLog(username || '(empty)', 'login.fail', { reason: 'missing credentials' });
     return res.status(400).json({ ok: false, error: 'username and password required' });
   }
-  const r = await ha.verifyHaLogin(String(username), String(password));
+  // The provider is chosen explicitly, never tried in turn: falling through from one
+  // to the other would hand every failed password to a second service, and would make
+  // "which system rejected me" unanswerable from the audit log.
+  const useExtra = provider === 'extra' && extraAuth.enabled();
+  if (provider === 'extra' && !extraAuth.enabled()) {
+    return res.status(400).json({ ok: false, error: 'That sign-in method is not available.' });
+  }
+  const r = useExtra
+    ? await extraAuth.verifyLogin(String(username), String(password))
+    : await ha.verifyHaLogin(String(username), String(password));
+  const via = useExtra ? 'extra' : 'ha';
   if (!r.ok) {
     req._loginEntry.count++;
-    await db.addAuditLog(username, 'login.fail', { reason: r.error || 'invalid credentials' });
+    await db.addAuditLog(username, 'login.fail', { reason: r.error || 'invalid credentials', via });
     if (req._loginEntry.count >= 10) req._loginEntry.blockedUntil = Date.now() + 300000;      // 5 min
     else if (req._loginEntry.count >= 5) req._loginEntry.blockedUntil = Date.now() + 60000;   // 1 min
     return res.status(401).json({ ok: false, error: r.error });
@@ -55,7 +66,7 @@ router.post('/api/login', wrap(async (req, res) => {
   const token = crypto.randomBytes(24).toString('hex');
   await db.saveSession(token, r.user, Date.now() + SESSION_MS);
   loginAttempts.delete(req.ip || req.socket.remoteAddress || 'unknown'); // reset rate limit on success
-  await db.addAuditLog(r.user, 'login', {});
+  await db.addAuditLog(r.user, 'login', { via });
   res.setHeader('Set-Cookie', sessionCookie(token, SESSION_MS / 1000));
   res.json({ ok: true, user: r.user });
 }));

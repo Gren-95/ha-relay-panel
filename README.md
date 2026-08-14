@@ -84,12 +84,28 @@ Tags: `latest`, the branch name, `sha-<commit>`, and `vX.Y.Z` on releases.
 | `HTTP_PORT` | Host port the panel is published on (default `8090`; the container always listens on 3000) |
 | `TZ` | Timezone for both containers - what the activity log and history charts render in (default `UTC`) |
 | `NOTIFY_SERVICE` | Optional HA `notify.*` service for offline / temperature-deviation alerts |
+| `EXTRA_AUTH_URL` | Optional second sign-in provider (see below). Unset = Home Assistant accounts only |
+| `EXTRA_AUTH_LABEL` | What to call that provider in the login modal (default `Company account`) |
 | `TRUST_PROXY` | Set to `1` only behind a reverse proxy, so `X-Forwarded-For` is trusted |
 | `SECURE_COOKIE` | Set to `1` when serving over TLS, to add `Secure` to the session cookie |
 
 Every host, port and credential this app knows about is read from `.env`. Nothing in the
 repository names a real deployment - if you need a concrete address in a comment, a test
 fixture or an example, use a documentation-reserved one (`192.0.2.0/24`, RFC 5737).
+
+### Second sign-in provider
+
+Editing requires signing in, and by default that means a Home Assistant account. If your
+site already has its own account service, set `EXTRA_AUTH_URL` to an endpoint that
+accepts a form POST of `user` and `pass` and replies with the bare word `TRUE` when the
+pair is valid. The login modal then offers both, named by `EXTRA_AUTH_LABEL`.
+
+It is off unless configured: with `EXTRA_AUTH_URL` unset no second option is rendered,
+and the server rejects the choice even if a client asks for it. The provider is always
+chosen explicitly rather than tried in turn, so a password is only ever sent to the one
+service the operator picked, and the activity log records which one accepted or refused
+it. `GET /api/config` tells the browser that the option exists and what to call it - the
+endpoint itself stays in `.env`.
 
 ### Map button
 

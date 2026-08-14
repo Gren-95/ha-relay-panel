@@ -41,6 +41,8 @@ app.get('/api/health', (req, res) => res.json({ ok: true }));
 // plots the HA combo sensors; leave it unset and the cards' map button stays hidden.
 app.get('/api/config', (req, res) => res.json({
   kwsMapUrl: process.env.KWS_MAP_URL || '',
+  // whether a second sign-in provider exists and what to call it — never its URL
+  extraAuth: require('./lib/extra-auth').publicConfig(),
   version: process.env.GIT_SHA || 'dev',
   buildDate: process.env.BUILD_DATE || '',
   description: 'Wall-mounted relay control panel for Home Assistant',

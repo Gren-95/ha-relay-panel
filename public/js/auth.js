@@ -45,7 +45,33 @@ async function checkSession() {
   if (enter && state.authed) { state.edit = true; applyMode(); render(); }
   else if (state.authed) render(); // re-render so toggle buttons enable now that auth is confirmed
 }
-function openLogin() { $('#login-msg').textContent = ''; $('#login-user').value = ''; $('#login-pass').value = ''; $('#login-modal').classList.remove('hidden'); $('#login-user').focus(); }
+// Which provider the credentials will be checked against. 'ha' unless a second one is
+// configured AND the operator picks it — an unconfigured panel never sees the choice.
+let provider = 'ha';
+
+function extraAuthCfg() { return (state.config && state.config.extraAuth) || { enabled: false }; }
+
+function paintProviders() {
+  const cfg = extraAuthCfg();
+  $('#login-providers').classList.toggle('hidden', !cfg.enabled);
+  if (!cfg.enabled) { provider = 'ha'; return; }
+  $('#login-providers').querySelector('[data-provider="extra"]').textContent = cfg.label;
+  for (const b of $('#login-providers').querySelectorAll('.lp-opt')) {
+    const on = b.dataset.provider === provider;
+    b.classList.toggle('bg-surface', on);
+    b.classList.toggle('shadow-panel', on);
+    b.classList.toggle('text-muted', !on);
+  }
+  $('#login-provider-name').textContent = provider === 'extra' ? cfg.label : 'Home Assistant';
+}
+
+function pickProvider(p) { provider = p; paintProviders(); $('#login-msg').textContent = ''; }
+
+function openLogin() {
+  $('#login-msg').textContent = ''; $('#login-user').value = ''; $('#login-pass').value = '';
+  paintProviders();
+  $('#login-modal').classList.remove('hidden'); $('#login-user').focus();
+}
 function closeLogin() { $('#login-modal').classList.add('hidden'); }
 async function doLogin() {
   const username = $('#login-user').value.trim(), password = $('#login-pass').value;
@@ -57,7 +83,7 @@ async function doLogin() {
   try {
     const res = await fetch('/api/login', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }), signal: ac.signal,
+      body: JSON.stringify({ username, password, provider }), signal: ac.signal,
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { $('#login-msg').textContent = data.error || t('sign_in_failed'); return; }
@@ -86,6 +112,8 @@ $('#login-pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') doL
 $('#login-user').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#login-pass').focus(); });
 $('#btn-logout').addEventListener('click', doLogout);
 $('#btn-login').addEventListener('click', openLogin);
+$('#login-providers').querySelectorAll('.lp-opt').forEach((b) =>
+  b.addEventListener('click', () => pickProvider(b.dataset.provider)));
 // The chip opens its menu. No stopPropagation here on purpose: the click still reaches
 // the document listeners that shut the +Add and More dropdowns, so only one is ever open.
 $('#user-badge').addEventListener('click', toggleAccountMenu);
