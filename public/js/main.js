@@ -10,7 +10,7 @@ import { allOff, setRelaysTemp, refreshLive, initRelayActions } from './relay-ac
 import { exportLayout, importLayout } from './import-export.js';
 import { saveLayout, initHistory, undo, redo } from './history-undo.js';
 import { applyMode, toggleMode, closeTopmost, initMode } from './mode.js';
-import { updateAuthUI, openLogin, initAuth } from './auth.js';
+import { updateAuthUI, openLogin, initAuth, closeAccountMenu } from './auth.js';
 import { initResize } from './resize.js';
 import { initTheme } from './theme.js';
 import { initChart } from './chart.js';
@@ -59,11 +59,13 @@ async function boot() {
 const closeAdvanced = () => $('#advanced-menu').classList.add('hidden');
 const closeAdd = () => $('#add-menu').classList.add('hidden');
 // +Add menu
-$('#btn-add-menu').addEventListener('click', (e) => { e.stopPropagation(); $('#add-menu').classList.toggle('hidden'); });
+// These two stopPropagation, so the document listener that would shut the account
+// menu (#104) never runs — close it by hand or two dropdowns end up open at once.
+$('#btn-add-menu').addEventListener('click', (e) => { e.stopPropagation(); closeAccountMenu(); $('#add-menu').classList.toggle('hidden'); });
 document.addEventListener('click', (e) => { if (!e.target.closest('.tb-add')) $('#add-menu').classList.add('hidden'); });
 $('#btn-add-single').addEventListener('click', () => { closeAdd(); addRelay(); });
 // Advanced/More menu
-$('#btn-advanced').addEventListener('click', (e) => { e.stopPropagation(); $('#advanced-menu').classList.toggle('hidden'); });
+$('#btn-advanced').addEventListener('click', (e) => { e.stopPropagation(); closeAccountMenu(); $('#advanced-menu').classList.toggle('hidden'); });
 document.addEventListener('click', (e) => { if (!e.target.closest('.tb-advanced')) $('#advanced-menu').classList.add('hidden'); });
 $('#btn-export').addEventListener('click', exportLayout);
 $('#btn-import').addEventListener('click', () => { $('#advanced-menu').classList.add('hidden'); $('#import-file').click(); });
@@ -168,7 +170,10 @@ document.addEventListener('keydown', (e) => {
 });
 
 // language: init from storage (default English), toggle button
-$('#btn-lang').addEventListener('click', () => setLang(LANG === 'et' ? 'en' : 'et'));
+// Language now lives in the account/options menu (#104); close it so the switch feels
+// decisive. Zoom is deliberately left alone — it is a repeat action, so it keeps the
+// menu open for a second press.
+$('#btn-lang').addEventListener('click', () => { closeAccountMenu(); setLang(LANG === 'et' ? 'en' : 'et'); });
 (function initLang() {
   let l = 'en'; try { l = localStorage.getItem('relaypanel-lang') || 'en'; } catch {}
   // snapshot English defaults now, then apply chosen language

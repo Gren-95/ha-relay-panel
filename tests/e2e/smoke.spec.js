@@ -41,6 +41,10 @@ async function mockApi(page) {
   await page.route('**/api/history**', (route) => route.fulfill({ json: { ok:true, rows:[], target:null } }));
 }
 
+// Signed-in fixture: the session check is all the client trusts for auth state.
+const signedIn = (page, user = 'risto') =>
+  page.route('**/api/session', (route) => route.fulfill({ json: { ok:true, authed:true, user } }));
+
 test.describe('relay-panel smoke', () => {
   test('app loads with canvas and header', async ({ page }) => {
     await mockApi(page);
@@ -70,23 +74,94 @@ test.describe('relay-panel smoke', () => {
     expect(pos).toBe('fixed');
   });
 
-  // #82 — the header names whoever is signed in, and stays quiet when nobody is
-  test('signed out shows no user badge', async ({ page }) => {
+  // #82 — the header names whoever is signed in, and stays anonymous when nobody is.
+  // #104 — but the chip itself stays put either way: it is the options menu's trigger,
+  // and language + zoom are open to everyone.
+  test('signed out shows the options trigger, not an identity', async ({ page }) => {
     await mockApi(page);
     await page.goto('/');
     await expect(page.locator('#btn-login')).toBeVisible();
-    await expect(page.locator('#user-badge')).toBeHidden();
+    await expect(page.locator('#user-badge')).toBeVisible();
+    await expect(page.locator('#prefs-icon')).toBeVisible();
+    await expect(page.locator('#user-name')).toBeHidden();
+    await expect(page.locator('#user-avatar')).toBeHidden();
+  });
+
+  test('signed out can still reach language and zoom in the menu', async ({ page }) => {
+    await mockApi(page);
+    await page.goto('/');
+    await page.click('#user-badge');
+    await expect(page.locator('#account-menu')).toBeVisible();
+    await expect(page.locator('#btn-lang')).toBeVisible();
+    await expect(page.locator('#zoom-row')).toBeVisible();
+    await expect(page.locator('#btn-logout')).toBeHidden();   // nothing to sign out of
+  });
+
+  test('zoom keeps the menu open, language closes it', async ({ page }) => {
+    await mockApi(page);
+    await page.goto('/');
+    await page.click('#user-badge');
+    await expect(page.locator('#btn-lang-flag')).toHaveText('🇬🇧');  // flag = current language
+    await page.click('#btn-zoom-in');
+    await expect(page.locator('#account-menu')).toBeVisible();  // repeat action
+    await page.click('#btn-lang');
+    await expect(page.locator('#account-menu')).toBeHidden();
+    await expect(page.locator('#btn-lang-flag')).toHaveText('🇪🇪');  // switched to Estonian
   });
 
   test('signed in shows the username in the header', async ({ page }) => {
     await mockApi(page);
-    await page.route('**/api/session', (route) => route.fulfill({ json: { ok:true, authed:true, user:'risto' } }));
+    await signedIn(page);
     await page.goto('/');
     await expect(page.locator('#user-badge')).toBeVisible();
     await expect(page.locator('#user-name')).toHaveText('risto');
     await expect(page.locator('#user-avatar')).toHaveText('r');           // uppercased in CSS
     await expect(page.locator('#user-badge')).toHaveAttribute('title', 'Logged in as risto');
     await expect(page.locator('#btn-login')).toBeHidden();
+  });
+
+  // #104 — Sign out is not a button of its own any more; it lives in the chip's menu
+  test('the account chip opens a menu holding Sign out', async ({ page }) => {
+    await mockApi(page);
+    await signedIn(page);
+    await page.goto('/');
+    await expect(page.locator('#account-menu')).toBeHidden();
+    await expect(page.locator('#user-badge')).toHaveAttribute('aria-expanded', 'false');
+    await page.click('#user-badge');
+    await expect(page.locator('#account-menu')).toBeVisible();
+    await expect(page.locator('#btn-logout')).toBeVisible();
+    await expect(page.locator('#user-badge')).toHaveAttribute('aria-expanded', 'true');
+    // Esc closes it, and takes aria-expanded back with it
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#account-menu')).toBeHidden();
+    await expect(page.locator('#user-badge')).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  test('signing out from the menu returns the header to signed-out', async ({ page }) => {
+    await mockApi(page);
+    await signedIn(page);
+    let loggedOut = false;
+    await page.route('**/api/logout', (route) => { loggedOut = true; route.fulfill({ json: { ok:true } }); });
+    await page.goto('/');
+    await page.click('#user-badge');
+    await page.click('#btn-logout');
+    await expect(page.locator('#account-menu')).toBeHidden();
+    await expect(page.locator('#btn-login')).toBeVisible();
+    await expect(page.locator('#user-name')).toBeHidden();     // identity gone
+    await expect(page.locator('#prefs-icon')).toBeVisible();   // options trigger stays
+    await expect(page.locator('#btn-logout')).toBeHidden();
+    expect(loggedOut).toBe(true);
+  });
+
+  test('opening the More menu closes the account menu', async ({ page }) => {
+    await mockApi(page);
+    await signedIn(page);
+    await page.goto('/');
+    await page.click('#user-badge');
+    await expect(page.locator('#account-menu')).toBeVisible();
+    await page.click('#btn-advanced');
+    await expect(page.locator('#account-menu')).toBeHidden();
+    await expect(page.locator('#advanced-menu')).toBeVisible();
   });
 
   test('mobile viewport shows hamburger menu', async ({ page }) => {

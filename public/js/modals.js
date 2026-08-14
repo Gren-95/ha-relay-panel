@@ -58,9 +58,15 @@ export function closeTopmost() {
   for (const id of ORDER) {
     if (registry.has(id) && isOpen(id)) { registry.get(id).close(); syncBackdrop(); return true; }
   }
-  // dropdowns are not registered panels but Esc should still shut them
-  for (const id of ['advanced-menu', 'add-menu']) {
-    if (isOpen(id)) { el(id).classList.add('hidden'); return true; }
+  // dropdowns are not registered panels but Esc should still shut them.
+  // The value is the trigger whose aria-expanded has to follow the menu (#104).
+  const DROPDOWNS = { 'advanced-menu': null, 'add-menu': null, 'account-menu': 'user-badge' };
+  for (const [id, trigger] of Object.entries(DROPDOWNS)) {
+    if (isOpen(id)) {
+      el(id).classList.add('hidden');
+      if (trigger && el(trigger)) el(trigger).setAttribute('aria-expanded', 'false');
+      return true;
+    }
   }
   return false;
 }
