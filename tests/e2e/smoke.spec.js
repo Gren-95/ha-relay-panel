@@ -70,6 +70,21 @@ test.describe('relay-panel smoke', () => {
     expect(pos).toBe('fixed');
   });
 
+  // #82 — the header names whoever is signed in, and stays quiet when nobody is
+  test('signed out shows no user badge', async ({ page }) => {
+    await mockApi(page);
+    await page.goto('/');
+    await expect(page.locator('#btn-login')).toBeVisible();
+    await expect(page.locator('#user-badge')).toBeHidden();
+  });
+
+  test('signed in shows the username in the header', async ({ page }) => {
+    await mockApi(page);
+    await page.route('**/api/session', (route) => route.fulfill({ json: { ok:true, authed:true, user:'risto' } }));
+    await page.goto('/');
+    await expect(page.locator('#user-badge')).toHaveText('Logged in as risto');
+  });
+
   test('mobile viewport shows hamburger menu', async ({ page }) => {
     await mockApi(page);
     await page.setViewportSize({ width: 500, height: 800 });

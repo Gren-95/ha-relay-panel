@@ -10,6 +10,10 @@ function updateAuthUI() {
   $('#btn-login').classList.toggle('hidden', state.authed);
   $('#btn-logout').classList.toggle('hidden', !state.authed);
   if (state.user) $('#btn-logout').title = 'Sign out (' + state.user + ')';
+  // Who am I? (#82) — subtle, signed-in only; the Sign in button covers the signed-out case.
+  const badge = $('#user-badge');
+  badge.textContent = state.user ? t('logged_in_as', { user: state.user }) : '';
+  badge.classList.toggle('hidden', !(state.authed && state.user));
   const alloff = $('#btn-alloff'); alloff.classList.toggle('hidden', !state.authed); alloff.classList.toggle('opacity-40', !state.edit); alloff.disabled = !state.edit;
 }
 async function checkSession() {
