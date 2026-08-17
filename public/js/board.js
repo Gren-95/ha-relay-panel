@@ -255,20 +255,21 @@ function renderBox(g, kind) {
   // the set point is deliberately in both places (#99): the pill shows it at a
   // glance and edits it in one click, the panel is where you go for everything else
   const master = isDev ? '' : areaMaster(g);   // hidden in read mode by .area-master
+  const lockBtn = `<button class="area-lock bg-transparent border-0 text-inherit text-[1rem] cursor-pointer leading-none ${state.edit ? 'opacity-60 hover:opacity-100' : 'hidden'}" title="${g.locked ? t('unlock') : t('lock')}"><i class="bi ${g.locked ? 'bi-lock-fill text-heat' : 'bi-unlock'}"></i></button>`;
   const delBtn = `<button class="area-del bg-transparent border-0 text-inherit text-[1.15rem] cursor-pointer leading-none ${state.edit ? 'opacity-60' : 'hidden'}" title="Remove group">&times;</button>`;
   // only areas are resizable — a device box is always sized to its outputs
-  const resize = state.edit && !isDev
+  const resize = state.edit && !isDev && !g.locked
     ? '<div class="area-resize absolute right-[3px] bottom-[3px] w-[26px] h-[26px] cursor-nwse-resize border-r-[3px] border-b-[3px] border-border-strong rounded-br-[12px] touch-none"></div>' : '';
   // Two wrapped parts. The titlebar is a solid-bordered bar on all four sides; the
   // body below it is the box's own dotted canvas, boxed in on left/bottom/right
   // (no top border — the bar's bottom edge already draws that line).
   // h-[44px] = 2px border + 40px row + 2px border, i.e. exactly HDR, so the body
   // starts where layout.js says content begins.
-  const head = `<div class="area-head h-[44px] px-2.5 flex items-center gap-1.5 font-bold select-none touch-none border-2 border-solid rounded-t-2xl ${state.edit ? 'cursor-grab active:cursor-grabbing' : ''}" style="color:${headColor(hue)};border-color:${line};background:${opaque(headTint(hue))}">
+  const head = `<div class="area-head h-[44px] px-2.5 flex items-center gap-1.5 font-bold select-none touch-none border-2 border-solid rounded-t-2xl ${state.edit && !g.locked ? 'cursor-grab active:cursor-grabbing' : ''}" style="color:${headColor(hue)};border-color:${line};background:${opaque(headTint(hue))}">
       <i class="bi ${state.edit ? 'bi-gear area-gear cursor-pointer' : (isDev ? 'bi-hdd-stack' : 'bi-grid-3x3-gap')} text-[.95rem] flex-none" title="${state.edit ? t(isDev ? 'physical_relay_h' : 'area_h') : ''}"></i>
       <span class="text-[.95rem] min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">${esc(g.name || refId)}</span>
       ${offWarn}
-      <span class="ml-auto flex items-center gap-1.5 flex-none">${master}${delBtn}</span>
+      <span class="ml-auto flex items-center gap-1.5 flex-none">${master}${lockBtn}${delBtn}</span>
     </div>`;
   // A device box keeps a plain solid CSS border; an area's body is outlined with the
   // wide-gap dashed SVG stroke, which has to be re-emitted whenever the box resizes.
@@ -302,7 +303,12 @@ function renderBox(g, kind) {
     b.addEventListener('click', (e) => { e.stopPropagation(); setAreaRelays(g.areaId, b.dataset.act === 'on'); });
   });
   if (state.edit) {
-    groupHeaderDrag(el.querySelector('.area-head'), el, g, isMember, isDev);
+    if (!g.locked) groupHeaderDrag(el.querySelector('.area-head'), el, g, isMember, isDev);
+    const lockEl = el.querySelector('.area-lock');
+    if (lockEl) {
+      lockEl.addEventListener('pointerdown', (e) => e.stopPropagation());
+      lockEl.addEventListener('click', (e) => { e.stopPropagation(); g.locked = !g.locked; render(); saveLayout(); });
+    }
     const rz = el.querySelector('.area-resize');
     // an area can never be dragged smaller than the members it has to hold, and
     // its members are pulled in as it shrinks — not only once the drag ends

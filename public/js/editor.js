@@ -44,6 +44,7 @@ function openEditor(r) {
   ['ed-bind', 'ed-duplicate', 'ed-unbind', 'ed-delete'].forEach((id) => {
     const btn = $('#' + id); if (btn) btn.classList.toggle('hidden', !show);
   });
+  updateLockButton(r);
   $('#editor').classList.remove('hidden');
   syncBackdrop();
   applyBlur();
@@ -189,6 +190,10 @@ function clearBlur() {
   document.querySelectorAll('.blurred').forEach(el => el.classList.remove('blurred'));
 }
 function edMsg(m, cls) { setMsg($('#ed-msg'), m, cls); }
+function updateLockButton(r) {
+  const btn = $('#ed-lock'); if (!btn) return;
+  btn.innerHTML = r.locked ? `<i class="bi bi-lock-fill"></i> ${t('unlock')}` : `<i class="bi bi-unlock"></i> ${t('lock')}`;
+}
 function selected() { return state.layout.relays.find((x) => x.id === state.selected); }
 
 function addRelay() {
@@ -302,6 +307,12 @@ $('#ed-duplicate').addEventListener('click', duplicateRelay);
 $('#ed-bind').addEventListener('click', bind);
 $('#ed-unbind').addEventListener('click', unbind);
 $('#ed-delete').addEventListener('click', deleteRelay);
+$('#ed-lock').addEventListener('click', () => {
+  const r = selected(); if (!r) return;
+  r.locked = !r.locked;
+  updateLockButton(r);
+  render(); saveLayout();
+});
 $('#ed-automation-toggle').addEventListener('click', toggleAutomation);
 $('#ed-relay-toggle').addEventListener('click', toggleRelayFromEditor);
 $('#ed-rename-relay').addEventListener('click', () => renameDevice($('#ed-relay').value));
