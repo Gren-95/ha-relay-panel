@@ -145,7 +145,7 @@ function renderMobile() {
     // the cards inside suppress their offline badges for a dead box wherever they
     // render, so mobile has to carry the block-level warning too or it says nothing
     const off = boxOffline(d.id);
-    box.style.borderColor = off ? 'var(--danger)' : `hsl(${hue},45%,55%)`;
+    box.style.borderColor = off ? 'var(--danger)' : `hsl(${hue},70%,42%)`;
     const head = document.createElement('div');
     head.className = 'font-bold text-fg text-base cursor-pointer';
     head.style.color = headColor(hue);
@@ -171,7 +171,7 @@ function renderMobile() {
     const hue = areaColor(a.areaId, a);
     const box = document.createElement('div');
     box.className = 'border-[3px] border-solid border-border-strong rounded-[14px] p-2.5 flex flex-col gap-2.5';
-    box.style.borderColor = `hsl(${hue},50%,55%)`;
+    box.style.borderColor = `hsl(${hue},70%,42%)`;
     box.innerHTML = `<div class="flex items-center justify-between font-extrabold text-[1.05rem] p-0.5" style="color:${headColor(hue)}"><span><i class="bi bi-grid-3x3-gap"></i> ${esc(a.name || a.areaId)}</span>
       ${areaMaster(a)}</div>`;
     box.querySelectorAll('.am-btn').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); setAreaRelays(a.areaId, b.dataset.act === 'on'); }));
@@ -188,7 +188,7 @@ function renderMobile() {
 
 // Update box border/background colours from a hue instantly (#73)
 function updateBoxColors(el, hue, isDev, g) {
-  const line = `hsl(${hue},50%,55%)`;
+  const line = `hsl(${hue},70%,42%)`;
   const head = el.querySelector('.area-head');
   if (head) {
     head.style.color = headColor(hue);
@@ -244,7 +244,7 @@ function renderBox(g, kind) {
   // colour — the cards inside then drop their own offline badges (see card.js). One
   // dead channel out of three is not this: that stays a per-output badge.
   const devOffline = isDev && boxOffline(g.id);
-  const line = devOffline ? 'var(--danger)' : `hsl(${hue},50%,55%)`;
+  const line = devOffline ? 'var(--danger)' : `hsl(${hue},70%,42%)`;
   const offWarn = devOffline
     ? `<i class="box-warn bi bi-exclamation-triangle-fill text-danger text-[.95rem] flex-none" title="${esc(t('warn_box_offline', { n: boxOutputs(g.id).length }))}"></i>`
     : '';

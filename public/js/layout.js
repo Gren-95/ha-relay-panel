@@ -36,16 +36,16 @@ function areaName(id) { const a = state.haAreas.find((x) => x.id === id); return
 // readable header colour for area/device boxes: dark on light theme, light on dark
 function headColor(hue) {
   const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-  return dark ? `hsl(${hue},65%,68%)` : `hsl(${hue},55%,32%)`;
+  return dark ? `hsl(${hue},75%,74%)` : `hsl(${hue},70%,26%)`;
 }
 function boxTint(hue) {
   const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-  return `hsla(${hue},55%,45%,${dark ? 0.07 : 0.10})`;
+  return `hsla(${hue},70%,38%,${dark ? 0.10 : 0.20})`;
 }
 // the titlebar sits on top of boxTint, so it needs a stronger wash to read as a bar
 function headTint(hue) {
   const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-  return `hsla(${hue},55%,45%,${dark ? 0.16 : 0.18})`;
+  return `hsla(${hue},70%,38%,${dark ? 0.20 : 0.30})`;
 }
 // Semi-transparent area body so relays underneath remain visible
 const opaque = (tint) => `linear-gradient(0deg, ${tint}, ${tint}), var(--surface-2)`;

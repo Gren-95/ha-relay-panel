@@ -14,7 +14,7 @@ function card(r, mobile) {
   const maint = r.bound && r.automationId && state.autoStates[r.automationId] === false;
   el.className = [
     'relay bg-surface rounded-[14px] px-[14px] shadow-panel select-none flex items-center gap-3 box-border touch-none',
-    maint ? 'border-2 border-heat' : 'border border-border',
+    maint ? 'border-2 border-heat' : 'border border-border-strong',
     mobile ? 'static w-full h-auto min-h-[84px]'
            : 'absolute w-[340px] h-[100px]' + (state.edit && !r.device ? ' cursor-grab' : ' cursor-pointer'),
   ].join(' ');
