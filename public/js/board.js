@@ -41,13 +41,18 @@ function applyZ() {
  *
  * It starts below the titlebar so the box's name and warning stay legible, and it is
  * pointer-events-none: the cards underneath must stay clickable.
+ *
+ * The red field is 12%: at the 5% it started out with, the tint read as a rendering
+ * artefact rather than a state, and the whole warning rested on the watermark glyph
+ * alone. 12% still keeps the card text and temperatures underneath fully legible in
+ * both themes - going past ~18% starts to fight them.
  */
 const washZ = (d) => Math.max(zIndexOf(d), ...boxOutputs(d.id).map(zIndexOf)) + 1;
 
 function offlineWash(d) {
   const w = num(d.w, DEV_W), h = num(d.h, MIN_AREA_H) - HDR;
   const el = document.createElement('div');
-  el.className = 'box-off-wash absolute pointer-events-none flex items-center justify-center rounded-b-2xl bg-danger/5';
+  el.className = 'box-off-wash absolute pointer-events-none flex items-center justify-center rounded-b-2xl bg-danger/12';
   el.dataset.offGid = d.id;
   el.style.left = num(d.x) + 'px';
   el.style.top = (num(d.y) + HDR) + 'px';
@@ -159,7 +164,7 @@ function renderMobile() {
     if (off) {
       box.classList.add('relative');
       const wash = document.createElement('div');
-      wash.className = 'box-off-wash absolute inset-0 pointer-events-none flex items-center justify-center rounded-[14px] bg-danger/5';
+      wash.className = 'box-off-wash absolute inset-0 pointer-events-none flex items-center justify-center rounded-[14px] bg-danger/12';
       wash.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-danger opacity-20" style="font-size:120px;line-height:1"></i>';
       box.appendChild(wash);
     }
