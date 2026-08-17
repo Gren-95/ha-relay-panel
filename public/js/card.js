@@ -191,7 +191,7 @@ function card(r, mobile) {
   if (mobile) {
     // list mode: tap the card (not the toggle) to edit; no dragging
     el.addEventListener('click', (e) => { if (!e.target.closest('.r-toggle')) { if (!state.authed) { openLogin(); return; } openEditor(r); } });
-  } else if (state.edit && !r.device) dragMove(el, el, (dx, dy, ox, oy) => {
+  } else if (state.edit && !r.device && !r.locked) dragMove(el, el, (dx, dy, ox, oy) => {
     const moved = Math.abs(dx) > 3 || Math.abs(dy) > 3; el._moved = el._moved || moved;
     r.x = Math.max(0, ox + dx); r.y = Math.max(0, oy + dy);
     const box = boxFor(r); if (box) clampToBox(r, box);
