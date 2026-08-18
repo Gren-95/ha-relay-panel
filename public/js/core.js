@@ -41,7 +41,11 @@ function setRangeActive(btn, on) { ['bg-primary', 'border-primary', 'text-white'
 // straight through the range the overlays use. Without a stacking context of its
 // own the canvas would let a relay card paint over the header, editor and modals.
 const CANVAS_DESKTOP = 'canvas relative isolate m-5 mt-[calc(var(--header-h,72px)_+_32px)] min-h-[calc(100vh_-_var(--header-h,72px)_-_58px)] bg-surface-2 border border-border rounded-2xl overflow-auto bg-local [background-image:radial-gradient(var(--dot)_1.4px,transparent_1.4px)] [background-size:26px_26px] mobile:m-2.5 mobile:overflow-auto';
-const CANVAS_MOBILE = 'canvas flex flex-col gap-3.5 bg-transparent border-0 p-0 m-3 min-h-0 overflow-visible';
+// The header is `fixed`, so the list needs the same top clearance the desktop canvas
+// gets or its first section is painted underneath it — and at scrollTop 0 there is
+// nothing to scroll up into, so that section is simply unreachable (#109). --header-h
+// is measured by js/zoom-lock.js; the 72px fallback only covers the first frame.
+const CANVAS_MOBILE = 'canvas flex flex-col gap-3.5 bg-transparent border-0 p-0 mx-3 mb-3 mt-[calc(var(--header-h,72px)_+_12px)] min-h-0 overflow-visible';
 
 async function api(path, opts) {
   const res = await fetch(path, opts);

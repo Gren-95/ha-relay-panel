@@ -11,6 +11,7 @@ import { saveLayout, initHistory, undo, redo } from './history-undo.js';
 import { applyMode, toggleMode, closeTopmost, initMode } from './mode.js';
 import { updateAuthUI, openLogin, initAuth, closeAccountMenu } from './auth.js';
 import { initResize } from './resize.js';
+import { initZoomLock } from './zoom-lock.js';
 import { initTheme } from './theme.js';
 import { initChart } from './chart.js';
 import { initDeviceEditor } from './device-editor.js';
@@ -202,6 +203,10 @@ window.addEventListener('resize', () => { const m = isMobile(); if (m !== _wasMo
 initModals();
 initTheme();
 initResize();
+// publishes --header-h / --header-zoom (#52). Was written but never called, so
+// --header-h sat at its 72px CSS default while the real header is taller on a
+// phone — the canvas top margin that reads it was short by the difference.
+initZoomLock();
 initMode();
 initEditor();
 initChart();

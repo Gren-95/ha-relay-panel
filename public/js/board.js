@@ -8,6 +8,9 @@ import { updateSummary, setAreaRelays } from './relay-actions.js';
 import { card } from './card.js';
 import { openDeviceEditor } from './device-editor.js';
 import { openAreaEditor } from './area-editor.js';
+// cycle-safe: auth.js imports render() back from here, and both sides are only ever
+// called from event handlers — the same shape card.js already relies on.
+import { openLogin } from './auth.js';
 import { saveLayout, saveZOrder } from './history-undo.js';
 
 const isMobile = () => window.innerWidth <= 700;
@@ -125,8 +128,10 @@ const masterButtons = () => `
     <button class="${AM_BTN}" data-act="on">${t('all_on')}</button>
     <button class="${AM_BTN}" data-act="off">${t('all_off')}</button>`;
 
-// Mobile keeps the temperature pill as well - it renders a flat list with no gear
-// and no area editor, so the pill is the only way to reach the set point there.
+// Mobile keeps the temperature pill as well: it is the one-tap way to the set point,
+// and the master pair beside it is what an area is reached for most. The section
+// header itself opens the area editor there (renderMobile), so the pill is a
+// shortcut rather than the only route.
 const areaMaster = (g) => {
   // per-area temperature set point (#81)
   const bound = state.layout.relays.filter((r) => r.bound && r.area === g.areaId && r.temp != null);
@@ -147,17 +152,23 @@ function renderMobile() {
     doneDev.add(d.id);
     const hue = areaColor(d.deviceId, d);
     const box = document.createElement('div');
-    box.className = 'border-2 border-border rounded-[14px] p-2.5 bg-surface-2 flex flex-col gap-2.5';
+    // px tighter than py: a card inside a box inside an area pays this padding twice
+    // on each side, and at 360px that came straight off the relay name's width.
+    box.className = 'border-2 border-border rounded-[14px] px-1.5 py-2 bg-surface-2 flex flex-col gap-2.5';
     // the cards inside suppress their offline badges for a dead box wherever they
     // render, so mobile has to carry the block-level warning too or it says nothing
     const off = boxOffline(d.id);
     box.style.borderColor = off ? 'var(--danger)' : `hsl(${hue},70%,42%)`;
     const head = document.createElement('div');
-    head.className = 'font-bold text-fg text-base cursor-pointer';
+    // min-h-[44px]: the header is the block's only control on a phone, so it has to
+    // be a real tap target rather than the height of one line of bold text.
+    head.className = 'font-bold text-fg text-base cursor-pointer flex items-center gap-1.5 min-h-[44px] px-0.5';
     head.style.color = headColor(hue);
-    head.innerHTML = `<i class="bi bi-hdd-stack"></i> ${esc(d.name || d.deviceId)}`
-      + (off ? ` <i class="box-warn bi bi-exclamation-triangle-fill text-danger" title="${esc(t('warn_box_offline', { n: boxOutputs(d.id).length }))}"></i>` : '');
-    head.addEventListener('click', () => openDeviceEditor(d));
+    head.innerHTML = `<i class="bi bi-hdd-stack"></i> <span class="min-w-0 truncate">${esc(d.name || d.deviceId)}</span>`
+      + (off ? ` <i class="box-warn bi bi-exclamation-triangle-fill text-danger flex-none" title="${esc(t('warn_box_offline', { n: boxOutputs(d.id).length }))}"></i>` : '');
+    // openDeviceEditor returns silently when signed out, which reads as a dead tap.
+    // Prompt instead, exactly as a card tap does (card.js).
+    head.addEventListener('click', () => { if (!state.authed) { openLogin(); return; } openDeviceEditor(d); });
     box.appendChild(head);
     for (const r of state.layout.relays.filter((x) => x.device === d.id)) { box.appendChild(card(r, true)); doneRel.add(r.id); }
     // here the outputs are CHILDREN of the block, so the wash only has to come last
@@ -176,11 +187,21 @@ function renderMobile() {
   for (const a of state.layout.areas) {
     const hue = areaColor(a.areaId, a);
     const box = document.createElement('div');
-    box.className = 'border-[3px] border-solid border-border-strong rounded-[14px] p-2.5 flex flex-col gap-2.5';
+    box.className = 'border-[3px] border-solid border-border-strong rounded-[14px] px-1.5 py-2 flex flex-col gap-2.5';
     box.style.borderColor = `hsl(${hue},70%,42%)`;
-    box.innerHTML = `<div class="flex items-center justify-between font-extrabold text-[1.05rem] p-0.5" style="color:${headColor(hue)}"><span><i class="bi bi-grid-3x3-gap"></i> ${esc(a.name || a.areaId)}</span>
+    // flex-wrap: at 360px the name plus All on / All off / the temp pill do not fit on
+    // one line, and without it the master cluster is pushed off the right edge.
+    box.innerHTML = `<div class="flex flex-wrap items-center justify-between gap-y-1.5 font-extrabold text-[1.05rem] p-0.5" style="color:${headColor(hue)}"><span class="area-open flex items-center gap-1.5 min-w-0 min-h-[44px] cursor-pointer"><i class="bi bi-grid-3x3-gap flex-none"></i> <span class="min-w-0 truncate">${esc(a.name || a.areaId)}</span></span>
       ${areaMaster(a)}</div>`;
     box.querySelectorAll('.am-btn').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); setAreaRelays(a.areaId, b.dataset.act === 'on'); }));
+    // The desktop box opens its editor from the gear in the titlebar; the mobile list
+    // draws no gear, so the name is the handle. Without this an area was inert on a
+    // phone — and in Live mode, where the master cluster is hidden, entirely inert.
+    box.querySelector('.area-open').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!state.authed) { openLogin(); return; }
+      openAreaEditor(a);
+    });
     for (const d of state.layout.devices.filter((x) => x.area === a.areaId)) box.appendChild(deviceBlock(d));
     for (const r of state.layout.relays.filter((x) => x.area === a.areaId && !x.device)) { box.appendChild(card(r, true)); doneRel.add(r.id); }
     canvas.appendChild(box);
