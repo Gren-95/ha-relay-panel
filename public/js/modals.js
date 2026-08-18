@@ -68,6 +68,15 @@ export function closeTopmost() {
       return true;
     }
   }
+  // The mobile hamburger panel is last: the three dropdowns above live INSIDE it,
+  // so Esc walks out of them before it closes the panel holding them. It opens by
+  // gaining `!flex` rather than losing `hidden`, hence its own check.
+  const tb = el('toolbar');
+  if (tb && tb.classList.contains('!flex')) {
+    tb.classList.remove('!flex');
+    if (el('btn-menu')) el('btn-menu').setAttribute('aria-expanded', 'false');
+    return true;
+  }
   return false;
 }
 

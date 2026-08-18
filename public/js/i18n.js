@@ -225,7 +225,14 @@ function applyI18n() {
     const v = LANG === 'et' ? TR.et[el.dataset.i18n] : null; if (v != null) el.textContent = v; else if (el.dataset.i18nEn != null) el.textContent = el.dataset.i18nEn;
   });
   document.querySelectorAll('[data-i18n-ph]').forEach((el) => { const v = LANG === 'et' ? TR.et[el.dataset.i18nPh] : null; if (v != null) el.placeholder = v; });
-  document.querySelectorAll('[data-i18n-title]').forEach((el) => { const v = LANG === 'et' ? TR.et[el.dataset.i18nTitle] : null; if (v != null) el.title = v; });
+  // Titles need the same English snapshot the text path keeps in dataset.i18nEn.
+  // Without it the et branch was one-way: switching back to English left every
+  // translated tooltip in Estonian until a reload, because `null` skipped the write.
+  document.querySelectorAll('[data-i18n-title]').forEach((el) => {
+    if (el.dataset.i18nTitleEn == null) el.dataset.i18nTitleEn = el.title;
+    const v = LANG === 'et' ? TR.et[el.dataset.i18nTitle] : el.dataset.i18nTitleEn;
+    if (v != null) el.title = v;
+  });
   // the flag lives in its own span (#104) — #btn-lang now also carries a "Language" label
   const lb = document.getElementById('btn-lang-flag'); if (lb) lb.textContent = LANG === 'et' ? '🇪🇪' : '🇬🇧';
   refreshThemeLabel();

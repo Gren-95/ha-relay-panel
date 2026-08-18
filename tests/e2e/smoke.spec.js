@@ -191,4 +191,55 @@ test.describe('relay-panel smoke', () => {
     await page.click('#btn-menu');
     await expect(page.locator('#toolbar')).toBeVisible();
   });
+
+  // The header is fixed, so a list starting at the top of the document is painted
+  // underneath it — and at scrollTop 0 there is nothing to scroll up into, so that
+  // first section was simply unreachable (#109).
+  test('mobile list starts below the fixed header', async ({ page }) => {
+    await mockApi(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    await ready(page);
+    const gap = await page.evaluate(() => {
+      const h = document.querySelector('header').getBoundingClientRect();
+      const first = document.querySelector('#canvas > *');
+      return first ? first.getBoundingClientRect().top - h.bottom : null;
+    });
+    expect(gap).not.toBeNull();
+    expect(gap).toBeGreaterThanOrEqual(0);
+  });
+
+  // #btn-advanced used to be mobile:hidden, which took the whole More menu — global
+  // set point, All off, activity log, bulk edit, import/export, About — off the phone.
+  test('mobile can reach the More menu and its settings', async ({ page }) => {
+    await mockApi(page);
+    await signedIn(page);   // All off is hidden for signed-out visitors by design
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    await ready(page);
+    await page.click('#btn-menu');
+    await expect(page.locator('#btn-advanced')).toBeVisible();
+    await page.click('#btn-advanced');
+    await expect(page.locator('#advanced-menu')).toBeVisible();
+    for (const id of ['#btn-activity', '#btn-bulk', '#btn-alloff', '#btn-about', '#global-temp-wrap']) {
+      await expect(page.locator(id)).toBeVisible();
+    }
+  });
+
+  // Esc walks out of the dropdown first, then closes the panel that holds it.
+  test('mobile: Escape closes the More menu, then the hamburger panel', async ({ page }) => {
+    await mockApi(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    await ready(page);
+    await page.click('#btn-menu');
+    await page.click('#btn-advanced');
+    await expect(page.locator('#advanced-menu')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#advanced-menu')).toBeHidden();
+    await expect(page.locator('#toolbar')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#toolbar')).toBeHidden();
+    await expect(page.locator('#btn-menu')).toHaveAttribute('aria-expanded', 'false');
+  });
 });
