@@ -45,10 +45,14 @@ async function mockApi(page) {
 const signedIn = (page, user = 'risto') =>
   page.route('**/api/session', (route) => route.fulfill({ json: { ok:true, authed:true, user } }));
 
+// Wait for the app's explicit ready signal instead of racing boot()/render() (#87)
+const ready = (page) => page.waitForSelector('body[data-ready="true"]', { timeout: 10000 });
+
 test.describe('relay-panel smoke', () => {
   test('app loads with canvas and header', async ({ page }) => {
     await mockApi(page);
     await page.goto('/');
+    await ready(page);
     await expect(page.locator('#canvas')).toBeVisible();
     await expect(page.locator('header')).toBeVisible();
   });
@@ -56,6 +60,7 @@ test.describe('relay-panel smoke', () => {
   test('theme toggle in the options menu works', async ({ page }) => {
     await mockApi(page);
     await page.goto('/');
+    await ready(page);
     const initial = await page.locator('html').getAttribute('data-theme');
     // Theme moved: More dropdown (#70) -> the account/options menu (#104), with
     // language and zoom, since all three are per-viewer display preferences.
@@ -74,6 +79,7 @@ test.describe('relay-panel smoke', () => {
   test('header is fixed and visible', async ({ page }) => {
     await mockApi(page);
     await page.goto('/');
+    await ready(page);
     await expect(page.locator('header')).toBeVisible();
     const pos = await page.locator('header').evaluate((el) => getComputedStyle(el).position);
     expect(pos).toBe('fixed');
@@ -85,6 +91,7 @@ test.describe('relay-panel smoke', () => {
   test('signed out shows the options trigger, not an identity', async ({ page }) => {
     await mockApi(page);
     await page.goto('/');
+    await ready(page);
     await expect(page.locator('#btn-login')).toBeVisible();
     await expect(page.locator('#user-badge')).toBeVisible();
     await expect(page.locator('#prefs-icon')).toBeVisible();
@@ -95,6 +102,7 @@ test.describe('relay-panel smoke', () => {
   test('signed out can still reach language and zoom in the menu', async ({ page }) => {
     await mockApi(page);
     await page.goto('/');
+    await ready(page);
     await page.click('#user-badge');
     await expect(page.locator('#account-menu')).toBeVisible();
     await expect(page.locator('#btn-lang')).toBeVisible();
@@ -105,6 +113,7 @@ test.describe('relay-panel smoke', () => {
   test('zoom keeps the menu open, language closes it', async ({ page }) => {
     await mockApi(page);
     await page.goto('/');
+    await ready(page);
     await page.click('#user-badge');
     await expect(page.locator('#btn-lang-flag')).toHaveText('🇬🇧');  // flag = current language
     await page.click('#btn-zoom-in');
@@ -118,6 +127,7 @@ test.describe('relay-panel smoke', () => {
     await mockApi(page);
     await signedIn(page);
     await page.goto('/');
+    await ready(page);
     await expect(page.locator('#user-badge')).toBeVisible();
     await expect(page.locator('#user-name')).toHaveText('risto');
     await expect(page.locator('#user-avatar')).toHaveText('r');           // uppercased in CSS
@@ -130,6 +140,7 @@ test.describe('relay-panel smoke', () => {
     await mockApi(page);
     await signedIn(page);
     await page.goto('/');
+    await ready(page);
     await expect(page.locator('#account-menu')).toBeHidden();
     await expect(page.locator('#user-badge')).toHaveAttribute('aria-expanded', 'false');
     await page.click('#user-badge');
@@ -148,6 +159,7 @@ test.describe('relay-panel smoke', () => {
     let loggedOut = false;
     await page.route('**/api/logout', (route) => { loggedOut = true; route.fulfill({ json: { ok:true } }); });
     await page.goto('/');
+    await ready(page);
     await page.click('#user-badge');
     await page.click('#btn-logout');
     await expect(page.locator('#account-menu')).toBeHidden();
@@ -162,6 +174,7 @@ test.describe('relay-panel smoke', () => {
     await mockApi(page);
     await signedIn(page);
     await page.goto('/');
+    await ready(page);
     await page.click('#user-badge');
     await expect(page.locator('#account-menu')).toBeVisible();
     await page.click('#btn-advanced');
@@ -173,6 +186,7 @@ test.describe('relay-panel smoke', () => {
     await mockApi(page);
     await page.setViewportSize({ width: 500, height: 800 });
     await page.goto('/');
+    await ready(page);
     await expect(page.locator('#btn-menu')).toBeVisible();
     await page.click('#btn-menu');
     await expect(page.locator('#toolbar')).toBeVisible();

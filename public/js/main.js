@@ -51,6 +51,8 @@ async function boot() {
   if (state.loaded && state.layout.devices.length) saveLayout();
   // #62 — first poll fires immediately; no need for a separate eager refreshLive()
   (function poll() { refreshLive().finally(() => setTimeout(poll, 10000)); })();
+  // e2e tests wait on this explicit signal rather than racing boot()/render() (#87)
+  document.body.dataset.ready = 'true';
 }
 
 // ---- top-level wiring (runs after all modules have evaluated) ----

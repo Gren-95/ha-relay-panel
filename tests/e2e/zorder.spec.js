@@ -42,6 +42,9 @@ function mockApi(page, store) {
 
 const newStore = () => ({ layout: JSON.parse(JSON.stringify(demoLayout)), version: 1, puts: [] });
 
+// Wait for the app's explicit ready signal instead of racing boot()/render() (#87)
+const ready = (page) => page.waitForSelector('body[data-ready="true"]', { timeout: 10000 });
+
 // Rendered level of every board object — group boxes and cards share one scale.
 const levelsOf = (page) => page.evaluate(() => Object.fromEntries(
   [...document.querySelectorAll('#canvas .area, #canvas .relay')]
@@ -103,6 +106,7 @@ test.describe('board stacking order', () => {
   test('every object gets its own level, ten apart, containers underneath', async ({ page }) => {
     await mockApi(page, newStore());
     await page.goto('/');
+    await ready(page);
     await expect(page.locator('#canvas .relay').first()).toBeVisible();
 
     const z = await levelsOf(page);
@@ -122,6 +126,7 @@ test.describe('board stacking order', () => {
     seeded.layout.relays.forEach((r) => { r.z = 3; });
     await mockApi(page, seeded);
     await page.goto('/');
+    await ready(page);
     await expect(page.locator('#canvas .relay').first()).toBeVisible();
     const withZ = await levelsOf(page);
 
@@ -133,6 +138,7 @@ test.describe('board stacking order', () => {
     const fresh = newStore();
     await mockApi(page, fresh);
     await page.goto('/');
+    await ready(page);
     await expect(page.locator('#canvas .relay').first()).toBeVisible();
     expect(await levelsOf(page)).toEqual(withZ);
   });
@@ -140,6 +146,7 @@ test.describe('board stacking order', () => {
   test('clicking a card raises it above the others', async ({ page }) => {
     await mockApi(page, newStore());
     await page.goto('/');
+    await ready(page);
     await expect(page.locator('#canvas .relay').first()).toBeVisible();
 
     const before = await levelsOf(page);
@@ -158,6 +165,7 @@ test.describe('board stacking order', () => {
   test('overlays still cover the board', async ({ page }) => {
     await mockApi(page, newStore());
     await page.goto('/');
+    await ready(page);
     await expect(page.locator('#canvas .relay').first()).toBeVisible();
 
     await page.locator('#canvas .relay').first().locator('.r-name').click();
@@ -184,6 +192,7 @@ test.describe('board stacking order', () => {
       store.layout = hardwareLayout(areaId);
       await mockApi(page, store);
       await page.goto('/');
+      await ready(page);
       await expect(page.locator('#canvas .relay')).toHaveCount(6);
 
       await page.locator('#canvas .relay[data-id="dBo1"] .r-name').click();
@@ -206,6 +215,7 @@ test.describe('board stacking order', () => {
     store.layout = hardwareLayout('');
     await mockApi(page, store);
     await page.goto('/');
+    await ready(page);
     await expect(page.locator('#canvas .relay')).toHaveCount(6);
 
     await page.locator('#canvas .area[data-gid="dB"] .area-head').click();
@@ -219,6 +229,7 @@ test.describe('board stacking order', () => {
     store.layout = hardwareLayout('');
     await mockApi(page, store);
     await page.goto('/');
+    await ready(page);
     await expect(page.locator('#canvas .relay')).toHaveCount(6);
 
     // outputs are pinned in a vertical stack inside the box and can never overlap
@@ -240,12 +251,14 @@ test.describe('board stacking order', () => {
     store.layout = hardwareLayout('');
     await mockApi(page, store);
     await page.goto('/');
+    await ready(page);
     await expect(page.locator('#canvas .relay')).toHaveCount(6);
 
     await page.locator('#canvas .relay[data-id="dAo0"] .r-name').click();
     await expect.poll(() => store.puts.length, { timeout: 5000 }).toBeGreaterThan(0);
 
     await page.reload();
+    await ready(page);
     await expect(page.locator('#canvas .relay')).toHaveCount(6);
     const z = await levelsOf(page);
     expect(Math.min(...boardLevels(z, 'dA'))).toBeGreaterThan(Math.max(...boardLevels(z, 'dB')));
