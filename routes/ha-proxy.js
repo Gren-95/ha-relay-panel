@@ -2,6 +2,7 @@
 const express = require('express');
 const ha = require('../ha');
 const { wrap } = require('../lib/middleware');
+const { resolveRange } = require('../lib/history');
 
 const router = express.Router();
 
@@ -45,6 +46,23 @@ router.get('/api/history/export', wrap(async (req, res) => {
   const target = parseFloat(req.query.target);
   const rows = await ha.getHistoryExport(sensor, relay || null, hours, start, end);
   res.json({ ok: true, rows, target: isFinite(target) ? target : null });
+}));
+
+// --- many sensors (+ their relays) over one window, for the history page ---
+router.get('/api/history/multi', wrap(async (req, res) => {
+  const ids = [...new Set(String(req.query.ids || '').split(',').map((s) => s.trim()).filter(Boolean))];
+  if (!ids.length || ids.length > 200 || ids.some((id) => !/^(sensor|switch)\.[a-z0-9_]+$/.test(id))) {
+    return res.status(400).json({ ok: false, error: 'ids: 1-200 sensor./switch. entity ids' });
+  }
+  const range = resolveRange(req.query);
+  if (range.error) return res.status(400).json({ ok: false, error: range.error });
+  const series = await ha.getHistoryMulti(ids, range.start, range.end);
+  res.json({ ok: true, start: range.start.getTime(), end: range.end.getTime(), series });
+}));
+
+// --- HA area of each temperature sensor (history page grouping) ---
+router.get('/api/sensor-areas', wrap(async (req, res) => {
+  res.json(await ha.getSensorAreas());
 }));
 
 // --- HA reachability (for the connection banner) ---

@@ -29,6 +29,7 @@
         </div>
       </div>
       <div class="flex items-center gap-2 mobile:w-full">
+        <button id="btn-history" data-ui="btn btnTb" data-i18n-title="temp_history" title="Temperature history"><i class="bi bi-graph-up"></i> <span data-i18n="history_btn">History</span></button>
         <button id="btn-mode" data-ui="btn btnTb"><i class="bi bi-pencil-square"></i> <span id="mode-label">Edit</span></button>
       </div>
       <span class="w-0.5 h-[30px] bg-border mobile:hidden"></span>
@@ -333,6 +334,36 @@
     </div>
   </div>
 
+
+  <!-- Temperature history page (history-page.js): every sensor over one shared time
+       window as small multiples, sized so the whole set fits on screen when it can. -->
+  <div id="history-page" class="hidden fixed inset-0 z-[58] bg-bg text-fg flex flex-col">
+    <div class="flex items-center gap-2 flex-wrap px-4 py-2.5 bg-surface border-b border-border mobile:px-3">
+      <h2 data-ui="panelH2" class="flex items-center gap-2 mr-1 whitespace-nowrap"><i class="bi bi-graph-up"></i> <span data-i18n="temp_history">Temperature history</span></h2>
+      <select id="hp-view" class="min-h-[34px] max-w-[260px] px-2 py-1 text-[.85rem] font-semibold rounded-[7px] border-[1.5px] border-border bg-surface-2 text-fg cursor-pointer" aria-label="Show"></select>
+      <div id="hp-ranges" class="inline-flex items-center gap-1">
+        <button data-ui="rangeBtn" data-hours="24">24h</button>
+        <button data-ui="rangeBtn" data-hours="168">7d</button>
+        <button data-ui="rangeBtn" data-hours="720">30d</button>
+        <button data-ui="rangeBtn" data-hours="custom" class="inline-flex items-center gap-1"><i class="bi bi-calendar3"></i> <span data-i18n="hp_custom">Dates</span></button>
+      </div>
+      <div id="hp-custom" class="hidden inline-flex items-center gap-1.5">
+        <input type="date" id="hp-start" class="min-h-0 px-2 py-1 text-[.8rem] bg-input border-2 border-border text-fg rounded-[7px] focus:outline-none focus:border-primary">
+        <span class="text-muted text-[.8rem]">–</span>
+        <input type="date" id="hp-end" class="min-h-0 px-2 py-1 text-[.8rem] bg-input border-2 border-border text-fg rounded-[7px] focus:outline-none focus:border-primary">
+        <button id="hp-apply" class="min-h-0 px-3 py-1 text-[.8rem] font-semibold rounded-[7px] bg-primary text-white border-0 cursor-pointer">OK</button>
+      </div>
+      <label class="inline-flex items-center gap-1.5 text-[.82rem] text-muted font-semibold cursor-pointer whitespace-nowrap"><input id="hp-same-scale" type="checkbox" class="min-h-0 w-auto m-0" /> <span data-i18n="hp_same_scale">Same scale</span></label>
+      <label class="inline-flex items-center gap-1.5 text-[.82rem] text-muted font-semibold cursor-pointer whitespace-nowrap"><input id="hp-device-temps" type="checkbox" class="min-h-0 w-auto m-0" /> <span data-i18n="hp_device_temps">Device temps</span></label>
+      <span id="hp-status" class="text-[.8rem] text-muted"></span>
+      <div class="ml-auto flex items-center gap-1">
+        <button id="hp-reload" class="min-h-0 px-2.5 py-[6px] text-[.9rem] rounded-lg bg-surface-2 text-muted border-[1.5px] border-border cursor-pointer active:translate-y-px" data-i18n-title="hp_reload" title="Reload"><i class="bi bi-arrow-clockwise"></i></button>
+        <button id="hp-close" data-ui="closeBtn" aria-label="Close">&times;</button>
+      </div>
+    </div>
+    <div id="hp-grid" class="flex-1 min-h-0 overflow-y-auto p-3 grid gap-2.5 content-start"></div>
+    <div id="hp-tip" class="hidden fixed z-[59] pointer-events-none bg-surface text-fg border-[1.5px] border-border-strong rounded-lg px-2.5 py-1.5 text-[.8rem] leading-[1.4] whitespace-nowrap shadow-[0_2px_8px_rgba(0,0,0,.12)]"></div>
+  </div>
 
   <!-- Editor backdrop overlay -->
   <div id="backdrop" class="hidden fixed inset-0 bg-black/25 z-[19]"></div>
