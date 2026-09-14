@@ -135,15 +135,37 @@ async function restoreBackup(id) {
   return saveLayout(normalize(rows[0].layout)); // saving also snapshots current first
 }
 
+// The audit rows the history page rebuilds a relay's set point and pauses from.
+const RELAY_EVENTS = ['relay.bind', 'relay.unbind', 'relay.delete', 'automation.pause', 'automation.resume'];
+
 async function addAuditLog(actor, action, detail) {
   await pool.query(
     'INSERT INTO audit_log (actor, action, detail) VALUES (?, ?, ?)',
     [actor || '', action, JSON.stringify(detail || {})]
   );
+  // Everything else rolls off past the newest 1000 rows. The rows the history page
+  // rebuilds set points and pauses from are kept 90 days instead: under the shared
+  // cap, routine layout saves pushed them out within weeks.
   await pool.query(
-    `DELETE FROM audit_log WHERE id NOT IN
-      (SELECT id FROM (SELECT id FROM audit_log ORDER BY id DESC LIMIT 1000) x)`
+    `DELETE FROM audit_log WHERE action NOT IN (?) AND id NOT IN
+      (SELECT id FROM (SELECT id FROM audit_log WHERE action NOT IN (?) ORDER BY id DESC LIMIT 1000) x)`,
+    [RELAY_EVENTS, RELAY_EVENTS]
   );
+  await pool.query('DELETE FROM audit_log WHERE action IN (?) AND created_at < NOW() - INTERVAL 90 DAY', [RELAY_EVENTS]);
+}
+
+// Set-point and pause changes, oldest first, for the history page (lib/history.js
+// relayTimelines). UNIX_TIMESTAMP keeps the DB session's time zone out of it.
+async function getRelayEvents() {
+  const [rows] = await pool.query(
+    'SELECT UNIX_TIMESTAMP(created_at) * 1000 AS t, action, detail FROM audit_log WHERE action IN (?) ORDER BY created_at, id',
+    [RELAY_EVENTS]
+  );
+  return rows.map((r) => {
+    let d = r.detail;
+    if (typeof d === 'string') { try { d = JSON.parse(d); } catch { d = {}; } }
+    return { t: Number(r.t), action: r.action, rid: d && d.rid, temp: d && d.temp };
+  });
 }
 
 async function getActivityLog(page, perPage) {
@@ -184,4 +206,4 @@ async function deleteSessionsForUser(username) {
   await pool.query('DELETE FROM sessions WHERE username = ?', [username]);
 }
 
-module.exports = { initDb, getLayout, saveLayout, saveZOrder, listBackups, restoreBackup, addAuditLog, getActivityLog, saveSession, getSession, deleteSession, deleteSessionsForUser, startSessionSweep };
+module.exports = { initDb, getLayout, saveLayout, saveZOrder, listBackups, restoreBackup, addAuditLog, getActivityLog, getRelayEvents, saveSession, getSession, deleteSession, deleteSessionsForUser, startSessionSweep };
