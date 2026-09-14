@@ -16,7 +16,7 @@ import { $ } from './core.js';
 
 // Escape priority, topmost first. The overlay modals sit above the board panels.
 const ORDER = [
-  'chart-modal', 'about-modal', 'login-modal',
+  'chart-modal', 'about-modal', 'refresh-modal', 'login-modal',
   'activity-editor', 'bulk-editor',
   'editor', 'dev-editor', 'area-editor',
 ];
@@ -91,7 +91,7 @@ export function initModals() {
 
   // The overlay modals paint their own dim layer, so "outside" is the element
   // itself rather than the shared backdrop.
-  for (const id of ['chart-modal', 'about-modal', 'login-modal']) {
+  for (const id of ['chart-modal', 'about-modal', 'refresh-modal', 'login-modal']) {
     const e = el(id);
     if (e) e.addEventListener('click', (ev) => { if (ev.target === e) closeTopmost(); });
   }
