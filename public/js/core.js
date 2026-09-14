@@ -32,7 +32,9 @@ const MSG = 'text-[.95rem] min-h-[1.3em] font-semibold';
 // message helper: sets full utility class + err/ok colour (JS-owned, replaces .ed-msg)
 function setMsg(el, m, cls) { if (!el) return; el.textContent = m || ''; el.className = MSG + (cls === 'err' ? ' text-danger' : cls === 'ok' ? ' text-ok' : ''); }
 // range button active state: toggle the primary-fill utilities
-function setRangeActive(btn, on) { ['bg-primary', 'border-primary', 'text-white'].forEach((c) => btn.classList.toggle(c, on)); }
+// `!`: the range buttons' own bg-surface-2 is emitted after bg-primary in the
+// stylesheet, so without it the active button came out white text on grey
+function setRangeActive(btn, on) { ['bg-primary!', 'border-primary!', 'text-white!'].forEach((c) => btn.classList.toggle(c, on)); }
 // canvas class strings (JS rebuilds #canvas.className each render)
 // header height is a variable now (it counter-scales against browser zoom, #52), so
 // the canvas subtracts --header-h + its own 2x20px margin rather than a flat 130px
