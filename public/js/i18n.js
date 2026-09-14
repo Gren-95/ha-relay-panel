@@ -133,6 +133,11 @@ const TR = {
     rc_layout: 'Paneeli paigutus', rc_layout_desc: 'Teiste tehtud muudatused paneelil ilmuvad pärast lehe uuesti laadimist.',
     rc_on_load: 'lehe laadimisel',
     rc_session: 'Sisselogimine', rc_session_desc: 'Kehtib 8 tundi ja pikeneb, kui teed muudatusi.',
+    history_btn: 'Ajalugu', temp_history: 'Temperatuuride ajalugu', hp_custom: 'Kuupäevad',
+    hp_same_scale: 'Ühine skaala', hp_device_temps: 'Seadmete temperatuurid', hp_reload: 'Laadi uuesti',
+    hp_all: 'Kõik andurid', hp_areas: 'Alad', hp_sensors: 'Andurid', hp_no_area: 'Alata',
+    hp_no_sensors: 'andureid pole', hp_pick_dates: 'vali kuupäevad', hp_no_data: 'andmed puuduvad',
+    hp_relay_on: 'relee SEES', hp_relay_off: 'relee VÄLJAS',
   },
 };
 const EN = {  // English fallbacks for dynamic (non-HTML) strings
@@ -219,6 +224,9 @@ const EN = {  // English fallbacks for dynamic (non-HTML) strings
   about_ha_status: 'Home Assistant', about_ha_reachable: 'reachable', about_ha_checking: 'checking…',
   about_view_repo: 'View on GitHub',
   about_report_issue: 'Report a problem', about_license: 'License',
+  hp_all: 'All sensors', hp_areas: 'Areas', hp_sensors: 'Sensors', hp_no_area: 'No area',
+  hp_no_sensors: 'no sensors', hp_pick_dates: 'pick dates', hp_no_data: 'no data',
+  hp_relay_on: 'relay ON', hp_relay_off: 'relay OFF',
 };
 let LANG = 'en';
 function t(key, params) {

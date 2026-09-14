@@ -1,5 +1,6 @@
 // Thin Home Assistant REST client (uses Node 20 global fetch).
 const WebSocket = require('ws');
+const { parseHistory } = require('./lib/history');
 const HA_URL = (process.env.HA_URL || 'http://homeassistant.local:8123').replace(/\/$/, '');
 const HA_TOKEN = process.env.HA_TOKEN || '';
 
@@ -201,6 +202,31 @@ async function getHistoryExport(sensor, relay, hours = 24, startDate, endDate) {
     while (si < states.length - 1 && states[si + 1].t <= p.t) si++;
     return { ...p, state: states[si] ? states[si].state : '?' };
   });
+}
+
+// History of many entities in ONE HA call (the history page): temperature
+// sensors as [{t, v}], relays as [{t, s}]. See lib/history.js for the shaping.
+async function getHistoryMulti(ids, start, end) {
+  const data = await haFetch(`/api/history/period/${start.toISOString()}?minimal_response&significant_changes_only` +
+    `&end_time=${encodeURIComponent(end.toISOString())}&filter_entity_id=${ids.map(encodeURIComponent).join(',')}`);
+  return parseHistory(data);
+}
+
+// HA area of every temperature sensor, {entity_id: area_id|null}. area_id()
+// falls back to the device's area, which is where Zigbee sensors get theirs.
+// The ids come from HA's own state list, never from the request.
+async function getSensorAreas() {
+  const { sensors } = await getEntities();
+  const tmpl =
+    "{%- set ns = namespace(rows=[]) -%}" +
+    `{%- for id in ${JSON.stringify(sensors.map((s) => s.entity_id))} -%}` +
+    "{%- set ns.rows = ns.rows + [[id, area_id(id)]] -%}" +
+    "{%- endfor -%}" +
+    "{{ ns.rows | tojson }}";
+  const out = await haFetch('/api/template', { method: 'POST', body: JSON.stringify({ template: tmpl }) });
+  let rows;
+  try { rows = typeof out === 'string' ? JSON.parse(out) : out; } catch { rows = []; }
+  return Object.fromEntries((rows || []).map(([id, area]) => [id, area || null]));
 }
 
 // Validate a username+password against Home Assistant using its login-flow API
@@ -504,6 +530,8 @@ module.exports = {
   getStatesAndAutomations,
   getHistory,
   getHistoryExport,
+  getHistoryMulti,
+  getSensorAreas,
   haReachable,
   verifyHaLogin,
   setSwitch,

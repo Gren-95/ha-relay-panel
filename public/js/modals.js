@@ -16,7 +16,7 @@ import { $ } from './core.js';
 
 // Escape priority, topmost first. The overlay modals sit above the board panels.
 const ORDER = [
-  'chart-modal', 'about-modal', 'refresh-modal', 'login-modal',
+  'chart-modal', 'about-modal', 'refresh-modal', 'login-modal', 'history-page',
   'activity-editor', 'bulk-editor',
   'editor', 'dev-editor', 'area-editor',
 ];
