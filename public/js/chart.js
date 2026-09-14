@@ -343,4 +343,4 @@ document.querySelectorAll('.range-btn').forEach((b) => b.addEventListener('click
 }));
 }
 
-export { loadHistory, exportHistory, drawChart, addChartTooltip, openChartModal, loadChartModal };
+export { loadHistory, exportHistory, drawChart, addChartTooltip, openChartModal, loadChartModal, comboBase, sensorMapUrl };

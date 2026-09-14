@@ -2,7 +2,8 @@
 const express = require('express');
 const ha = require('../ha');
 const { wrap } = require('../lib/middleware');
-const { resolveRange } = require('../lib/history');
+const db = require('../db');
+const { resolveRange, relayTimelines } = require('../lib/history');
 
 const router = express.Router();
 
@@ -56,8 +57,23 @@ router.get('/api/history/multi', wrap(async (req, res) => {
   }
   const range = resolveRange(req.query);
   if (range.error) return res.status(400).json({ ok: false, error: range.error });
-  const series = await ha.getHistoryMulti(ids, range.start, range.end);
-  res.json({ ok: true, start: range.start.getTime(), end: range.end.getTime(), series });
+  // optional: panel relay ids whose set point + pause history to add (from the audit log)
+  const rids = [...new Set(String(req.query.rids || '').split(',').map((s) => s.trim()).filter(Boolean))];
+  if (rids.length > 200 || rids.some((r) => !/^[A-Za-z0-9_-]{1,64}$/.test(r))) {
+    return res.status(400).json({ ok: false, error: 'rids: up to 200 relay ids' });
+  }
+  const [series, events, layout] = await Promise.all([
+    ha.getHistoryMulti(ids, range.start, range.end),
+    rids.length ? db.getRelayEvents() : [],
+    rids.length ? db.getLayout() : null,
+  ]);
+  const relays = {};
+  for (const rid of rids) {
+    const r = ((layout && layout.relays) || []).find((x) => x.id === rid);
+    const fallback = r && r.bound && isFinite(parseFloat(r.temp)) ? parseFloat(r.temp) : null;
+    relays[rid] = relayTimelines(events.filter((e) => e.rid === rid), range.start.getTime(), range.end.getTime(), fallback);
+  }
+  res.json({ ok: true, start: range.start.getTime(), end: range.end.getTime(), series, relays });
 }));
 
 // --- HA area of each temperature sensor (history page grouping) ---

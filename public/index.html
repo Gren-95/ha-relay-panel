@@ -341,6 +341,11 @@
     <div class="flex items-center gap-2 flex-wrap px-4 py-2.5 bg-surface border-b border-border mobile:px-3">
       <h2 data-ui="panelH2" class="flex items-center gap-2 mr-1 whitespace-nowrap"><i class="bi bi-graph-up"></i> <span data-i18n="temp_history">Temperature history</span></h2>
       <select id="hp-view" class="min-h-[34px] max-w-[260px] px-2 py-1 text-[.85rem] font-semibold rounded-[7px] border-[1.5px] border-border bg-surface-2 text-fg cursor-pointer" aria-label="Show"></select>
+      <div id="hp-relay-filter" class="inline-flex items-center gap-1" role="group" data-i18n-title="hp_rf_title" title="Filter by relay">
+        <button data-ui="rangeBtn" data-rf="all" data-i18n="hp_rf_all">All</button>
+        <button data-ui="rangeBtn" data-rf="bound" class="inline-flex items-center gap-1"><i class="bi bi-plug"></i> <span data-i18n="hp_rf_bound">With relay</span></button>
+        <button data-ui="rangeBtn" data-rf="unbound" data-i18n="hp_rf_unbound">No relay</button>
+      </div>
       <div id="hp-ranges" class="inline-flex items-center gap-1">
         <button data-ui="rangeBtn" data-hours="24">24h</button>
         <button data-ui="rangeBtn" data-hours="168">7d</button>
@@ -355,6 +360,13 @@
       </div>
       <label class="inline-flex items-center gap-1.5 text-[.82rem] text-muted font-semibold cursor-pointer whitespace-nowrap"><input id="hp-same-scale" type="checkbox" class="min-h-0 w-auto m-0" /> <span data-i18n="hp_same_scale">Same scale</span></label>
       <label class="inline-flex items-center gap-1.5 text-[.82rem] text-muted font-semibold cursor-pointer whitespace-nowrap"><input id="hp-device-temps" type="checkbox" class="min-h-0 w-auto m-0" /> <span data-i18n="hp_device_temps">Device temps</span></label>
+      <div id="hp-legend" class="flex items-center gap-x-3 gap-y-1 flex-wrap text-[.75rem] text-muted">
+        <span class="inline-flex items-center gap-1"><svg width="14" height="8" aria-hidden="true"><rect y="1.5" width="14" height="5" rx="1.5" fill="var(--on)"/></svg> <span data-i18n="hp_lg_on">relay ON</span></span>
+        <span class="inline-flex items-center gap-1"><svg width="14" height="8" aria-hidden="true"><defs><pattern id="hp-lg-hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="1.6" height="4" fill="var(--muted)"/></pattern></defs><rect y="1.5" width="14" height="5" rx="1.5" fill="var(--off)" fill-opacity=".45"/><rect y="1.5" width="14" height="5" fill="url(#hp-lg-hatch)"/></svg> <span data-i18n="hp_lg_paused">paused</span></span>
+        <span class="inline-flex items-center gap-1"><svg width="14" height="8" aria-hidden="true"><rect y="1.5" width="14" height="5" rx="1.5" fill="var(--danger)"/></svg> <span data-i18n="hp_lg_offline">offline</span></span>
+        <span class="inline-flex items-center gap-1"><svg width="14" height="8" aria-hidden="true"><rect width="14" height="8" fill="var(--cool)" fill-opacity=".35"/></svg> <span data-i18n="hp_lg_below">below set point</span></span>
+        <span class="inline-flex items-center gap-1"><svg width="14" height="8" aria-hidden="true"><line x1="0" y1="4" x2="14" y2="4" stroke="var(--ok)" stroke-width="1.5" stroke-dasharray="4 2"/></svg> <span data-i18n="hp_lg_setpoint">set point</span></span>
+      </div>
       <span id="hp-status" class="text-[.8rem] text-muted"></span>
       <div class="ml-auto flex items-center gap-1">
         <button id="hp-reload" class="min-h-0 px-2.5 py-[6px] text-[.9rem] rounded-lg bg-surface-2 text-muted border-[1.5px] border-border cursor-pointer active:translate-y-px" data-i18n-title="hp_reload" title="Reload"><i class="bi bi-arrow-clockwise"></i></button>

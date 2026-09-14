@@ -138,6 +138,11 @@ const TR = {
     hp_all: 'Kõik andurid', hp_areas: 'Alad', hp_sensors: 'Andurid', hp_no_area: 'Alata',
     hp_no_sensors: 'andureid pole', hp_pick_dates: 'vali kuupäevad', hp_no_data: 'andmed puuduvad',
     hp_relay_on: 'relee SEES', hp_relay_off: 'relee VÄLJAS',
+    hp_relay_offline: 'relee võrguühenduseta', hp_setpoint: 'sihtväärtus', hp_paused: 'peatatud',
+    hp_on_time: 'Relee sees-aeg valitud vahemikus', hp_below_time: 'Aeg alla sihtväärtuse valitud vahemikus',
+    hp_lg_on: 'relee SEES', hp_lg_paused: 'peatatud', hp_lg_offline: 'võrguühenduseta',
+    hp_lg_below: 'alla sihtväärtuse', hp_lg_setpoint: 'sihtväärtus',
+    hp_rf_title: 'Filtreeri relee järgi', hp_rf_all: 'Kõik', hp_rf_bound: 'Releega', hp_rf_unbound: 'Releeta',
   },
 };
 const EN = {  // English fallbacks for dynamic (non-HTML) strings
@@ -227,6 +232,8 @@ const EN = {  // English fallbacks for dynamic (non-HTML) strings
   hp_all: 'All sensors', hp_areas: 'Areas', hp_sensors: 'Sensors', hp_no_area: 'No area',
   hp_no_sensors: 'no sensors', hp_pick_dates: 'pick dates', hp_no_data: 'no data',
   hp_relay_on: 'relay ON', hp_relay_off: 'relay OFF',
+  hp_relay_offline: 'relay offline', hp_setpoint: 'set point', hp_paused: 'paused',
+  hp_on_time: 'Relay ON time in this range', hp_below_time: 'Time below the set point in this range',
 };
 let LANG = 'en';
 function t(key, params) {

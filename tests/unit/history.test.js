@@ -48,3 +48,30 @@ test('resolveRange: last N hours by default, custom start/end, and the guards', 
   // hours is clamped to the span limit rather than refused
   assert.equal(resolveRange({ hours: '99999' }, now).end - resolveRange({ hours: '99999' }, now).start, MAX_SPAN_MS);
 });
+
+const { stepTimeline, relayTimelines } = require('../../lib/history');
+
+test('stepTimeline: value in force at start, then one step per change inside the window', () => {
+  const ev = [{ t: 5, v: 1 }, { t: 15, v: 2 }, { t: 25, v: 2 }, { t: 30, v: 3 }, { t: 99, v: 4 }];
+  assert.deepEqual(stepTimeline(ev, 10, 50, null, (e) => e.v), [{ t: 10, v: 1 }, { t: 15, v: 2 }, { t: 30, v: 3 }]);
+  assert.deepEqual(stepTimeline([], 10, 50, 7, (e) => e.v), [{ t: 10, v: 7 }]);
+});
+
+test('relayTimelines: set point from binds, cleared by unbind; pauses tracked separately', () => {
+  const ev = [
+    { t: 100, action: 'relay.bind', temp: 17 },
+    { t: 200, action: 'automation.pause' },
+    { t: 300, action: 'relay.bind', temp: '25' },
+    { t: 350, action: 'automation.resume' },
+    { t: 400, action: 'relay.unbind' },
+  ];
+  const r = relayTimelines(ev, 150, 1000, 20);
+  assert.deepEqual(r.target, [{ t: 150, v: 17 }, { t: 300, v: 25 }, { t: 400, v: null }]);
+  assert.deepEqual(r.paused, [{ t: 150, v: false }, { t: 200, v: true }, { t: 350, v: false }]);
+});
+
+test('relayTimelines: unknown before the first logged bind; current value when the log has none', () => {
+  assert.deepEqual(relayTimelines([{ t: 500, action: 'relay.bind', temp: 18 }], 100, 1000, 18).target,
+    [{ t: 100, v: null }, { t: 500, v: 18 }]);
+  assert.deepEqual(relayTimelines([], 100, 1000, 21).target, [{ t: 100, v: 21 }]);
+});
