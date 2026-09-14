@@ -18,6 +18,9 @@ import { initDeviceEditor } from './device-editor.js';
 import { initAreaEditor } from './area-editor.js';
 import { initModals, registerModal } from './modals.js';
 
+// How often the board re-reads live values from HA. The Refresh cycles modal quotes it.
+const LIVE_POLL_MS = 10000;
+
 async function boot() {
   try {
     const layout = await api('/api/layout');   // must succeed before we ever save
@@ -51,7 +54,7 @@ async function boot() {
   initHistory();
   if (state.loaded && state.layout.devices.length) saveLayout();
   // #62 — first poll fires immediately; no need for a separate eager refreshLive()
-  (function poll() { refreshLive().finally(() => setTimeout(poll, 10000)); })();
+  (function poll() { refreshLive().finally(() => setTimeout(poll, LIVE_POLL_MS)); })();
   // e2e tests wait on this explicit signal rather than racing boot()/render() (#87)
   document.body.dataset.ready = 'true';
 }
@@ -95,6 +98,17 @@ registerModal('about-modal', closeAbout);
 $('#btn-about').addEventListener('click', openAbout);
 $('#about-close').addEventListener('click', closeAbout);
 $('#about-dismiss').addEventListener('click', closeAbout);
+// Refresh cycles modal: how often each part of the panel updates
+function openRefreshInfo() {
+  closeAdvanced();
+  for (const id of ['#rc-live-every', '#rc-ha-every']) $(id).textContent = `${LIVE_POLL_MS / 1000} s`;
+  $('#refresh-modal').classList.remove('hidden');
+}
+function closeRefreshInfo() { $('#refresh-modal').classList.add('hidden'); }
+registerModal('refresh-modal', closeRefreshInfo);
+$('#btn-refresh-info').addEventListener('click', openRefreshInfo);
+$('#refresh-close').addEventListener('click', closeRefreshInfo);
+$('#refresh-dismiss').addEventListener('click', closeRefreshInfo);
 $('#import-file').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) importLayout(f); e.target.value = ''; });
 $('#area-picker').addEventListener('change', (e) => { closeAdd(); addArea(e.target.value); e.target.value = ''; });
 $('#device-picker').addEventListener('change', (e) => { closeAdd(); addPhysicalRelay(e.target.value); e.target.value = ''; });

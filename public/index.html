@@ -59,6 +59,7 @@
           </div>
           <button id="btn-alloff" data-ui="menuItem"><i class="bi bi-power w-4 text-center text-muted"></i> <span data-i18n="all_off">All off</span></button>
           <span class="h-px bg-border mx-2 my-1"></span>
+          <button id="btn-refresh-info" data-ui="menuItem"><i class="bi bi-arrow-repeat w-4 text-center text-muted"></i> <span data-i18n="refresh_info">Refresh cycles</span></button>
           <button id="btn-about" data-ui="menuItem"><i class="bi bi-info-circle w-4 text-center text-muted"></i> <span data-i18n="about">About</span></button>
         </div>
         <input id="import-file" type="file" accept="application/json,.json" hidden />
@@ -355,6 +356,53 @@
       </div>
       <div class="text-[.78rem] text-muted"><span data-i18n="about_license">License</span>: <a href="https://github.com/Gren-95/ha-relay-panel/blob/master/LICENSE" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">MIT</a></div>
       <button id="about-dismiss" class="border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px" data-i18n="cancel">Close</button>
+    </div>
+  </div>
+
+  <!-- Refresh cycles: how often each part of the panel updates. The intervals are
+       quoted from the code - keep them in step with main.js (live poll),
+       ha.js buildAutomation (time_pattern), lib/notify.js and lib/middleware.js. -->
+  <div id="refresh-modal" class="hidden fixed inset-0 z-[55] flex items-center justify-center bg-black/45 p-4">
+    <div class="w-full max-w-[460px] max-h-[calc(100vh-32px)] overflow-y-auto flex flex-col gap-3 bg-surface text-fg border-2 border-solid border-border rounded-[14px] p-[22px] shadow-panel">
+      <div class="flex items-center justify-between">
+        <h2 data-ui="panelH2" class="flex items-center gap-2"><i class="bi bi-arrow-repeat"></i> <span data-i18n="refresh_info">Refresh cycles</span></h2>
+        <button id="refresh-close" class="bg-transparent border-0 text-muted text-[1.8rem] cursor-pointer leading-none" aria-label="Close">&times;</button>
+      </div>
+      <dl class="m-0 flex flex-col gap-3">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex flex-col gap-0.5"><dt class="font-semibold text-[.9rem]" data-i18n="rc_live">Temperatures &amp; relay states</dt><dd class="m-0 text-muted text-[.8rem]" data-i18n="rc_live_desc">This page asks Home Assistant for the current values.</dd></div>
+          <span id="rc-live-every" class="shrink-0 bg-surface-2 rounded-md px-2 py-0.5 text-[.8rem] font-semibold tabular-nums whitespace-nowrap">10 s</span>
+        </div>
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex flex-col gap-0.5"><dt class="font-semibold text-[.9rem]" data-i18n="rc_sensor">Sensor readings</dt><dd class="m-0 text-muted text-[.8rem]" data-i18n="rc_sensor_desc">Each sensor reports on its own schedule, usually when the temperature changes. A number can stay the same for minutes even while the page refreshes.</dd></div>
+          <span class="shrink-0 bg-surface-2 rounded-md px-2 py-0.5 text-[.8rem] font-semibold whitespace-nowrap" data-i18n="rc_sensor_every">when it reports</span>
+        </div>
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex flex-col gap-0.5"><dt class="font-semibold text-[.9rem]" data-i18n="rc_ha">Home Assistant connection</dt><dd class="m-0 text-muted text-[.8rem]" data-i18n="rc_ha_desc">Checked together with the values. A red banner appears when it can't be reached.</dd></div>
+          <span id="rc-ha-every" class="shrink-0 bg-surface-2 rounded-md px-2 py-0.5 text-[.8rem] font-semibold tabular-nums whitespace-nowrap">10 s</span>
+        </div>
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex flex-col gap-0.5"><dt class="font-semibold text-[.9rem]" data-i18n="rc_auto">Automatic switching</dt><dd class="m-0 text-muted text-[.8rem]" data-i18n="rc_auto_desc">Home Assistant compares the temperature to the target on every new reading, and every 5 minutes regardless. A changed target applies at once.</dd></div>
+          <span class="shrink-0 bg-surface-2 rounded-md px-2 py-0.5 text-[.8rem] font-semibold tabular-nums whitespace-nowrap">5 min</span>
+        </div>
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex flex-col gap-0.5"><dt class="font-semibold text-[.9rem]" data-i18n="rc_alerts">Alerts</dt><dd class="m-0 text-muted text-[.8rem]" data-i18n="rc_alerts_desc">Offline and off-target checks, for relays with "Notify on issues" turned on.</dd></div>
+          <span class="shrink-0 bg-surface-2 rounded-md px-2 py-0.5 text-[.8rem] font-semibold tabular-nums whitespace-nowrap">60 s</span>
+        </div>
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex flex-col gap-0.5"><dt class="font-semibold text-[.9rem]" data-i18n="rc_history">History charts &amp; activity log</dt><dd class="m-0 text-muted text-[.8rem]" data-i18n="rc_history_desc">Loaded when you open them. Close and reopen to see newer data.</dd></div>
+          <span class="shrink-0 bg-surface-2 rounded-md px-2 py-0.5 text-[.8rem] font-semibold whitespace-nowrap" data-i18n="rc_on_open">when opened</span>
+        </div>
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex flex-col gap-0.5"><dt class="font-semibold text-[.9rem]" data-i18n="rc_layout">Board layout</dt><dd class="m-0 text-muted text-[.8rem]" data-i18n="rc_layout_desc">Changes someone else makes to the board show up after you reload the page.</dd></div>
+          <span class="shrink-0 bg-surface-2 rounded-md px-2 py-0.5 text-[.8rem] font-semibold whitespace-nowrap" data-i18n="rc_on_load">on page load</span>
+        </div>
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex flex-col gap-0.5"><dt class="font-semibold text-[.9rem]" data-i18n="rc_session">Sign-in</dt><dd class="m-0 text-muted text-[.8rem]" data-i18n="rc_session_desc">Lasts 8 hours, and is extended while you keep making changes.</dd></div>
+          <span class="shrink-0 bg-surface-2 rounded-md px-2 py-0.5 text-[.8rem] font-semibold tabular-nums whitespace-nowrap">8 h</span>
+        </div>
+      </dl>
+      <button id="refresh-dismiss" class="border border-border-strong bg-surface text-fg px-4 py-[11px] rounded-[11px] cursor-pointer text-base font-semibold min-h-[48px] leading-[1.1] active:translate-y-px" data-i18n="cancel">Close</button>
     </div>
   </div>
 
