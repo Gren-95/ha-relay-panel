@@ -52,6 +52,14 @@ async function initDb() {
       INDEX idx_created (created_at)
     )
   `);
+  // Small key -> JSON store for app settings edited in the panel (battery alerts).
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS settings (
+      k          VARCHAR(64) PRIMARY KEY,
+      v          JSON NOT NULL,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
   await pool.query(
     `INSERT IGNORE INTO panel (id, name, layout) VALUES (1, 'Main', ?)`,
     [JSON.stringify({ relays: [], areas: [], devices: [] })]
@@ -206,4 +214,19 @@ async function deleteSessionsForUser(username) {
   await pool.query('DELETE FROM sessions WHERE username = ?', [username]);
 }
 
-module.exports = { initDb, getLayout, saveLayout, saveZOrder, listBackups, restoreBackup, addAuditLog, getActivityLog, getRelayEvents, saveSession, getSession, deleteSession, deleteSessionsForUser, startSessionSweep };
+async function getSetting(key) {
+  const [rows] = await pool.query('SELECT v FROM settings WHERE k = ?', [key]);
+  if (!rows.length) return null;
+  const v = rows[0].v;
+  if (typeof v !== 'string') return v;
+  try { return JSON.parse(v); } catch { return null; }
+}
+
+async function setSetting(key, value) {
+  await pool.query(
+    'INSERT INTO settings (k, v) VALUES (?, ?) ON DUPLICATE KEY UPDATE v = VALUES(v)',
+    [key, JSON.stringify(value)]
+  );
+}
+
+module.exports = { getSetting, setSetting, initDb, getLayout, saveLayout, saveZOrder, listBackups, restoreBackup, addAuditLog, getActivityLog, getRelayEvents, saveSession, getSession, deleteSession, deleteSessionsForUser, startSessionSweep };

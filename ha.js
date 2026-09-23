@@ -163,6 +163,10 @@ async function getStates(ids) {
   return out;
 }
 
+async function getAllStates() {
+  return haFetch('/api/states');
+}
+
 // 24h numeric history for a sensor (for the sparkline). Returns [{t, v}].
 async function getHistory(entity, hours = 24) {
   const end = new Date();
@@ -527,6 +531,7 @@ module.exports = {
   getAreas,
   getRelayDevices,
   getStates,
+  getAllStates,
   getStatesAndAutomations,
   getHistory,
   getHistoryExport,

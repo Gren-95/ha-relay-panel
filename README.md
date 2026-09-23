@@ -80,6 +80,9 @@ Self-hosted, no cloud. Talks to your own Home Assistant over its REST/WebSocket 
 - **Notifications** - a server-side watcher checks Home Assistant every 60 s and sends an
   alert through HA's `notify.*` service when a relay or sensor goes offline or a
   temperature drifts past a per-relay threshold (opt in per relay).
+- **Battery alerts** - emails a list of recipients when any Home Assistant battery drops to
+  a chosen level (0-30 %, default 20 %), and again once it is replaced. Set up from the gear
+  menu; see [Battery alerts](#battery-alerts).
 - **Activity log** - who did what (sign-ins, binds, switches, pauses, renames, layout
   saves, ...), from the gear menu, with CSV export; keeps the latest 1 000 events.
 
@@ -159,6 +162,17 @@ running `node server.js` outside Compose, against a MariaDB of your own.
 Every host, port and credential this app knows about is read from `.env`. Nothing in the
 repository names a real deployment - if you need a concrete address in a comment, a test
 fixture or an example, use a documentation-reserved one (`192.0.2.0/24`, RFC 5737).
+
+### Battery alerts
+
+**More > Battery alerts** (signed in) emails a list of recipients when any battery entity in
+Home Assistant (`device_class: battery`: percentage sensors and the binary "battery low"
+kind) drops to the chosen level (0-30 %, default 20 %), and once more when it is back 10 %
+above that line. The SMTP server, sender and recipients are set in the same panel and stored
+in the database, not in `.env`; the password is never sent back to the browser. Individual
+batteries can be left out of the emails, and a test email can be sent before saving. The
+check runs every 60 s; what has already been reported is stored, so a restart does not
+repeat an alert.
 
 ### Second sign-in provider
 

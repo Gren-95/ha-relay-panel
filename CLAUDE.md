@@ -53,11 +53,21 @@ Instructions for Claude Code in this project.
   becomes dead. `npx eslint public/js/i18n.js` catches it (`no-dupe-keys`) - it must stay clean.
 - Use `data-i18n` attributes on HTML elements for static text, `t('key')` for dynamic text
 
+## Battery alerts
+
+- Settings live in the `settings` table (key `battery_alerts`), not `.env`, because they
+  are edited in the panel. Key `battery_alert_state` holds which batteries were already
+  mailed, so a restart does not re-send. The SMTP password is stored there in plain text
+  and must never be returned by an API: `publicConfig()` strips it to `hasPass`.
+- Rules are pure in `lib/battery.js` (unit-tested); mail + the 60 s loop are in
+  `lib/battery-alerts.js`. A failed send leaves the state alone, so it retries next tick.
+- Separate from `lib/notify.js` (HA `notify.*` services, relay offline/deviation alerts).
+
 ## Activity log
 
 - Page size: 15 entries
 - Retention: 1000 newest events (auto-pruned after each insert)
-- Actions logged: login, logout, relay.bind, relay.unbind, relay.delete, device.rename, switch.toggle, automation.pause, automation.resume, layout.save, layout.restore, automation.reapply, automation.prune, device.delete, area.delete
+- Actions logged: login, logout, relay.bind, relay.unbind, relay.delete, device.rename, switch.toggle, automation.pause, automation.resume, layout.save, layout.restore, automation.reapply, automation.prune, device.delete, area.delete, alerts.save, alerts.test
 - CSV export available via download button in the panel footer
 
 ## No production identifiers in the repo
