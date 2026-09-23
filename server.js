@@ -3,6 +3,7 @@ const path = require('path');
 const db = require('./db');
 const ha = require('./ha');
 const { startNotifyWatcher } = require('./lib/notify');
+const { startBatteryWatcher } = require('./lib/battery-alerts');
 
 const app = express();
 // Only trust X-Forwarded-For when behind a reverse proxy (Caddy/nginx).
@@ -34,6 +35,7 @@ app.use(require('./routes/layout'));
 app.use(require('./routes/relays'));
 app.use(require('./routes/auth'));
 app.use(require('./routes/activity'));
+app.use(require('./routes/battery-alerts'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
@@ -60,6 +62,7 @@ db.initDb()
     server = app.listen(PORT, () => {
       console.log(`relay-panel on :${PORT}, HA ${ha.HA_URL}`);
       startNotifyWatcher();
+      startBatteryWatcher();
     });
   })
   .catch((e) => { console.error('DB init failed:', e.message); process.exit(1); });

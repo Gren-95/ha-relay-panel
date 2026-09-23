@@ -52,6 +52,7 @@
           <span class="h-px bg-border mx-2 my-1"></span>
           <button id="btn-activity" data-ui="menuItem"><i class="bi bi-clock-history w-4 text-center text-muted"></i> <span data-i18n="activity_log">Activity log</span></button>
           <button id="btn-bulk" data-ui="menuItem"><i class="bi bi-collection w-4 text-center text-muted"></i> <span data-i18n="bulk_edit">Bulk edit</span></button>
+          <button id="btn-battery-alerts" data-ui="menuItem"><i class="bi bi-battery-half w-4 text-center text-muted"></i> <span data-i18n="battery_alerts">Battery alerts</span></button>
           <span class="h-px bg-border mx-2 my-1"></span>
           <div data-ui="menuRow" class="[.live-mode_&]:opacity-40" id="global-temp-wrap">
             <span class="inline-flex items-center gap-2.5"><i class="bi bi-thermometer-half w-4 text-center text-heat"></i> <span data-i18n="global_temp_title">Set temp for all</span></span>
@@ -306,6 +307,59 @@
     <p id="bk-msg" class="text-[.95rem] min-h-[1.3em] font-semibold"></p>
   </aside>
 
+  <!-- Battery alerts: email when any HA battery entity runs low -->
+  <aside id="alerts-editor" role="dialog" aria-modal="true" class="editor hidden" data-ui="editorAside">
+    <div class="flex items-center justify-between">
+      <h2 data-ui="panelH2"><i class="bi bi-battery-half"></i> <span data-i18n="battery_alerts">Battery alerts</span></h2>
+      <button id="al-close" data-ui="closeBtn" aria-label="Close">&times;</button>
+    </div>
+    <label class="flex flex-row items-center gap-2 font-semibold text-muted"><input id="al-enabled" type="checkbox" class="min-h-0 w-auto" /> <span data-i18n="al_enabled">Send email alerts</span></label>
+    <label data-ui="label"><span data-i18n="al_threshold">Alert at or below (%)</span>
+      <input id="al-threshold" type="number" min="0" max="30" step="1" value="20" data-ui="field" />
+      <span id="al-threshold-hint" class="text-[.8rem] font-normal"></span>
+    </label>
+    <label data-ui="label"><span data-i18n="al_recipients">Recipients</span>
+      <textarea id="al-recipients" rows="3" data-ui="field" data-i18n-ph="al_recipients_ph" placeholder="One email address per line" class="resize-y font-sans"></textarea>
+    </label>
+    <h3 class="m-0 mt-1 text-[1rem] font-bold" data-i18n="al_smtp">SMTP server</h3>
+    <div class="flex gap-2.5 mobile:flex-col">
+      <label data-ui="label" class="flex-[3]"><span data-i18n="al_host">Server</span>
+        <input id="al-host" type="text" data-ui="field" placeholder="smtp.example.com" autocomplete="off" />
+      </label>
+      <label data-ui="label" class="flex-1"><span data-i18n="al_port">Port</span>
+        <input id="al-port" type="number" min="1" max="65535" value="25" data-ui="field" />
+      </label>
+    </div>
+    <label data-ui="label"><span data-i18n="al_security">Encryption</span>
+      <select id="al-security" data-ui="field">
+        <option value="none" data-i18n="al_sec_none">None (plain, e.g. port 25 relay)</option>
+        <option value="starttls" data-i18n="al_sec_starttls">STARTTLS (usually port 587)</option>
+        <option value="tls" data-i18n="al_sec_tls">TLS (usually port 465)</option>
+      </select>
+    </label>
+    <div class="flex gap-2.5 mobile:flex-col">
+      <label data-ui="label" class="flex-1"><span data-i18n="al_user">Username (optional)</span>
+        <input id="al-user" type="text" data-ui="field" autocomplete="off" />
+      </label>
+      <label data-ui="label" class="flex-1"><span data-i18n="al_pass">Password</span>
+        <input id="al-pass" type="password" data-ui="field" autocomplete="new-password" />
+      </label>
+    </div>
+    <label id="al-clear-pass-wrap" class="hidden flex flex-row items-center gap-2 font-semibold text-muted"><input id="al-clear-pass" type="checkbox" class="min-h-0 w-auto" /> <span data-i18n="al_clear_pass">Remove the saved password</span></label>
+    <label data-ui="label"><span data-i18n="al_from">Sender address</span>
+      <input id="al-from" type="email" data-ui="field" placeholder="relay-panel@example.com" autocomplete="off" />
+    </label>
+    <div class="flex gap-2.5 mobile:flex-col">
+      <button id="al-save" data-ui="btnPrimary" class="flex-1 mobile:min-h-[54px]" data-i18n="save">Save</button>
+      <button id="al-test" data-ui="btn" class="flex-1 mobile:min-h-[54px]"><i class="bi bi-send"></i> <span data-i18n="al_test">Send test email</span></button>
+    </div>
+    <p id="al-msg" class="text-[.95rem] min-h-[1.3em] font-semibold"></p>
+    <p id="al-status" class="m-0 text-muted text-[.85rem]"></p>
+    <h3 class="m-0 mt-1 text-[1rem] font-bold" data-i18n="al_entities">Batteries</h3>
+    <p class="m-0 text-muted text-[.82rem]" data-i18n="al_entities_hint">Every battery in Home Assistant. Untick one to leave it out of the emails.</p>
+    <div id="al-list" class="shrink-0 flex flex-col max-h-[340px] overflow-y-auto rounded-xl border border-border divide-y divide-border"></div>
+  </aside>
+
   <!-- Expanded chart modal -->
   <div id="chart-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
     <div class="bg-surface rounded-[14px] p-5 w-[min(95vw,1000px)] shadow-panel flex flex-col gap-2.5">
@@ -404,7 +458,7 @@
 
   <!-- Refresh cycles: how often each part of the panel updates. The intervals are
        quoted from the code - keep them in step with main.js (live poll),
-       ha.js buildAutomation (time_pattern), lib/notify.js and lib/middleware.js. -->
+       ha.js buildAutomation (time_pattern), lib/notify.js, lib/battery-alerts.js and lib/middleware.js. -->
   <div id="refresh-modal" class="hidden fixed inset-0 z-[55] flex items-center justify-center bg-black/45 p-4">
     <div class="w-full max-w-[460px] max-h-[calc(100vh-32px)] overflow-y-auto flex flex-col gap-3 bg-surface text-fg border-2 border-solid border-border rounded-[14px] p-[22px] shadow-panel">
       <div class="flex items-center justify-between">
@@ -430,6 +484,10 @@
         </div>
         <div class="flex items-start justify-between gap-3">
           <div class="flex flex-col gap-0.5"><dt class="font-semibold text-[.9rem]" data-i18n="rc_alerts">Alerts</dt><dd class="m-0 text-muted text-[.8rem]" data-i18n="rc_alerts_desc">Offline and off-target checks, for relays with "Notify on issues" turned on.</dd></div>
+          <span class="shrink-0 bg-surface-2 rounded-md px-2 py-0.5 text-[.8rem] font-semibold tabular-nums whitespace-nowrap">60 s</span>
+        </div>
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex flex-col gap-0.5"><dt class="font-semibold text-[.9rem]" data-i18n="rc_battery">Battery alerts</dt><dd class="m-0 text-muted text-[.8rem]" data-i18n="rc_battery_desc">Every battery in Home Assistant is checked, and an email goes out when one drops to the set level.</dd></div>
           <span class="shrink-0 bg-surface-2 rounded-md px-2 py-0.5 text-[.8rem] font-semibold tabular-nums whitespace-nowrap">60 s</span>
         </div>
         <div class="flex items-start justify-between gap-3">
