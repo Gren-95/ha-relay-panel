@@ -18,6 +18,8 @@ const state = {
   canvasScale: 0.8,     // relay board zoom level — default 2 clicks below 1.0
   live: {},
   autoStates: {},
+  liveStream: false,   // the SSE push is connected — polling pauses (#push)
+  liveStreamHook: null, // fired after a successful layout save (relay-actions sets it)
   tgtEditing: false, // an inline target-temp input is open — render() holds off the redraw
 };
 

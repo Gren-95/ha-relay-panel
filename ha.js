@@ -121,6 +121,7 @@ async function getStatesAndAutomations(ids) {
   const idSet = new Set(ids);
   const out = {};
   const autos = {};
+  let reachable = true;
   try {
     const all = await haFetch('/api/states');
     for (const s of all) {
@@ -133,12 +134,13 @@ async function getStatesAndAutomations(ids) {
       }
     }
   } catch {
+    reachable = false;
     for (const id of ids) out[id] = { state: 'unavailable', unit: '', missing: true };
   }
   for (const id of ids) {
     if (!out[id]) out[id] = { state: 'unavailable', unit: '', missing: true };
   }
-  return { states: out, automations: autos };
+  return { states: out, automations: autos, reachable };
 }
 
 async function getStates(ids) {
@@ -330,13 +332,30 @@ async function setSwitch(entity, action) {
   } catch { return 'unavailable'; } // entity was removed/renamed
 }
 
-// Create/replace an automation, then reload so it takes effect.
+// Create/replace an automation, reload so it takes effect, then run it once so
+// the new set point applies to the current reading right away.
 async function upsertAutomation(automationId, config) {
   await haFetch(`/api/config/automation/config/${automationId}`, {
     method: 'POST',
     body: JSON.stringify(config),
   });
   await haFetch('/api/services/automation/reload', { method: 'POST', body: '{}' });
+  await evaluateAutomation(automationId);
+}
+
+// Run an automation's actions now. Its only triggers are a sensor change and a
+// 5-min tick, and a sensor can hold one value for hours - so without this a
+// set point dropped below the room temperature left a heater on until the next
+// tick. automation.trigger runs even a disabled automation, so a paused
+// (maintenance) one is left alone. Best-effort: the change has already landed
+// and the tick catches up, so a failure here must not fail the caller.
+async function evaluateAutomation(automationId) {
+  try {
+    const a = await findAutomation(automationId);
+    if (!a || !a.enabled) return;
+    await haFetch('/api/services/automation/trigger',
+      { method: 'POST', body: JSON.stringify({ entity_id: a.entity_id }) });
+  } catch { /* the next tick evaluates it */ }
 }
 
 // Find the automation entity created for a given automation id (HA derives the
@@ -545,6 +564,7 @@ module.exports = {
   renameHaDevice,
   upsertAutomation,
   deleteAutomation,
+  evaluateAutomation,
   pruneOrphanAutomations,
   findAutomation,
   listRelayAutomations,

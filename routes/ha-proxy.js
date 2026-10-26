@@ -1,6 +1,7 @@
 // Read-only HA proxy endpoints: entities, areas, relay devices, live states, history.
 const express = require('express');
 const ha = require('../ha');
+const live = require('../lib/live');
 const { wrap } = require('../lib/middleware');
 const db = require('../db');
 const { resolveRange, relayTimelines } = require('../lib/history');
@@ -26,8 +27,16 @@ router.get('/api/relay-devices', wrap(async (req, res) => {
 router.get('/api/live', wrap(async (req, res) => {
   const ids = String(req.query.ids || '').split(',').map((s) => s.trim()).filter(Boolean);
   const result = await ha.getStatesAndAutomations(ids);
-  res.json({ ...result.states, _automations: result.automations });
+  res.json({ ...result.states, _automations: result.automations, _reachable: result.reachable });
 }));
+
+// Live push (#push): one server tick fetches HA for everyone; the board gets
+// events only when something changed. Polling stays as the fallback.
+router.get('/api/live/stream', (req, res) => {
+  const ids = String(req.query.ids || '').split(',').map((s) => s.trim()).filter(Boolean);
+  if (!ids.length) return res.status(400).json({ ok: false, error: 'ids required' });
+  if (!live.addClient(res, ids)) return res.status(503).json({ ok: false, error: 'too many live clients' });
+});
 
 // --- 24h sensor history (sparkline) ---
 router.get('/api/history', wrap(async (req, res) => {

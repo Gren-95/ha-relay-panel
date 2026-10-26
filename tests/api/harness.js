@@ -18,9 +18,11 @@ const ROOT = path.join(__dirname, '..', '..');
 // The HA stub accepts exactly this password; anything else is a failed login.
 const HA_PASSWORD = 'ha-stub-password';
 
-// --- tiny Home Assistant stub: enough for login flows and reachability ---
+// --- tiny Home Assistant stub: enough for login flows, reachability and a
+// mutable /api/states for the live-push tests ---
 function startHaStub() {
   const flows = new Map(); // flow_id -> attempts
+  const stub = { states: [] };
   const s = http.createServer((req, res) => {
     const body = [];
     req.on('data', (c) => body.push(c));
@@ -29,6 +31,7 @@ function startHaStub() {
       let payload = {};
       try { payload = JSON.parse(Buffer.concat(body).toString() || '{}'); } catch { /* junk is fine */ }
       const m = req.url.match(/^\/auth\/login_flow(?:\/([^/?]+))?/);
+      if (req.method === 'GET' && req.url === '/api/states') return send(200, stub.states);
       if (req.method === 'POST' && req.url === '/auth/login_flow') {
         const id = `flow${flows.size + 1}`;
         flows.set(id, 0);
@@ -43,7 +46,7 @@ function startHaStub() {
       send(404, { message: 'not stubbed' });
     });
   });
-  return new Promise((resolve) => s.listen(0, '127.0.0.1', () => resolve({ server: s, url: `http://127.0.0.1:${s.address().port}` })));
+  return new Promise((resolve) => s.listen(0, '127.0.0.1', () => resolve({ server: s, url: `http://127.0.0.1:${s.address().port}`, setStates: (arr) => { stub.states = arr; } })));
 }
 
 // --- the real server, booted as a child process ---
