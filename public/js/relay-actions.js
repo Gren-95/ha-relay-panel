@@ -155,9 +155,10 @@ function closeLiveStream() {
 }
 // Re-open after a layout save: the id list the stream was opened with may no
 // longer match the board. history-undo fires state.liveStreamHook after every
-// successful save — set here, so no module cycle is needed.
+// successful save — registered in initRelayActions (not at module top level:
+// this module sits in an import cycle, and touching `state` during its own
+// evaluation throws "Cannot access 'state' before initialization").
 function reopenLiveStream() { closeLiveStream(); openLiveStream(); }
-state.liveStreamHook = reopenLiveStream;
 
 async function refreshLive() {
   const ids = liveIds();
@@ -194,7 +195,8 @@ function updateSummary() {
 
 // wiring: canvas quick-adjust buttons + warning-popover dismissal
 export function initRelayActions() {
-canvas.addEventListener('click', (e) => {
+  state.liveStreamHook = reopenLiveStream; // history-undo fires it after each save (#push)
+  canvas.addEventListener('click', (e) => {
   const btn = e.target.closest('.adj-btn');
   if (btn) {
     e.stopPropagation();
