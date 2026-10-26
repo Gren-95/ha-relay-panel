@@ -69,12 +69,36 @@ run_e2e() {
     "$PW_IMAGE" sh -c "$INSTALL && npx playwright test \"\$@\"" -- "$@" || fail e2e
 }
 
+# The API suite: the real server in a container against a throwaway MariaDB,
+# with Home Assistant stubbed inside the tests. Needs node_modules (express,
+# mysql2), so it reuses the shared volume like lint does.
+API_DB_PORT="${API_DB_PORT:-33070}"
+API_DB_NAME="relay-panel-test-db"
+run_api() {
+  step "api ($NODE_IMAGE, db on :$API_DB_PORT)"
+  docker rm -f "$API_DB_NAME" >/dev/null 2>&1 || true
+  cleanup() { docker rm -f "$API_DB_NAME" >/dev/null 2>&1 || true; }
+  trap cleanup EXIT
+  docker run -d --name "$API_DB_NAME" \
+    -e MARIADB_DATABASE=relaypanel -e MARIADB_ROOT_PASSWORD=test-root-password \
+    -p "127.0.0.1:$API_DB_PORT:3306" mariadb:12 >/dev/null
+  for _ in $(seq 1 60); do
+    docker exec "$API_DB_NAME" healthcheck.sh --connect --innodb_initialized >/dev/null 2>&1 && break
+    sleep 2
+  done
+  docker run --rm --network host \
+    -v "$PWD":/app -v "$MODS_VOLUME":/app/node_modules -w /app \
+    -e API_DB_PORT="$API_DB_PORT" -e API_DB_ROOT_PASSWORD=test-root-password \
+    "$NODE_IMAGE" sh -c "$INSTALL && node --test 'tests/api/*.test.js'" || fail api
+}
+
 case "${1:-all}" in
   unit) run_unit ;;
   lint) run_lint ;;
+  api)  run_api ;;
   e2e)  shift; run_e2e "$@" ;;
-  all)  run_unit; run_lint; run_e2e ;;
-  *)    echo "usage: $0 [unit|lint|e2e|all] [-- playwright args]" >&2; exit 2 ;;
+  all)  run_unit; run_api; run_lint; run_e2e ;;
+  *)    echo "usage: $0 [unit|lint|api|e2e|all] [-- playwright args]" >&2; exit 2 ;;
 esac
 
 [ $RC -eq 0 ] && printf '\n\033[32mall green\033[0m\n' || printf '\n\033[31msome suites failed\033[0m\n'

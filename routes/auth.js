@@ -20,7 +20,12 @@ function checkLoginRate(req, res) {
     res.status(429).json({ ok: false, error: `Too many login attempts. Try again in ${wait}s.` });
     return false;
   }
-  if (!entry || entry.blockedUntil <= now) entry = { count: 0, blockedUntil: 0 };
+  // A blocked-out entry must survive until its lockout expires; only an entry
+  // whose lockout has EXPIRED starts fresh. Resetting on every unblocked
+  // request (entry.blockedUntil <= now) made the counter reset each time, so
+  // the lockout could never be reached — caught by tests/api/auth.test.js.
+  if (!entry) entry = { count: 0, blockedUntil: 0 };
+  else if (entry.blockedUntil && entry.blockedUntil <= now) entry = { count: 0, blockedUntil: 0 };
   loginAttempts.set(ip, entry);
   // Clean old entries every 100 logins
   if (loginAttempts.size > 500) {
