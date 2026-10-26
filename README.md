@@ -236,11 +236,17 @@ disappears entirely.
 The suites run in containers, so the host needs only Docker:
 
 ```bash
-./scripts/test.sh          # unit + lint + e2e
+./scripts/test.sh          # unit + api + lint + e2e
 ./scripts/test.sh unit     # Node's built-in test runner (tests/unit/)
+./scripts/test.sh api      # HTTP tests against the real server (tests/api/)
 ./scripts/test.sh lint     # ESLint, plus a check for Tailwind classes it cannot see
 ./scripts/test.sh e2e      # Playwright (tests/e2e/) - extra args go to playwright
 ```
+
+**Where does a new test go?** Pure logic → `tests/unit/` (no `node_modules`, Node's
+built-in runner). Endpoint behaviour — authorization, validation, persistence →
+`tests/api/` (the real server, a throwaway MariaDB, HA stubbed). What the user sees →
+`tests/e2e/`.
 
 The e2e suite runs against a **running panel** (`BASE_URL`, default
 `http://localhost:8090`), so deploy first. Every Home Assistant- and database-backed
