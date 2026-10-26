@@ -19,6 +19,14 @@ Instructions for Claude Code in this project.
 - Health check: `curl -s http://localhost:8090/api/health`
 - Verify frontend changes: `curl -s http://localhost:8090/ | grep <element>`
 
+## Schema migrations
+
+Schema changes go in numbered `.sql` files under `migrations/` — plain `ALTER`s, applied
+exactly once in filename order by `lib/migrate.js` on boot and recorded in the
+`schema_migrations` table. `db.js` owns no DDL. Never edit a migration that has shipped;
+add a new one (`migrations/0002_example.sql`). The runner fails loud and fatal, so a
+half-migrated schema never serves.
+
 ## Testing
 
 - **Run everything with `./scripts/test.sh`** (unit + lint + e2e), or one suite:
@@ -52,6 +60,36 @@ Instructions for Claude Code in this project.
   single object literals, so a second definition silently shadows the first and the earlier one
   becomes dead. `npx eslint public/js/i18n.js` catches it (`no-dupe-keys`) - it must stay clean.
 - Use `data-i18n` attributes on HTML elements for static text, `t('key')` for dynamic text
+
+## Edit vs View (Live) mode
+
+- `state.edit` is the mode; `applyMode()` puts `.live-mode` on `<body>` and the button
+  shows the CURRENT mode ("Live"/"Vaade" with an eye, "Edit"/"Muuda" with a pencil).
+  Entering Edit requires a signed-in session; signing in lands straight in Edit.
+- **View mode is read-only, signed in as well.** The mode used to be checked only by the
+  toolbar-level actions (All off, the area masters, the global set point). Every
+  board-level control asked `state.authed` alone, so a signed-in operator in View mode
+  could still flip relays, retype set points and open every editor panel.
+- **The board itself is inert in View mode.** `card()` builds it that way rather than
+  guarding a click: the toggle renders `disabled` (its `title` says why), the set-point
+  pill gets no handler and no pointer cursor, and the card body gets neither the editor
+  nor the drag. The mobile list's device and area headers follow the same rule. The one
+  thing that still opens is the **history chart**, from the temperature reading - plus
+  the warning "!" popover, which only explains a fault.
+- That includes the old sign-in bounce: a tap on a card no longer opens the login modal,
+  because you were only trying to read it. The header's **Sign in** button is the way in.
+- Anything left that writes - the toolbar's Bulk edit and Import, the editors - goes
+  through `requireEdit(anchor)` in `public/js/guard.js`: it prompts sign-in when signed
+  out, and otherwise explains the mode in a popover anchored to the control that was
+  clicked. `#status` is useless for that on a phone: it lives in the toolbar, behind the
+  hamburger. The three `open*Editor()` functions refuse in View mode themselves, as a
+  last line of defence behind their callers.
+- Deliberately still allowed in View mode: the history chart, the activity log and
+  Export (all read-only), and click-to-front. Raising a card persists a z-order row, but
+  stacking is how you read an overlapped board - it is a viewing action, not an edit.
+- It is a **UI guard, not an authorization boundary** - the server has no notion of the
+  mode, only of the session. Anything that must not be possible for a signed-in user has
+  to be enforced in `server.js`/`routes/`.
 
 ## Battery alerts
 

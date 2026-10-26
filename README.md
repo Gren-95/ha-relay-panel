@@ -222,6 +222,10 @@ disappears entirely.
   (`z2m.js`). The layout, sessions and activity log live in MariaDB (`db.js`).
 - **Frontend** - a single static page (`public/`): vanilla JS modules in `public/js/`
   and Tailwind CSS compiled from `src/input.css` (`npm run build:css`).
+- **Schema** - owned by numbered migrations in `migrations/`, applied once each at boot
+  (`lib/migrate.js`, tracked in a `schema_migrations` table) before the server accepts
+  traffic. To change the schema, add `migrations/NNNN_description.sql` with plain
+  `ALTER`s — never edit a file that has shipped, and never add `CREATE TABLE` to `db.js`.
 - **Automations** - binding a relay writes a normal Home Assistant automation. It
   re-evaluates whenever the sensor changes and every 5 minutes, with the schedule, gap and
   minimum on/off times built into its conditions. It keeps working when the panel is

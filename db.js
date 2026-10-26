@@ -1,69 +1,25 @@
 const mysql = require('mysql2/promise');
+const { runMigrations } = require('./lib/migrate');
 
 let pool;
 
 async function initDb() {
-  pool = mysql.createPool({
+  const config = {
     host: process.env.DB_HOST || 'relay-panel-db',
+    port: Number(process.env.DB_PORT || 3306),
     user: process.env.DB_USER || 'relay',
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME || 'relaypanel',
     waitForConnections: true,
     connectionLimit: 5,
-  });
+  };
+  pool = mysql.createPool(config);
 
-  // One panel row holds the whole layout JSON (relay widgets + bindings).
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS panel (
-      id         INT PRIMARY KEY,
-      name       VARCHAR(190) NOT NULL DEFAULT 'Main',
-      layout     JSON NOT NULL,
-      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    )
-  `);
-  // Rolling backups so a layout is never lost — every change snapshots the
-  // PREVIOUS layout here before overwriting; the newest ~30 are kept.
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS panel_backup (
-      id         INT AUTO_INCREMENT PRIMARY KEY,
-      layout     JSON NOT NULL,
-      relays     INT NOT NULL DEFAULT 0,
-      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-  // Persistent login sessions (survive container restarts).
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS sessions (
-      token      VARCHAR(64) PRIMARY KEY,
-      username   VARCHAR(190) NOT NULL,
-      expires_at DATETIME NOT NULL,
-      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      INDEX idx_expires (expires_at)
-    )
-  `);
-  // Audit trail for "who did what and when".
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS audit_log (
-      id         INT AUTO_INCREMENT PRIMARY KEY,
-      actor      VARCHAR(190) NOT NULL DEFAULT '',
-      action     VARCHAR(60)  NOT NULL,
-      detail     JSON,
-      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      INDEX idx_created (created_at)
-    )
-  `);
-  // Small key -> JSON store for app settings edited in the panel (battery alerts).
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS settings (
-      k          VARCHAR(64) PRIMARY KEY,
-      v          JSON NOT NULL,
-      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    )
-  `);
-  await pool.query(
-    `INSERT IGNORE INTO panel (id, name, layout) VALUES (1, 'Main', ?)`,
-    [JSON.stringify({ relays: [], areas: [], devices: [] })]
-  );
+  // The schema is owned by migrations/ (lib/migrate.js) — applied once per
+  // numbered file and tracked in schema_migrations. A fresh install gets the
+  // tables (and the seeded panel row) from 0001_baseline; an existing install
+  // records the baseline as already applied and keeps its data.
+  await runMigrations(pool, config);
   return pool;
 }
 
