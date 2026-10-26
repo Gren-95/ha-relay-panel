@@ -110,7 +110,7 @@ Self-hosted, no cloud. Talks to your own Home Assistant over its REST/WebSocket 
 git clone https://github.com/Gren-95/ha-relay-panel.git
 cd ha-relay-panel
 cp .env.example .env
-# edit .env: set HA_URL + HA_TOKEN, and change DB_PASSWORD / DB_ROOT_PASSWORD
+# edit .env: set HA_URL + HA_TOKEN — that's all
 
 docker compose up -d --build
 ```
@@ -122,9 +122,23 @@ To update, `git pull` and run `docker compose up -d --build` again.
 
 ## Docker
 
-`compose.yml` runs two containers: `relay-panel-web` (the app) and `relay-panel-db`
-(MariaDB 12, data in the `relay-panel-data` volume). The web container is **stateless and
-runs unprivileged** - everything that persists lives in the database.
+`compose.yml` runs **one container** (`relay-panel-web`). Its storage is embedded SQLite
+(`node:sqlite`) — no database container, no credentials to invent — and the data lives in
+the `relay-panel-appdata` volume as a single file. The container **runs unprivileged**.
+Backup is one command:
+
+```bash
+docker cp relay-panel-web:/app/data/panel.db ./panel-backup.db
+```
+
+Already running an older, MariaDB-backed install? Upgrade as usual, then run
+`scripts/migrate-to-sqlite.sh` once: it exports the old database (the orphaned
+`relay-panel-db` container keeps running until you remove it), imports it into the new
+store and restarts the panel. Your layout, backups, sessions, audit log and settings
+carry over; the old volume is left untouched until you delete it yourself.
+
+Prefer an external MariaDB? Set `DB_HOST` (+ `DB_USER`/`DB_PASSWORD`/`DB_NAME`) in `.env`
+and the app uses it instead — the embedded store is not started.
 
 The web image is **always built from your checkout** (`pull_policy: build`), so a stray
 `docker compose pull` can never swap your running app for a different registry image. The
@@ -143,9 +157,9 @@ GIT_SHA=$(git rev-parse --short HEAD) BUILD_DATE=$(date -u +%F) docker compose u
 | --- | --- |
 | `HA_URL` | Base URL of your Home Assistant (e.g. `http://homeassistant.local:8123`) |
 | `HA_TOKEN` | A Home Assistant long-lived access token |
-| `DB_PASSWORD` / `DB_ROOT_PASSWORD` | Credentials for the bundled MariaDB container |
+| `DB_HOST` | Optional: an external MariaDB to use instead of the embedded store (with `DB_USER`/`DB_PASSWORD`/`DB_NAME`) |
 | `HTTP_PORT` | Host port the panel is published on (default `8090`) |
-| `TZ` | Timezone for both containers - what the activity log and history charts render in (default `UTC`) |
+| `TZ` | Timezone - what the activity log and history charts render in (default `UTC`) |
 | `MQTT_URL` | Optional MQTT broker URL, for renaming Zigbee2MQTT devices |
 | `NOTIFY_SERVICE` | Optional HA notify service(s) for alerts, e.g. `notify.mobile_app_phone`; comma-separate several. Unset = no alerts |
 | `KWS_MAP_URL` | Optional facility-map page for the [map button](#map-button). Unset = no button |
@@ -155,9 +169,9 @@ GIT_SHA=$(git rev-parse --short HEAD) BUILD_DATE=$(date -u +%F) docker compose u
 | `EXTRA_AUTH_LABEL` | What to call that provider in the login dialog (default `Company account`) |
 | `EXTRA_AUTH_PERM_URL` / `EXTRA_AUTH_PERM_TOKEN` / `EXTRA_AUTH_PERM_VALUE` | Optional permission check for that provider - all three or none |
 
-`compose.yml` sets the database connection for you (`DB_HOST`, `DB_USER`, `DB_NAME`), and
-the app listens on `PORT` (default `3000`) inside the container. You only need those when
-running `node server.js` outside Compose, against a MariaDB of your own.
+The app listens on `PORT` (default `3000`) inside the container, and reads its storage
+location from `SQLITE_DIR`/`SQLITE_FILE` (defaults `data/panel.db`). `DB_*` matters only
+with the external-MariaDB escape hatch.
 
 Every host, port and credential this app knows about is read from `.env`. Nothing in the
 repository names a real deployment - if you need a concrete address in a comment, a test

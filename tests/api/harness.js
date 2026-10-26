@@ -7,6 +7,8 @@
 // Requires node_modules (express, mysql2) — unlike tests/unit, this suite runs
 // with the installed dependencies.
 const { spawn } = require('node:child_process');
+const fs = require('node:fs');
+const os = require('node:os');
 const http = require('node:http');
 const path = require('node:path');
 const mysql = require('mysql2/promise');
@@ -44,28 +46,34 @@ function startHaStub() {
   return new Promise((resolve) => s.listen(0, '127.0.0.1', () => resolve({ server: s, url: `http://127.0.0.1:${s.address().port}` })));
 }
 
-// --- the real server, booted as a child process against its own database ---
-async function startApp({ dbPort, dbRootPassword, haUrl, dbname }) {
-  const conn = await mysql.createConnection({ host: '127.0.0.1', port: dbPort, user: 'root', password: dbRootPassword });
-  await conn.query(`DROP DATABASE IF EXISTS ${dbname}`);
-  await conn.query(`CREATE DATABASE ${dbname}`);
-  await conn.end();
-
-  const port = 30000 + Math.floor(Math.random() * 10000);
-  const proc = spawn('node', [path.join(ROOT, 'server.js')], {
-    env: {
-      ...process.env,
-      PORT: String(port),
+// --- the real server, booted as a child process ---
+// mode 'sqlite' (default, the shipped configuration): embedded storage in a
+// temp file, no DB_* env at all — proves the one-container path. mode 'mysql':
+// the DB_HOST escape hatch against a throwaway MariaDB (API_DB_PORT), which
+// also exercises the migration runner.
+async function startApp({ mode = 'sqlite', dbPort, dbRootPassword, haUrl, dbname }) {
+  const env = { ...process.env, HA_URL: haUrl, TZ: 'UTC' };
+  if (mode === 'mysql') {
+    const conn = await mysql.createConnection({ host: '127.0.0.1', port: dbPort, user: 'root', password: dbRootPassword });
+    await conn.query(`DROP DATABASE IF EXISTS ${dbname}`);
+    await conn.query(`CREATE DATABASE ${dbname}`);
+    await conn.end();
+    Object.assign(env, {
       DB_HOST: '127.0.0.1', DB_PORT: String(dbPort), DB_USER: 'root',
       DB_PASSWORD: dbRootPassword, DB_NAME: dbname,
-      HA_URL: haUrl,
-      TZ: 'UTC',
-    },
+    });
+  } else {
+    env.SQLITE_FILE = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'rp-api-')), 'panel.db');
+  }
+  const port = 30000 + Math.floor(Math.random() * 10000);
+  env.PORT = String(port);
+  const proc = spawn('node', [path.join(ROOT, 'server.js')], {
+    env,
     stdio: ['ignore', 'pipe', 'pipe'],
   });
-  proc.stderr.on('data', (d) => process.stderr.write(`[server:${dbname}] ${d}`));
+  proc.stderr.on('data', (d) => process.stderr.write(`[server:${mode}] ${d}`));
   // loud and fatal on boot is a feature; surface why instead of hanging
-  proc.on('exit', (code) => { if (code) console.error(`[server:${dbname}] exited ${code}`); });
+  proc.on('exit', (code) => { if (code) console.error(`[server:${mode}] exited ${code}`); });
 
   const deadline = Date.now() + 20000;
   for (;;) {
@@ -76,15 +84,19 @@ async function startApp({ dbPort, dbRootPassword, haUrl, dbname }) {
     if (Date.now() > deadline) throw new Error(`server on :${port} never became healthy`);
     await new Promise((r) => setTimeout(r, 150));
   }
-  return { port, proc };
+  return { port, proc, env };
 }
 
 async function stopApp(handle, dbname, dbPort, dbRootPassword) {
   handle.proc.kill('SIGTERM');
   await new Promise((r) => { handle.proc.on('exit', r); setTimeout(r, 5000); });
-  const conn = await mysql.createConnection({ host: '127.0.0.1', port: dbPort, user: 'root', password: dbRootPassword });
-  await conn.query(`DROP DATABASE IF EXISTS ${dbname}`);
-  await conn.end();
+  if (handle.env.DB_HOST) {
+    const conn = await mysql.createConnection({ host: '127.0.0.1', port: dbPort, user: 'root', password: dbRootPassword });
+    await conn.query(`DROP DATABASE IF EXISTS ${dbname}`);
+    await conn.end();
+  } else {
+    try { fs.rmSync(path.dirname(handle.env.SQLITE_FILE), { recursive: true, force: true }); } catch { /* tmp */ }
+  }
 }
 
 // --- HTTP helpers ---
