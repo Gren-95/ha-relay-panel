@@ -102,4 +102,11 @@ html[data-theme="dark"] {
   body.editor-open #ha-banner { filter: blur(4px); }
   .blurred { filter: blur(4px); }
   /* no transition — blur appears instantly */
+  /* The Edit/Live toggle swaps both its icon and its label between modes; left
+     to their natural widths the button changes size on every switch and the
+     centered toolbar row nudges every button left of it. Constant widths:
+     the icon gets a 1em slot, the label a 3.4em floor — 'Muuda' measures 61px
+     at the button's 19px font (3em = 57px was not enough for Estonian). */
+  #btn-mode .bi { display: inline-block; width: 1em; text-align: center; }
+  #mode-label { display: inline-block; min-width: 3.4em; text-align: center; }
 }

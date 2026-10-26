@@ -35,6 +35,14 @@ function updateAuthUI() {
   $('#btn-logout').classList.toggle('hidden', !signedIn);
   $('#logout-sep').classList.toggle('hidden', !signedIn);
   const alloff = $('#btn-alloff'); alloff.classList.toggle('hidden', !state.authed); alloff.classList.toggle('opacity-40', !state.edit); alloff.disabled = !state.edit;
+  // Add is a write control: it exists only for a signed-in operator. Hiding it
+  // (rather than dimming) keeps the header from showing an action a visitor
+  // cannot use; the wrapper keeps its space so History/Edit do not shift.
+  const addWrap = document.querySelector('.tb-add');
+  if (addWrap) {
+    addWrap.classList.toggle('invisible', !state.authed);
+    addWrap.classList.toggle('mobile:hidden', !state.authed); // mobile stacks rows — an empty one just looks broken
+  }
 }
 async function checkSession() {
   try { const s = await api('/api/session'); state.authed = !!s.authed; state.user = s.user || null; }

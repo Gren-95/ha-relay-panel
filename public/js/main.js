@@ -74,7 +74,13 @@ const closeAdd = () => $('#add-menu').classList.add('hidden');
 // +Add menu
 // These two stopPropagation, so the document listener that would shut the account
 // menu (#104) never runs — close it by hand or two dropdowns end up open at once.
-$('#btn-add-menu').addEventListener('click', (e) => { e.stopPropagation(); closeAccountMenu(); $('#add-menu').classList.toggle('hidden'); });
+$('#btn-add-menu').addEventListener('click', (e) => {
+  e.stopPropagation(); closeAccountMenu();
+  // Write control, like Bulk edit / Import: in View mode it explains itself
+  // instead of opening the menu (signed out, it offers the sign-in modal).
+  if (!requireEdit($('#btn-add-menu'))) return;
+  $('#add-menu').classList.toggle('hidden');
+});
 document.addEventListener('click', (e) => { if (!e.target.closest('.tb-add')) $('#add-menu').classList.add('hidden'); });
 $('#btn-add-single').addEventListener('click', () => { closeAdd(); addRelay(); });
 // Advanced/More menu

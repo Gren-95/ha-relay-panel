@@ -20,7 +20,10 @@
            `mobile:static mobile:w-full`, so while this stayed a flex row the menu and
            its own trigger fought over one line — the two pickers came out clipped to
            "+ Phy rela" and "+ -". As a block the menu stacks under the button. -->
-      <div class="flex items-center gap-2 mobile:block mobile:w-full [.live-mode_&]:hidden tb-add relative">
+      <!-- Add stays in the header in View (Live) mode too — dimmed like the other
+           write controls (bulk edit, import), not removed. Hiding the whole group
+           made History and the Edit/Live toggle slide left on every mode switch. -->
+      <div class="flex items-center gap-2 mobile:block mobile:w-full tb-add [.live-mode_&]:opacity-40 relative">
         <button id="btn-add-menu" data-ui="btn btnTb" class="mobile:w-full mobile:mb-2.5"><i class="bi bi-plus-lg"></i> <span data-i18n="add">Add</span> <i class="bi bi-caret-down-fill"></i></button>
         <div id="add-menu" class="hidden flex flex-col gap-1.5 absolute top-full left-0 mt-2 w-max min-w-[220px] max-w-[min(360px,calc(100vw-24px))] bg-surface border-2 border-border rounded-xl p-2 shadow-panel z-20 mobile:static mobile:grid mobile:grid-cols-1 mobile:w-full mobile:bg-transparent mobile:border-0 mobile:shadow-none mobile:p-0 mobile:m-0 mobile:min-w-0 mobile:gap-2.5">
           <button id="btn-add-single" data-ui="btn btnMenu"><i class="bi bi-plus-lg"></i> <span data-i18n="add_single_relay">Add single relay</span></button>
