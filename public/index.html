@@ -39,21 +39,20 @@
              point, All off, activity log, bulk edit, import/export and About with it.
              The label is desktop-hidden so the toolbar keeps its icon-only gear. -->
         <button id="btn-advanced" data-ui="btn" class="mobile:min-h-[54px]" data-i18n-title="advanced" title="More"><i class="bi bi-gear"></i> <span class="min-[701px]:hidden" data-i18n="advanced">More</span></button>
-        <!-- Primary, not an outline (#109 follow-up): signed out, the panel is read-only,
-             and since the board itself no longer bounces a tap to this modal (View mode is
-             inert — only the history chart opens) this button is the ONLY way in, so it has
-             to read as THE action, and it only exists while it is. It was `border-ok text-ok`, but --ok is
+        <!-- Primary, not an outline (#109 follow-up): signed out, the panel is read-only —
+             every card tap, toggle and target edit bounces to this modal — so this is THE
+             action, and it only exists while it is. It was `border-ok text-ok`, but --ok is
              the relay-ON colour: the same green as the "N on" badge beside it and every live
              toggle bar, so an action was wearing a state's colour. The tooltip now says what
              signing in is FOR instead of repeating the label. -->
         <button id="btn-login" data-ui="btnPrimary" class="hidden mobile:min-h-[54px]" data-i18n-title="sign_in_to_edit" title="Sign in to edit"><i class="bi bi-box-arrow-in-right"></i> <span data-i18n="sign_in">Sign in</span></button>
         <div id="advanced-menu" class="hidden flex flex-col gap-0.5 absolute top-full right-0 mt-2 w-max min-w-[210px] max-w-[min(360px,calc(100vw-24px))] bg-surface border border-border rounded-xl p-1.5 shadow-panel z-20 mobile:static mobile:w-full mobile:bg-transparent mobile:border-0 mobile:shadow-none mobile:p-0 mobile:m-0 mobile:min-w-0 mobile:max-w-none">
           <button id="btn-export" data-ui="menuItem"><i class="bi bi-download w-4 text-center text-muted"></i> <span data-i18n="export_layout">Export</span></button>
-          <button id="btn-import" data-ui="menuItem" class="[.live-mode_&]:opacity-40"><i class="bi bi-upload w-4 text-center text-muted"></i> <span data-i18n="import_layout">Import</span></button>
+          <button id="btn-import" data-ui="menuItem"><i class="bi bi-upload w-4 text-center text-muted"></i> <span data-i18n="import_layout">Import</span></button>
           <span class="h-px bg-border mx-2 my-1"></span>
           <button id="btn-activity" data-ui="menuItem"><i class="bi bi-clock-history w-4 text-center text-muted"></i> <span data-i18n="activity_log">Activity log</span></button>
-          <button id="btn-bulk" data-ui="menuItem" class="[.live-mode_&]:opacity-40"><i class="bi bi-collection w-4 text-center text-muted"></i> <span data-i18n="bulk_edit">Bulk edit</span></button>
-          <button id="btn-battery-alerts" data-ui="menuItem" class="[.live-mode_&]:opacity-40"><i class="bi bi-battery-half w-4 text-center text-muted"></i> <span data-i18n="battery_alerts">Battery alerts</span></button>
+          <button id="btn-bulk" data-ui="menuItem"><i class="bi bi-collection w-4 text-center text-muted"></i> <span data-i18n="bulk_edit">Bulk edit</span></button>
+          <button id="btn-battery-alerts" data-ui="menuItem"><i class="bi bi-battery-half w-4 text-center text-muted"></i> <span data-i18n="battery_alerts">Battery alerts</span></button>
           <span class="h-px bg-border mx-2 my-1"></span>
           <div data-ui="menuRow" class="[.live-mode_&]:opacity-40" id="global-temp-wrap">
             <span class="inline-flex items-center gap-2.5"><i class="bi bi-thermometer-half w-4 text-center text-heat"></i> <span data-i18n="global_temp_title">Set temp for all</span></span>
