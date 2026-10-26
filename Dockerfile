@@ -28,7 +28,12 @@ COPY . .
 # overwrite the committed stylesheet with the freshly compiled one
 COPY --from=cssbuild /app/public/style.css ./public/style.css
 
-# run unprivileged (the web tier is stateless; all state lives in MariaDB)
+# embedded storage (#106): the SQLite file lives here; a named volume keeps it
+# writable for the unprivileged runtime (a bind mount would be root-owned).
+RUN mkdir -p /app/data && chown node:node /app/data
+VOLUME /app/data
+
+# run unprivileged
 USER node
 
 EXPOSE 3000

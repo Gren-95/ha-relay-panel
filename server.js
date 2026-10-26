@@ -4,6 +4,7 @@ const db = require('./db');
 const ha = require('./ha');
 const { startNotifyWatcher } = require('./lib/notify');
 const { startBatteryWatcher } = require('./lib/battery-alerts');
+const { wrap } = require('./lib/middleware');
 
 const app = express();
 // Only trust X-Forwarded-For when behind a reverse proxy (Caddy/nginx).
@@ -37,7 +38,17 @@ app.use(require('./routes/auth'));
 app.use(require('./routes/activity'));
 app.use(require('./routes/battery-alerts'));
 
-app.get('/api/health', (req, res) => res.json({ ok: true }));
+// Storage readiness is part of health (#106): the app must not answer 200
+// before the store accepts a write — there is no db container healthcheck
+// doing that job anymore.
+app.get('/api/health', wrap(async (req, res) => {
+  try {
+    await db.ping();
+    res.json({ ok: true, driver: db.driver });
+  } catch {
+    res.status(503).json({ ok: false, error: 'storage not writable' });
+  }
+}));
 
 // Client-visible configuration — no secrets. KWS_MAP_URL is the facility-map page that
 // plots the HA combo sensors; leave it unset and the cards' map button stays hidden.

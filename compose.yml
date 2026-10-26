@@ -1,22 +1,4 @@
 services:
-  relay-panel-db:
-    image: mariadb:12
-    container_name: relay-panel-db
-    restart: always
-    environment:
-      - MARIADB_DATABASE=relaypanel
-      - MARIADB_USER=relay
-      - MARIADB_PASSWORD=${DB_PASSWORD}
-      - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
-      - TZ=${TZ:-UTC}
-    volumes:
-      - relay-panel-data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
   relay-panel-web:
     # ALWAYS build from this checkout. pull_policy: build stops a bare
     # `docker compose up -d` (or a stray `pull`) from replacing the running app
@@ -35,13 +17,13 @@ services:
     env_file:
       - .env
     environment:
-      - DB_HOST=relay-panel-db
-      - DB_USER=relay
-      - DB_NAME=relaypanel
       - TZ=${TZ:-UTC}
-    depends_on:
-      relay-panel-db:
-        condition: service_healthy
+    volumes:
+      # The panel's storage (embedded SQLite): one file, survives down/recreate
+      # and an image upgrade. Escape hatch: set DB_HOST (+ DB_USER/DB_PASSWORD/
+      # DB_NAME) in .env and the app uses that external MariaDB instead, and
+      # this volume stays empty.
+      - relay-panel-appdata:/app/data
 
 volumes:
-  relay-panel-data:
+  relay-panel-appdata:
