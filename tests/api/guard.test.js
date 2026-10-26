@@ -16,7 +16,7 @@ before(async () => {
   ha = await startHaStub();
   app = await startApp({ dbPort: DB_PORT, dbRootPassword: DB_ROOT_PASSWORD, haUrl: ha.url, dbname: DBNAME });
 });
-after(async () => { await stopApp(app, DBNAME, DB_PORT, DB_ROOT_PASSWORD); ha.server.close(); });
+after(async () => { if (app) await stopApp(app, DBNAME, DB_PORT, DB_ROOT_PASSWORD); if (ha) ha.server.close(); });
 
 // Mutating endpoints, all behind requireAuth. Each entry is [method, path, body]
 // — the body only has to be shaped well enough to get past express.json().

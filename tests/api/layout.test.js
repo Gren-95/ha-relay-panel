@@ -18,7 +18,7 @@ before(async () => {
   app = await startApp({ dbPort: DB_PORT, dbRootPassword: DB_ROOT_PASSWORD, haUrl: ha.url, dbname: DBNAME });
   cookie = await login(app.port, 'editor');
 });
-after(async () => { await stopApp(app, DBNAME, DB_PORT, DB_ROOT_PASSWORD); ha.server.close(); });
+after(async () => { if (app) await stopApp(app, DBNAME, DB_PORT, DB_ROOT_PASSWORD); if (ha) ha.server.close(); });
 
 const put = (body, c = cookie) => call(app.port, 'PUT', '/api/layout', { body, cookie: c });
 const backups = () => call(app.port, 'GET', '/api/layout/backups').then((r) => r.body.backups);

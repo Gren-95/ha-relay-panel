@@ -14,7 +14,7 @@ before(async () => {
   ha = await startHaStub();
   app = await startApp({ dbPort: DB_PORT, dbRootPassword: DB_ROOT_PASSWORD, haUrl: ha.url, dbname: DBNAME });
 });
-after(async () => { await stopApp(app, DBNAME, DB_PORT, DB_ROOT_PASSWORD); ha.server.close(); });
+after(async () => { if (app) await stopApp(app, DBNAME, DB_PORT, DB_ROOT_PASSWORD); if (ha) ha.server.close(); });
 
 test('valid HA credentials sign in and set the session cookie', async () => {
   const r = await call(app.port, 'POST', '/api/login', { body: { username: 'risto', password: HA_PASSWORD } });
