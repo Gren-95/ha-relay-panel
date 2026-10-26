@@ -48,6 +48,7 @@ async function allOff() {
 // Master control: turn every relay in an area on/off at once.
 async function setAreaRelays(areaId, on) {
   if (!state.authed) { openLogin(); return; } // #62
+  if (!state.edit) return; // the master cluster is hidden in View mode; the area editor also calls this
   const relays = state.layout.relays.filter((r) => r.area === areaId && r.relay);
   if (!relays.length) return;
   setStatus(on ? t('turning_area_on') : t('turning_area_off'));
@@ -114,24 +115,61 @@ async function toggleRelay(r) {
   } catch { setStatus(t('switch_error')); }
 }
 
-async function refreshLive() {
+function liveIds() {
   const ids = new Set();
   for (const r of state.layout.relays) { if (r.sensor) ids.add(r.sensor); if (r.relay) ids.add(r.relay); }
+  return ids;
+}
+
+// One shape for "new live data arrived", shared by the poll fallback and the
+// SSE stream (#push): automations map, states, HA-reachability banner.
+function applyLive(liveData, reachable) {
+  state.autoStates = liveData._automations || {};
+  delete liveData._automations;
+  state.live = liveData;
+  $('#ha-banner').classList.toggle('hidden', reachable !== false);
+  render();
+}
+
+// --- live push (SSE): the server fetches HA once per tick for everyone and
+// pushes only on change; polling below is the fallback while the stream is
+// down (browser auto-reconnects EventSource on its own).
+let es = null;
+function openLiveStream() {
+  if (es || typeof EventSource === 'undefined') return;
+  const ids = liveIds();
+  if (!ids.size) return;
+  es = new EventSource('/api/live/stream?ids=' + encodeURIComponent([...ids].join(',')));
+  es.onmessage = (ev) => {
+    try {
+      const d = JSON.parse(ev.data);
+      state.liveStream = true;
+      applyLive(d.states, d.reachable);
+    } catch { /* a torn frame is retried by the server tick */ }
+  };
+  es.onerror = () => { state.liveStream = false; }; // fallback poll takes over
+}
+function closeLiveStream() {
+  if (es) { es.close(); es = null; }
+  state.liveStream = false;
+}
+// Re-open after a layout save: the id list the stream was opened with may no
+// longer match the board. history-undo fires state.liveStreamHook after every
+// successful save — set here, so no module cycle is needed.
+function reopenLiveStream() { closeLiveStream(); openLiveStream(); }
+state.liveStreamHook = reopenLiveStream;
+
+async function refreshLive() {
+  const ids = liveIds();
   try {
-    // Single /api/live now returns both states and automation map (issue #48)
-    const livePromise = ids.size
-      ? api('/api/live?ids=' + encodeURIComponent([...ids].join(',')))
-      : Promise.resolve({ ...state.live, _automations: state.autoStates || {} });
-    const promises = [
-      livePromise,
-      api('/api/ha-status').catch(() => ({ reachable: true })),
-    ];
-    const [liveData, haStatus] = await Promise.all(promises);
-    state.autoStates = liveData._automations || {};
-    delete liveData._automations;
-    state.live = liveData;
-    $('#ha-banner').classList.toggle('hidden', haStatus.reachable !== false);
-    render();
+    // Single /api/live now returns states, the automation map (issue #48) and
+    // HA reachability — the separate /api/ha-status round-trip is gone.
+    const liveData = ids.size
+      ? await api('/api/live?ids=' + encodeURIComponent([...ids].join(',')))
+      : { ...state.live, _automations: state.autoStates || {}, _reachable: true };
+    const reachable = liveData._reachable;
+    delete liveData._reachable;
+    applyLive(liveData, reachable);
   } catch {}
 }
 
@@ -160,6 +198,8 @@ canvas.addEventListener('click', (e) => {
   const btn = e.target.closest('.adj-btn');
   if (btn) {
     e.stopPropagation();
+    if (!state.authed) { openLogin(); return; }
+    if (!state.edit) return;
     adjustTemp(btn.dataset.rid, parseInt(btn.dataset.dir));
     return;
   }
@@ -178,10 +218,16 @@ canvas.addEventListener('click', (e) => {
   }
 });
 
+// Capture phase, deliberately: this dismisses the popover that is ALREADY open, and it
+// has to do that before the click reaches whatever opened a new one. guard.js anchors
+// the same popover to whatever was clicked (a toggle, a set-point pill, a menu item),
+// and on the bubble this listener ran on that very click — removing the pop in the same
+// tick it appeared. The anchor exemption stays so a second click on the anchor toggles
+// the pop off in showWarnPop rather than being reopened here.
 document.addEventListener('click', (e) => {
   const p = document.getElementById('warn-pop');
-  if (p && !e.target.closest('.warn-icon') && e.target !== p) p.remove();
-});
+  if (p && e.target !== p && !e.target.closest('.warn-icon') && !(p._anchor && p._anchor.contains(e.target))) p.remove();
+}, true);
 }
 
-export { adjustTemp, allOff, setAreaRelays, setRelaysTemp, showWarnPop, toggleRelay, refreshLive, updateSummary };
+export { adjustTemp, allOff, setAreaRelays, setRelaysTemp, showWarnPop, toggleRelay, refreshLive, updateSummary, openLiveStream };

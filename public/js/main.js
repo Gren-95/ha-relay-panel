@@ -6,7 +6,7 @@ import { addRelay, initEditor } from './editor.js';
 import { openActivityLog, initActivity } from './activity.js';
 import { openBulkEdit, initBulk } from './bulk.js';
 import { openBatteryAlerts, initBatteryAlerts } from './battery-alerts.js';
-import { allOff, setRelaysTemp, refreshLive, initRelayActions } from './relay-actions.js';
+import { allOff, setRelaysTemp, refreshLive, initRelayActions, openLiveStream } from './relay-actions.js';
 import { exportLayout, importLayout } from './import-export.js';
 import { saveLayout, initHistory, undo, redo } from './history-undo.js';
 import { applyMode, toggleMode, closeTopmost, initMode } from './mode.js';
@@ -19,6 +19,7 @@ import { initHistoryPage } from './history-page.js';
 import { initDeviceEditor } from './device-editor.js';
 import { initAreaEditor } from './area-editor.js';
 import { initModals, registerModal } from './modals.js';
+import { requireEdit } from './guard.js';
 
 // How often the board re-reads live values from HA. The Refresh cycles modal quotes it.
 const LIVE_POLL_MS = 10000;
@@ -55,8 +56,13 @@ async function boot() {
   render();
   initHistory();
   if (state.loaded && state.layout.devices.length) saveLayout();
-  // #62 — first poll fires immediately; no need for a separate eager refreshLive()
-  (function poll() { refreshLive().finally(() => setTimeout(poll, LIVE_POLL_MS)); })();
+  // #62 — first poll fires immediately; then the SSE stream takes over (#push)
+  // and the poll loop below only runs while the stream is down.
+  (function poll() {
+    if (state.liveStream) { setTimeout(poll, LIVE_POLL_MS); return; }
+    refreshLive().finally(() => setTimeout(poll, LIVE_POLL_MS));
+  })();
+  refreshLive().finally(() => openLiveStream());
   // e2e tests wait on this explicit signal rather than racing boot()/render() (#87)
   document.body.dataset.ready = 'true';
 }
@@ -75,10 +81,12 @@ $('#btn-add-single').addEventListener('click', () => { closeAdd(); addRelay(); }
 $('#btn-advanced').addEventListener('click', (e) => { e.stopPropagation(); closeAccountMenu(); $('#advanced-menu').classList.toggle('hidden'); });
 document.addEventListener('click', (e) => { if (!e.target.closest('.tb-advanced')) $('#advanced-menu').classList.add('hidden'); });
 $('#btn-export').addEventListener('click', exportLayout);
-$('#btn-import').addEventListener('click', () => { $('#advanced-menu').classList.add('hidden'); $('#import-file').click(); });
+// Import replaces the whole board and Bulk edit rebinds every relay in one go — both
+// are edits, so neither is reachable from View mode. Export stays: it only reads.
+$('#btn-import').addEventListener('click', () => { $('#advanced-menu').classList.add('hidden'); if (!requireEdit($('#btn-advanced'))) return; $('#import-file').click(); });
 $('#btn-activity').addEventListener('click', () => { closeAdvanced(); openActivityLog(); });
-$('#btn-bulk').addEventListener('click', () => { closeAdvanced(); openBulkEdit(); });
-$('#btn-battery-alerts').addEventListener('click', () => { closeAdvanced(); openBatteryAlerts(); });
+$('#btn-bulk').addEventListener('click', () => { closeAdvanced(); if (!requireEdit($('#btn-advanced'))) return; openBulkEdit(); });
+$('#btn-battery-alerts').addEventListener('click', () => { closeAdvanced(); if (!requireEdit($('#btn-advanced'))) return; openBatteryAlerts(); });
 $('#btn-alloff').addEventListener('click', () => { closeAdvanced(); allOff(); });
 // About modal (#78)
 function openAbout() {
@@ -104,7 +112,9 @@ $('#about-dismiss').addEventListener('click', closeAbout);
 // Refresh cycles modal: how often each part of the panel updates
 function openRefreshInfo() {
   closeAdvanced();
-  for (const id of ['#rc-live-every', '#rc-ha-every']) $(id).textContent = `${LIVE_POLL_MS / 1000} s`;
+  const live = state.liveStream ? t('push_live') : `${LIVE_POLL_MS / 1000} s`;
+  $('#rc-live-every').textContent = live;
+  $('#rc-ha-every').textContent = state.liveStream ? t('push_ha') : `${LIVE_POLL_MS / 1000} s`;
   $('#refresh-modal').classList.remove('hidden');
 }
 function closeRefreshInfo() { $('#refresh-modal').classList.add('hidden'); }
@@ -112,7 +122,7 @@ registerModal('refresh-modal', closeRefreshInfo);
 $('#btn-refresh-info').addEventListener('click', openRefreshInfo);
 $('#refresh-close').addEventListener('click', closeRefreshInfo);
 $('#refresh-dismiss').addEventListener('click', closeRefreshInfo);
-$('#import-file').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) importLayout(f); e.target.value = ''; });
+$('#import-file').addEventListener('change', (e) => { const f = e.target.files[0]; if (f && requireEdit($('#btn-advanced'))) importLayout(f); e.target.value = ''; });
 $('#area-picker').addEventListener('change', (e) => { closeAdd(); addArea(e.target.value); e.target.value = ''; });
 $('#device-picker').addEventListener('change', (e) => { closeAdd(); addPhysicalRelay(e.target.value); e.target.value = ''; });
 

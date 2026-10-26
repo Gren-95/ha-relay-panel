@@ -39,6 +39,7 @@ async function saveLayout() {
     state.layoutVersion = result.updated_at; // bump to the version we just wrote
     pushHistory();
     flashStatus(t('saved'), 1000);
+    state.liveStreamHook?.(); // the saved board may watch different entities (#push)
   } catch (e) {
     if (e.status === 409) {
       // Stale write — fetch the fresh version token & retry with our local changes
