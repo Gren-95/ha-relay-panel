@@ -42,6 +42,10 @@ Self-hosted, no cloud. Talks to your own Home Assistant over its REST/WebSocket 
 - **Visual layout** - drag relay cards around a board, group them into Home Assistant
   **areas**, and collapse a multi-channel relay (e.g. a Shelly Pro) into one
   **physical relay** box holding its outputs. Boxes take a colour of your choosing.
+- **Reorder a relay's outputs** - in a physical relay's settings, drag the outputs into the
+  order you want them stacked in the box (each row shows its sensor, mode/target and schedule).
+  A separate "Swap configs" action moves the settings of two outputs between their channels
+  without touching the Home Assistant entities; it is refused while an output is bound.
 - **Live state on every card** - current temperature and how old the reading is, the
   set point, and the relay's on/off state as the card's left edge (click it to switch).
 - **Health at a glance** - offline / missing-entity warnings per card, a whole-box warning
