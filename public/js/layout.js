@@ -1,8 +1,25 @@
 import { state, $, esc } from './core.js';
+import { t } from './i18n.js';
+import { outputLabel, isDefaultOutputName } from './output-label.mjs';
 
 function fillSelects() {
   const opt = (v, t) => `<option value="${esc(v)}">${esc(t)}</option>`;
-  $('#ed-relay').innerHTML = opt('', '— pick relay —') + state.entities.switches.map((s) => opt(s.entity_id, s.name)).join('');
+  // "Relay to switch" always says which physical relay and output it is (#111).
+  // The suffix is display only — values and order are untouched.
+  const outWord = (n) => t('output_n', { n });
+  const devOf = new Map();
+  for (const d of state.relayDevices) for (const o of d.outputs || []) devOf.set(o.entity_id, d.name);
+  // A relay renamed on the board (e.g. "vaba") keeps HA's default name on the entity, so
+  // the board's name is the one to show. Only when the HA name is still that default —
+  // a real HA rename must not be hidden by a stale board name.
+  const boardName = new Map();
+  for (const r of state.layout.relays || []) if (r.relay) boardName.set(r.relay, r.name);
+  $('#ed-relay').innerHTML = opt('', '— pick relay —') + state.entities.switches.map((s) => {
+    const onBoard = boardName.get(s.entity_id);
+    const name = onBoard && isDefaultOutputName(s.name, s.entity_id) ? onBoard : s.name;
+    return opt(s.entity_id, outputLabel(name, s.entity_id,
+      { device: devOf.get(s.entity_id) || '', format: outWord }));
+  }).join('');
   $('#ed-sensor').innerHTML = opt('', '— pick sensor —') + state.entities.sensors.map((s) => opt(s.entity_id, s.name)).join('');
   $('#ed-area').innerHTML = opt('', '— none —') + state.haAreas.map((a) => opt(a.id, a.name)).join('');
   $('#device-picker').innerHTML = opt('', '+ Physical relay…') +

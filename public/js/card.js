@@ -1,5 +1,6 @@
 import { state, esc, boxOffline } from './core.js';
 import { t, fmtAgo } from './i18n.js';
+import { outputNum } from './output-label.mjs';
 import { boxFor, clampToBox, num, zIndexOf } from './layout.js';
 import { toggleRelay, showWarnPop, adjustTemp } from './relay-actions.js';
 import { openLogin } from './auth.js';
@@ -96,7 +97,7 @@ function card(r, mobile) {
     <button class="${togBase} ${togState}" title="${!r.relay ? t('no_relay') : relayBad ? t('relay_offline_short') : (on ? t('click_turn_off') : t('click_turn_on'))}"${r.relay && !relayBad && state.authed ? '' : ' disabled'}></button>
     <div class="r-info flex-auto min-w-0">
       <div class="r-name font-bold text-[1rem] leading-[1.2]" style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${esc(r.name || 'Relay')}${r.bound ? '' : ' <span class="text-heat text-[.9rem]"><i class="bi bi-circle"></i></span>'}${(r.schedule && r.schedule.blocks && r.schedule.blocks.length) ? ' <i class="bi bi-clock text-cool text-base ml-1" title="scheduled"></i>' : ''}</div>
-      <div class="r-relay text-[.82rem] text-muted overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-1.5">${(() => { const m = (r.relay || '').match(/_output_(\d+)$/); return m ? `Output ${m[1]}` : esc(r.relay || 'no relay'); })()}${maint ? '<span class="text-[.68rem] font-extrabold px-[5px] py-px rounded-md whitespace-nowrap flex-none bg-[var(--maint-bg)] text-[var(--maint-fg)]"><i class="bi bi-pause-fill"></i> ' + t('maint_badge') + '</span>' : ''}</div>
+      <div class="r-relay text-[.82rem] text-muted overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-1.5">${(() => { const n = outputNum(r.relay); return n == null ? esc(r.relay || 'no relay') : `Output ${n}`; })()}${maint ? '<span class="text-[.68rem] font-extrabold px-[5px] py-px rounded-md whitespace-nowrap flex-none bg-[var(--maint-bg)] text-[var(--maint-fg)]"><i class="bi bi-pause-fill"></i> ' + t('maint_badge') + '</span>' : ''}</div>
     </div>
     ${warnIcon}${limitIcon}
     <div class="r-metric text-right flex-none flex flex-col items-end gap-1">
